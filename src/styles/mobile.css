@@ -1,0 +1,283 @@
+/* Mobile Responsiveness Styles */
+/* Comprehensive mobile optimization for FloWorx */
+
+/* Mobile-first responsive breakpoints */
+@media (max-width: 640px) {
+  /* Mobile-specific adjustments */
+  
+  /* Typography scaling */
+  .text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+  .text-2xl { font-size: 1.5rem; line-height: 2rem; }
+  .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+  
+  /* Spacing adjustments */
+  .p-6 { padding: 1rem; }
+  .px-6 { padding-left: 1rem; padding-right: 1rem; }
+  .py-6 { padding-top: 1rem; padding-bottom: 1rem; }
+  .mb-8 { margin-bottom: 1.5rem; }
+  .gap-6 { gap: 1rem; }
+  .gap-8 { gap: 1.5rem; }
+  
+  /* Grid adjustments */
+  .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+  
+  /* Card adjustments */
+  .rounded-2xl { border-radius: 0.75rem; }
+  
+  /* Button touch targets */
+  button, .btn {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.75rem 1rem;
+  }
+  
+  /* Input touch targets */
+  input, textarea, select {
+    min-height: 44px;
+    padding: 0.75rem;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  /* Navigation adjustments */
+  .h-16 { height: 3.5rem; }
+  
+  /* Logo adjustments */
+  .h-10 { height: 2rem; }
+  
+  /* Icon adjustments */
+  .h-5 { height: 1rem; width: 1rem; }
+  .h-6 { height: 1.25rem; width: 1.25rem; }
+  .w-5 { width: 1rem; }
+  .w-6 { width: 1.25rem; }
+}
+
+@media (max-width: 480px) {
+  /* Extra small mobile devices */
+  
+  /* Further typography scaling */
+  .text-3xl { font-size: 1.5rem; line-height: 2rem; }
+  .text-2xl { font-size: 1.25rem; line-height: 1.75rem; }
+  
+  /* Tighter spacing */
+  .p-6 { padding: 0.75rem; }
+  .px-4 { padding-left: 0.75rem; padding-right: 0.75rem; }
+  .py-4 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+  
+  /* Smaller gaps */
+  .gap-6 { gap: 0.75rem; }
+  .gap-8 { gap: 1rem; }
+  
+  /* Compact cards */
+  .rounded-2xl { border-radius: 0.5rem; }
+  
+  /* Smaller header */
+  .h-16 { height: 3rem; }
+}
+
+/* Tablet adjustments */
+@media (min-width: 641px) and (max-width: 1024px) {
+  /* Tablet-specific styles */
+  
+  /* Grid adjustments for tablet */
+  .md\\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  
+  /* Spacing adjustments */
+  .md\\:p-6 { padding: 1.25rem; }
+  .md\\:px-6 { padding-left: 1.25rem; padding-right: 1.25rem; }
+  
+  /* Typography scaling */
+  .md\\:text-3xl { font-size: 2rem; line-height: 2.5rem; }
+}
+
+/* Touch interaction optimizations */
+@media (hover: none) and (pointer: coarse) {
+  /* Touch device specific styles */
+  
+  /* Larger touch targets */
+  button, .btn, [role="button"] {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 0.875rem 1.25rem;
+  }
+  
+  /* Touch-friendly links */
+  a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  
+  /* Remove hover effects on touch devices */
+  .hover\\:bg-gray-100:hover { background-color: transparent; }
+  .hover\\:bg-blue-100:hover { background-color: transparent; }
+  
+  /* Add active states for touch feedback */
+  button:active, .btn:active, [role="button"]:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+  
+  /* Touch-friendly form elements */
+  input, textarea, select {
+    min-height: 48px;
+    padding: 0.875rem;
+    font-size: 16px;
+  }
+  
+  /* Touch-friendly navigation */
+  nav a, nav button {
+    min-height: 48px;
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* High DPI display optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  /* Crisp borders on high DPI displays */
+  .border { border-width: 0.5px; }
+  .border-t { border-top-width: 0.5px; }
+  .border-b { border-bottom-width: 0.5px; }
+  .border-l { border-left-width: 0.5px; }
+  .border-r { border-right-width: 0.5px; }
+}
+
+/* Landscape mobile orientation */
+@media (max-width: 896px) and (orientation: landscape) {
+  /* Landscape mobile adjustments */
+  
+  /* Reduce vertical spacing */
+  .py-8 { padding-top: 1rem; padding-bottom: 1rem; }
+  .mb-8 { margin-bottom: 1rem; }
+  
+  /* Compact header */
+  .h-16 { height: 3rem; }
+  
+  /* Smaller cards */
+  .p-6 { padding: 0.75rem; }
+  
+  /* Adjust grid for landscape */
+  .grid-cols-1 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Dark mode mobile adjustments */
+@media (prefers-color-scheme: dark) {
+  @media (max-width: 640px) {
+    /* Dark mode mobile styles */
+    .bg-white { background-color: #1f2937; }
+    .text-gray-900 { color: #f9fafb; }
+    .text-gray-600 { color: #d1d5db; }
+    .text-gray-500 { color: #9ca3af; }
+    .border-gray-200 { border-color: #374151; }
+    .bg-gray-100 { background-color: #374151; }
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  /* Disable animations for users who prefer reduced motion */
+  .animate-spin,
+  .animate-pulse,
+  .animate-bounce,
+  .animate-fade-in-up,
+  .animate-fade-in-down,
+  .animate-slide-in-left,
+  .animate-slide-in-right {
+    animation: none;
+  }
+  
+  /* Reduce transition durations */
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* Mobile-specific utility classes */
+.mobile-only {
+  display: block;
+}
+
+.desktop-only {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .mobile-only {
+    display: none;
+  }
+  
+  .desktop-only {
+    display: block;
+  }
+}
+
+/* Touch-friendly focus styles */
+@media (hover: none) and (pointer: coarse) {
+  button:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  [role="button"]:focus-visible {
+    outline: 3px solid #3b82f6;
+    outline-offset: 2px;
+  }
+}
+
+/* Mobile performance optimizations */
+@media (max-width: 640px) {
+  /* Optimize images for mobile */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  /* Reduce shadows for better performance */
+  .shadow-lg { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+  .shadow-xl { box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.1); }
+  
+  /* Simplify gradients */
+  .bg-gradient-to-r { background: linear-gradient(90deg, var(--tw-gradient-stops)); }
+}
+
+/* Mobile-specific component styles */
+.mobile-card {
+  @apply bg-white rounded-lg p-4 border border-gray-200 shadow-sm;
+}
+
+.mobile-button {
+  @apply w-full py-3 px-4 rounded-lg font-medium text-center;
+  min-height: 48px;
+}
+
+.mobile-input {
+  @apply w-full py-3 px-4 rounded-lg border border-gray-300;
+  min-height: 48px;
+  font-size: 16px;
+}
+
+.mobile-nav-item {
+  @apply flex items-center space-x-3 px-4 py-3 rounded-lg;
+  min-height: 48px;
+}
+
+/* Mobile grid utilities */
+.mobile-grid-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+.mobile-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+@media (min-width: 640px) {
+  .mobile-grid-1 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mobile-grid-2 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* Mobile spacing utilities */
+.mobile-p-4 { padding: 1rem; }
+.mobile-p-6 { padding: 1.5rem; }
+.mobile-mb-4 { margin-bottom: 1rem; }
+.mobile-mb-6 { margin-bottom: 1.5rem; }
+
+@media (min-width: 640px) {
+  .mobile-p-4 { padding: 1.5rem; }
+  .mobile-p-6 { padding: 2rem; }
+  .mobile-mb-4 { margin-bottom: 1.5rem; }
+  .mobile-mb-6 { margin-bottom: 2rem; }
+}

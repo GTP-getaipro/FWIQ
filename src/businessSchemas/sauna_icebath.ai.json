@@ -1,0 +1,268 @@
+{
+  "schemaVersion": "1.0.0",
+  "businessType": "Sauna & Icebath",
+  "displayName": "Sauna & Ice Bath Business",
+  "description": "AI JSON schema for sauna and cold plunge businesses including installation, repair, maintenance, and wellness consultation",
+  "updatedAt": "2025-10-08",
+  "author": "Floworx Automation Core",
+  
+  "metadata": {
+    "industry": "Wellness & Recovery Services",
+    "primaryServices": ["Sauna Installation", "Cold Plunge Installation", "Repairs", "Maintenance", "Wellness Consultation"],
+    "targetCustomers": ["Residential", "Commercial", "Athletic Facilities", "Wellness Centers"],
+    "seasonality": "Year-round with peak in fall/winter for saunas",
+    "emergencyServices": true,
+    "warrantyServices": true,
+    "supplierDependent": true
+  },
+
+  "aiConfiguration": {
+    "toneProfile": {
+      "primary": "Wellness-focused and educational",
+      "secondary": "Friendly and knowledgeable",
+      "emergency": "Urgent and solution-oriented",
+      "sales": "Consultative and health-focused"
+    },
+    "responseStyle": {
+      "length": "concise",
+      "formality": "professional",
+      "urgency": "context-aware",
+      "personalization": "high"
+    },
+    "classificationModel": "gpt-4o-mini",
+    "confidenceThreshold": 0.8,
+    "fallbackLabel": "MISC"
+  },
+
+  "intentMapping": {
+    "ai.service_request": "SERVICE",
+    "ai.financial_transaction": "BANKING",
+    "ai.emergency_request": "URGENT",
+    "ai.warranty_claim": "WARRANTY",
+    "ai.support_request": "SUPPORT",
+    "ai.sales_inquiry": "SALES",
+    "ai.supplier_communication": "SUPPLIERS",
+    "ai.management_oversight": "MANAGER",
+    "ai.review_management": "GOOGLE_REVIEW",
+    "ai.form_submission": "FORMSUB",
+    "ai.phone_communication": "PHONE",
+    "ai.marketing_communication": "PROMO",
+    "ai.hr_communication": "RECRUITMENT",
+    "ai.social_media": "SOCIALMEDIA",
+    "ai.wellness_consultation": "WELLNESS",
+    "ai.general_communication": "MISC"
+  },
+
+  "keywords": {
+    "primary": ["sauna", "cold plunge", "ice bath", "ice tub", "chiller", "heater", "infrared", "traditional sauna", "finnish sauna"],
+    "secondary": ["installation", "repair", "maintenance", "temperature", "timer", "rocks", "wellness", "recovery", "contrast therapy"],
+    "emergency": ["urgent", "emergency", "not heating", "not cooling", "heater failure", "chiller failure", "safety issue", "asap", "immediately"],
+    "service": ["repair", "install", "maintenance", "service", "heater replacement", "chiller service", "temperature calibration"],
+    "financial": ["invoice", "payment", "quote", "estimate", "e-transfer", "refund", "receipt"],
+    "warranty": ["warranty", "claim", "defect", "replacement", "manufacturer warranty"],
+    "negative": ["problem", "issue", "broken", "not working", "not heating", "not cooling", "malfunction"]
+  },
+
+  "labelSchema": {
+    "colors": {
+      "BANKING": { "backgroundColor": "#16a766", "textColor": "#ffffff" },
+      "FORMSUB": { "backgroundColor": "#0b804b", "textColor": "#ffffff" },
+      "GOOGLE_REVIEW": { "backgroundColor": "#fad165", "textColor": "#000000" },
+      "MANAGER": { "backgroundColor": "#ffad47", "textColor": "#000000" },
+      "SERVICE": { "backgroundColor": "#4a86e8", "textColor": "#ffffff" },
+      "WARRANTY": { "backgroundColor": "#a479e2", "textColor": "#ffffff" },
+      "SUPPORT": { "backgroundColor": "#4a86e8", "textColor": "#ffffff" },
+      "SALES": { "backgroundColor": "#149e60", "textColor": "#ffffff" },
+      "SUPPLIERS": { "backgroundColor": "#ffad47", "textColor": "#000000" },
+      "URGENT": { "backgroundColor": "#fb4c2f", "textColor": "#ffffff" },
+      "WELLNESS": { "backgroundColor": "#00bcd4", "textColor": "#ffffff" },
+      "MISC": { "backgroundColor": "#999999", "textColor": "#ffffff" },
+      "PROMO": { "backgroundColor": "#43d692", "textColor": "#000000" },
+      "RECRUITMENT": { "backgroundColor": "#e07798", "textColor": "#ffffff" },
+      "PHONE": { "backgroundColor": "#6d9eeb", "textColor": "#ffffff" },
+      "SOCIALMEDIA": { "backgroundColor": "#ffad47", "textColor": "#000000" }
+    },
+    
+    "labels": {
+      "BANKING": {
+        "color": "BANKING",
+        "sub": ["Invoice", "Receipts", "Refund", "Payment Confirmation", "Bank Alert", "e-Transfer"],
+        "nested": {
+          "Receipts": ["Payment Sent", "Payment Received"],
+          "e-Transfer": ["From Business", "To Business"]
+        },
+        "intent": "ai.financial_transaction",
+        "critical": true,
+        "description": "Financial transactions and payments",
+        "n8nEnvVar": "LABEL_BANKING"
+      },
+      
+      "FORMSUB": {
+        "color": "FORMSUB",
+        "sub": ["New Submission", "Service Requests"],
+        "intent": "ai.form_submission",
+        "critical": false,
+        "description": "Customer form submissions",
+        "n8nEnvVar": "LABEL_FORMSUB"
+      },
+      
+      "GOOGLE_REVIEW": {
+        "color": "GOOGLE_REVIEW",
+        "sub": ["New Review", "Response Needed", "Resolved"],
+        "intent": "ai.customer_feedback",
+        "critical": false,
+        "description": "Google reviews and feedback",
+        "n8nEnvVar": "LABEL_GOOGLE_REVIEW"
+      },
+      
+      "MANAGER": {
+        "color": "MANAGER",
+        "sub": ["Unassigned", "Escalations"],
+        "intent": "ai.internal_routing",
+        "critical": false,
+        "description": "Management oversight",
+        "n8nEnvVar": "LABEL_MANAGER"
+      },
+      
+      "SERVICE": {
+        "color": "SERVICE",
+        "sub": ["Sauna Service", "Cold Plunge Service", "Installations", "Repairs", "Maintenance"],
+        "nested": {
+          "Sauna Service": ["Heater Repairs", "Timer Replacement", "Rock Replacement"],
+          "Cold Plunge Service": ["Chiller Repairs", "Water Quality", "Temperature Calibration"],
+          "Installations": ["Sauna Installation", "Cold Plunge Installation", "Electrical Setup"]
+        },
+        "intent": "ai.service_request",
+        "critical": true,
+        "description": "All sauna and cold plunge services",
+        "n8nEnvVar": "LABEL_SERVICE"
+      },
+      
+      "SUPPORT": {
+        "color": "SUPPORT",
+        "sub": ["Technical Support", "Heater Issues", "Chiller Issues", "Appointment Scheduling"],
+        "nested": {
+          "Technical Support": ["Troubleshooting", "User Guidance", "Safety Questions"]
+        },
+        "intent": "ai.support_ticket",
+        "critical": false,
+        "description": "Customer support and technical assistance",
+        "n8nEnvVar": "LABEL_SUPPORT"
+      },
+      
+      "SALES": {
+        "color": "SALES",
+        "sub": ["Saunas", "Cold Plunge", "Accessories", "Quotes", "Follow-ups"],
+        "nested": {
+          "Saunas": ["Infrared Saunas", "Traditional Saunas", "Outdoor Saunas"],
+          "Cold Plunge": ["Ice Baths", "Chillers", "Cold Tubs"]
+        },
+        "intent": "ai.sales_inquiry",
+        "critical": false,
+        "description": "Sales inquiries and consultations",
+        "n8nEnvVar": "LABEL_SALES"
+      },
+      
+      "SUPPLIERS": {
+        "color": "SUPPLIERS",
+        "sub": ["Finnleo", "Almost Heaven", "Plunge"],
+        "nested": {
+          "Finnleo": ["Orders", "Warranty", "Support"],
+          "Plunge": ["Orders", "Chiller Support", "Installation Support"]
+        },
+        "intent": "ai.vendor_communication",
+        "critical": false,
+        "description": "Supplier communications",
+        "n8nEnvVar": "LABEL_SUPPLIERS"
+      },
+      
+      "URGENT": {
+        "color": "URGENT",
+        "sub": ["Not Heating", "Heater Not Working", "Not Cooling", "Chiller Not Working", "Safety Issue"],
+        "intent": "ai.emergency_request",
+        "critical": true,
+        "description": "Urgent emergencies requiring immediate attention",
+        "n8nEnvVar": "LABEL_URGENT"
+      },
+      
+      "WELLNESS": {
+        "color": "WELLNESS",
+        "sub": ["Usage Guidance", "Health Benefits", "Temperature Settings", "Protocol Advice"],
+        "intent": "ai.wellness_consultation",
+        "critical": false,
+        "description": "Wellness consultation and usage guidance",
+        "n8nEnvVar": "LABEL_WELLNESS"
+      },
+      
+      "PHONE": {
+        "color": "PHONE",
+        "sub": ["Missed Calls", "Call Backs", "Voicemails"],
+        "intent": "ai.call_log",
+        "critical": false,
+        "description": "Phone communications",
+        "n8nEnvVar": "LABEL_PHONE"
+      },
+      
+      "PROMO": {
+        "color": "PROMO",
+        "sub": ["Email Campaigns", "Seasonal Offers", "Newsletters"],
+        "intent": "ai.marketing",
+        "critical": false,
+        "description": "Marketing campaigns",
+        "n8nEnvVar": "LABEL_PROMO"
+      },
+      
+      "RECRUITMENT": {
+        "color": "RECRUITMENT",
+        "sub": ["Applications", "Interviews", "New Hires"],
+        "intent": "ai.hr",
+        "critical": false,
+        "description": "Recruitment and HR",
+        "n8nEnvVar": "LABEL_RECRUITMENT"
+      },
+      
+      "SOCIALMEDIA": {
+        "color": "SOCIALMEDIA",
+        "sub": ["Facebook", "Instagram", "LinkedIn"],
+        "intent": "ai.social_engagement",
+        "critical": false,
+        "description": "Social media",
+        "n8nEnvVar": "LABEL_SOCIALMEDIA"
+      },
+      
+      "MISC": {
+        "color": "MISC",
+        "sub": ["General", "Archive"],
+        "intent": "ai.general",
+        "critical": false,
+        "description": "Miscellaneous",
+        "n8nEnvVar": "LABEL_MISC"
+      }
+    },
+    
+    "provisioningOrder": [
+      "BANKING", "FORMSUB", "GOOGLE_REVIEW", "MANAGER", "SERVICE",
+      "WARRANTY", "SUPPORT", "SALES", "SUPPLIERS", "URGENT",
+      "WELLNESS", "PHONE", "PROMO", "RECRUITMENT", "SOCIALMEDIA", "MISC"
+    ],
+    
+    "categoryGroups": {
+      "Operations": ["SERVICE", "SUPPORT", "WARRANTY", "WELLNESS"],
+      "Sales": ["SALES", "PROMO"],
+      "Administration": ["BANKING", "MANAGER", "RECRUITMENT"],
+      "Communications": ["PHONE", "SOCIALMEDIA"],
+      "Suppliers": ["SUPPLIERS"],
+      "CustomerExperience": ["GOOGLE_REVIEW", "FORMSUB"],
+      "Critical": ["URGENT"],
+      "General": ["MISC"]
+    }
+  },
+
+  "validation": {
+    "requiredFields": ["businessType", "intentMapping", "labelSchema", "keywords"],
+    "colorValidation": "Must use Gmail API allowed colors",
+    "intentValidation": "All intents must map to valid labels",
+    "envVarValidation": "All n8nEnvVar values must be unique"
+  }
+}
+

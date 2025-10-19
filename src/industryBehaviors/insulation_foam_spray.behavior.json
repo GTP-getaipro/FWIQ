@@ -1,0 +1,57 @@
+{
+  "industry": "Insulation & Foam Spray",
+  "version": "v2.0.0",
+  "lastUpdated": "2025-01-05",
+  "author": "Floworx AI Core",
+  "description": "AI classification and routing behavior for insulation and foam spray service companies.",
+  "behaviorProfile": {
+    "ai_model": "gpt-4o-mini",
+    "prompt_type": "define",
+    "system_message": "You are an expert email classification and routing agent for an insulation and foam spray service company. Your sole task is to analyze incoming emails and output a structured JSON with category, summary, and extracted entities. Focus on energy efficiency, spray foam, sealing, insulation removal, and thermal performance.",
+    "rules": {
+      "ai_can_reply_conditions": {
+        "allowed_primary_categories": ["Support", "Sales", "Urgent"],
+        "minimum_confidence": 0.75,
+        "internal_domain_blocklist": ["@{{businessProfile.emailDomain}}"]
+      },
+      "urgent_keywords": ["urgent", "emergency", "asap", "immediately", "broken", "leak", "energy loss", "draft", "cold", "hot", "safety issue", "asbestos", "mold"],
+      "form_submission_sources": ["noreply@reports.connecteam.com", "alerts@servicetitan.com", "noreply@insulation.com"]
+    }
+  },
+  "categories": {
+    "Banking": ["e-Transfer", "Invoice", "Refund", "Receipts", "Bank Alert", "Payment Confirmation"],
+    "Support": ["Technical Support", "Appointment Scheduling", "General", "Parts & Supplies", "Maintenance Reminders", "Energy Audits"],
+    "Sales": ["New Installations", "Consultations", "Service Agreements", "Equipment Quotes", "Spray Foam", "Blown Insulation", "Batt Insulation", "Air Sealing"],
+    "Warranty": ["Claims", "Resolved", "Pending", "Installation Warranty", "Material Warranty"],
+    "Urgent": ["Emergency Repair", "Safety Issue", "Energy Loss", "Draft", "Cold", "Hot", "Asbestos", "Mold"],
+    "FormSub": ["New Submission", "Work Order Form", "Service Request", "Energy Audit Form", "Installation Form"],
+    "Suppliers": ["Insulation Supply Co", "Owens Corning", "Johns Manville", "CertainTeed", "Knauf", "Roxul", "Icynene", "Demilec"],
+    "Manager": ["Unassigned", "Escalations", "Team Assignments", "Schedule Conflicts", "Customer Complaints"],
+    "Promo": ["Email Campaigns", "Seasonal Offers", "Energy Efficiency Specials", "Insulation Packages"],
+    "Recruitment": ["Applications", "Interviews", "New Hires", "Technician Positions", "Sales Positions"],
+    "Google Review": ["New Review", "Responses", "Requests", "Review Management"],
+    "Misc": ["General", "Archive", "Personal", "Spam"]
+  },
+  "outputFormat": {
+    "summary": "One-line summary of email purpose",
+    "primary_category": "string",
+    "secondary_category": "string or null",
+    "tertiary_category": "string or null",
+    "confidence": "float 0.0–1.0",
+    "ai_can_reply": "boolean",
+    "entities": {
+      "contact_name": "string or null",
+      "email_address": "string or null",
+      "phone_number": "string or null",
+      "order_number": "string or null",
+      "insulation_type": "string or null",
+      "r_value": "string or null",
+      "service_address": "string or null"
+    }
+  },
+  "meta": {
+    "integration": "n8n",
+    "usecase": "email_classification",
+    "validated": true
+  }
+}

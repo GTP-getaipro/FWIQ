@@ -1,0 +1,57 @@
+{
+  "industry": "General Contractor",
+  "version": "v2.0.0",
+  "lastUpdated": "2025-01-05",
+  "author": "Floworx AI Core",
+  "description": "AI classification and routing behavior for general contractor companies.",
+  "behaviorProfile": {
+    "ai_model": "gpt-4o-mini",
+    "prompt_type": "define",
+    "system_message": "You are an expert email classification and routing agent for a general contractor company. Your sole task is to analyze incoming emails and output a structured JSON with category, summary, and extracted entities. Focus on permits, sub-contractors, project management, and construction services.",
+    "rules": {
+      "ai_can_reply_conditions": {
+        "allowed_primary_categories": ["Support", "Sales", "Urgent"],
+        "minimum_confidence": 0.75,
+        "internal_domain_blocklist": ["@{{businessProfile.emailDomain}}"]
+      },
+      "urgent_keywords": ["urgent", "emergency", "asap", "immediately", "broken", "leak", "structural damage", "safety issue", "building collapse", "fire damage", "storm damage", "permit issue"],
+      "form_submission_sources": ["noreply@reports.connecteam.com", "alerts@servicetitan.com", "noreply@construction.com"]
+    }
+  },
+  "categories": {
+    "Banking": ["e-Transfer", "Invoice", "Refund", "Receipts", "Bank Alert", "Payment Confirmation"],
+    "Support": ["Technical Support", "Appointment Scheduling", "General", "Parts & Supplies", "Maintenance Reminders", "Project Updates"],
+    "Sales": ["New Installations", "Consultations", "Service Agreements", "Equipment Quotes", "Renovations", "Additions", "New Construction", "Remodeling"],
+    "Warranty": ["Claims", "Resolved", "Pending", "Workmanship Warranty", "Material Warranty"],
+    "Urgent": ["Emergency Repair", "Safety Issue", "Structural Damage", "Building Collapse", "Fire Damage", "Storm Damage", "Permit Issue"],
+    "FormSub": ["New Submission", "Work Order Form", "Service Request", "Permit Form", "Project Form"],
+    "Suppliers": ["Construction Supply Co", "Home Depot", "Lowe's", "Menards", "84 Lumber", "Builders FirstSource", "ABC Supply", "Beacon"],
+    "Manager": ["Unassigned", "Escalations", "Team Assignments", "Schedule Conflicts", "Customer Complaints"],
+    "Promo": ["Email Campaigns", "Seasonal Offers", "Renovation Specials", "Construction Packages"],
+    "Recruitment": ["Applications", "Interviews", "New Hires", "Technician Positions", "Sales Positions"],
+    "Google Review": ["New Review", "Responses", "Requests", "Review Management"],
+    "Misc": ["General", "Archive", "Personal", "Spam"]
+  },
+  "outputFormat": {
+    "summary": "One-line summary of email purpose",
+    "primary_category": "string",
+    "secondary_category": "string or null",
+    "tertiary_category": "string or null",
+    "confidence": "float 0.0–1.0",
+    "ai_can_reply": "boolean",
+    "entities": {
+      "contact_name": "string or null",
+      "email_address": "string or null",
+      "phone_number": "string or null",
+      "order_number": "string or null",
+      "project_type": "string or null",
+      "permit_number": "string or null",
+      "service_address": "string or null"
+    }
+  },
+  "meta": {
+    "integration": "n8n",
+    "usecase": "email_classification",
+    "validated": true
+  }
+}

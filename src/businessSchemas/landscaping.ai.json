@@ -1,0 +1,356 @@
+{
+  "schemaVersion": "1.0.0",
+  "businessType": "Landscaping",
+  "displayName": "Landscaping Business",
+  "description": "AI JSON schema for landscaping contractors including lawn care, garden design, and outdoor maintenance services",
+  "updatedAt": "2025-01-05",
+  "author": "Floworx Automation Core",
+  
+  "metadata": {
+    "industry": "Landscaping Services",
+    "primaryServices": ["Lawn Care", "Garden Design", "Tree Services", "Irrigation", "Outdoor Maintenance"],
+    "targetCustomers": ["Residential", "Commercial"],
+    "seasonality": "Peak in spring/summer, maintenance year-round",
+    "emergencyServices": true,
+    "warrantyServices": true,
+    "supplierDependent": true
+  },
+
+  "aiConfiguration": {
+    "toneProfile": {
+      "primary": "Professional and nature-focused",
+      "secondary": "Helpful and knowledgeable",
+      "emergency": "Urgent and action-oriented",
+      "sales": "Consultative and inspiring"
+    },
+    "responseStyle": {
+      "length": "concise",
+      "formality": "professional",
+      "urgency": "context-aware",
+      "personalization": "high"
+    },
+    "classificationModel": "gpt-4o-mini",
+    "confidenceThreshold": 0.8,
+    "fallbackLabel": "MISC"
+  },
+
+  "intentMapping": {
+    "ai.service_request": "SERVICE",
+    "ai.financial_transaction": "BANKING", 
+    "ai.emergency_request": "URGENT",
+    "ai.warranty_claim": "WARRANTY",
+    "ai.support_request": "SUPPORT",
+    "ai.sales_inquiry": "SALES",
+    "ai.supplier_communication": "SUPPLIERS",
+    "ai.management_oversight": "MANAGER",
+    "ai.review_management": "GOOGLE_REVIEW",
+    "ai.form_submission": "FORMSUB",
+    "ai.phone_communication": "PHONE",
+    "ai.marketing_communication": "PROMO",
+    "ai.hr_communication": "RECRUITMENT",
+    "ai.social_media": "SOCIALMEDIA",
+    "ai.general_communication": "MISC"
+  },
+
+  "keywords": {
+    "primary": ["landscaping", "lawn", "garden", "tree", "irrigation", "mulch", "plant", "outdoor"],
+    "secondary": ["mowing", "trimming", "pruning", "fertilizing", "watering", "design", "maintenance", "cleanup"],
+    "emergency": ["urgent", "emergency", "storm damage", "tree down", "asap", "immediately"],
+    "service": ["mowing", "trimming", "pruning", "fertilizing", "maintenance", "cleanup", "design"],
+    "financial": ["invoice", "payment", "quote", "estimate", "seasonal contract", "maintenance plan"],
+    "warranty": ["warranty", "claim", "defect", "replacement", "plant guarantee", "workmanship"],
+    "negative": ["problem", "issue", "dying", "brown", "overgrown", "weeds", "pests"]
+  },
+
+  "labelSchema": {
+    "colors": {
+      "BANKING": { "backgroundColor": "#16a766", "textColor": "#ffffff" },
+      "FORMSUB": { "backgroundColor": "#0b804b", "textColor": "#ffffff" },
+      "GOOGLE_REVIEW": { "backgroundColor": "#fad165", "textColor": "#000000" },
+      "MANAGER": { "backgroundColor": "#ffad47", "textColor": "#000000" },
+      "SERVICE": { "backgroundColor": "#4a86e8", "textColor": "#ffffff" },
+      "WARRANTY": { "backgroundColor": "#a479e2", "textColor": "#ffffff" },
+      "SUPPORT": { "backgroundColor": "#4a86e8", "textColor": "#ffffff" },
+      "SALES": { "backgroundColor": "#149e60", "textColor": "#ffffff" },
+      "SUPPLIERS": { "backgroundColor": "#ffad47", "textColor": "#000000" },
+      "URGENT": { "backgroundColor": "#fb4c2f", "textColor": "#ffffff" },
+      "MISC": { "backgroundColor": "#999999", "textColor": "#ffffff" },
+      "PROMO": { "backgroundColor": "#43d692", "textColor": "#000000" },
+      "RECRUITMENT": { "backgroundColor": "#e07798", "textColor": "#ffffff" },
+      "PHONE": { "backgroundColor": "#6d9eeb", "textColor": "#ffffff" },
+      "SOCIALMEDIA": { "backgroundColor": "#ffad47", "textColor": "#000000" }
+    },
+    
+    "labels": {
+      "BANKING": {
+        "color": "BANKING",
+        "sub": ["Invoice", "Receipts", "Refund", "Payment Confirmation", "Bank Alert", "e-Transfer"],
+        "nested": {
+          "Receipts": ["Payment Sent", "Payment Received"]
+        },
+        "intent": "ai.financial_transaction",
+        "critical": true,
+        "description": "Financial transactions, invoices, payments, and banking alerts",
+        "n8nEnvVar": "LABEL_BANKING"
+      },
+      
+      "FORMSUB": {
+        "color": "FORMSUB", 
+        "sub": ["New Submission", "Work Order Forms", "Service Requests", "Quote Requests"],
+        "intent": "ai.form_submission",
+        "critical": false,
+        "description": "Customer form submissions and work order processing",
+        "n8nEnvVar": "LABEL_FORMSUB"
+      },
+      
+      "GOOGLE_REVIEW": {
+        "color": "GOOGLE_REVIEW",
+        "sub": ["New Reviews", "Review Responses", "Review Requests"],
+        "intent": "ai.review_management", 
+        "critical": false,
+        "description": "Google reviews, reputation management, and customer feedback",
+        "n8nEnvVar": "LABEL_GOOGLE_REVIEW"
+      },
+      
+      "MANAGER": {
+        "color": "MANAGER",
+        "sub": ["Unassigned", "Team Assignments", "Manager Review", "Escalations"],
+        "intent": "ai.management_oversight",
+        "critical": false,
+        "description": "Management oversight, team assignments, and escalations",
+        "n8nEnvVar": "LABEL_MANAGER"
+      },
+      
+      "SERVICE": {
+        "color": "SERVICE",
+        "sub": ["Lawn Care", "Garden Design", "Tree Services", "Irrigation", "Outdoor Maintenance"],
+        "nested": {
+          "Lawn Care": ["Mowing", "Fertilizing", "Aeration", "Overseeding"],
+          "Garden Design": ["Plant Selection", "Landscape Design", "Planting", "Mulching"],
+          "Tree Services": ["Tree Removal", "Tree Trimming", "Stump Grinding", "Tree Planting"],
+          "Irrigation": ["Sprinkler Installation", "Irrigation Repair", "System Maintenance", "Watering"]
+        },
+        "intent": "ai.service_request",
+        "critical": true,
+        "description": "All landscaping services including lawn care, garden design, and maintenance",
+        "n8nEnvVar": "LABEL_SERVICE"
+      },
+      
+      "WARRANTY": {
+        "color": "WARRANTY",
+        "sub": ["Claims", "Pending Review", "Resolved", "Denied", "Plant Guarantees"],
+        "nested": {
+          "Claims": ["New Claims", "Claim Documentation", "Claim Follow-up"],
+          "Plant Guarantees": ["Plant Replacements", "Plant Care", "Plant Health"]
+        },
+        "intent": "ai.warranty_claim",
+        "critical": true,
+        "description": "Warranty claims, plant guarantees, and warranty-related communications",
+        "n8nEnvVar": "LABEL_WARRANTY"
+      },
+      
+      "SUPPORT": {
+        "color": "SUPPORT",
+        "sub": ["Technical Support", "General Support", "Plant Care", "Maintenance"],
+        "nested": {
+          "Technical Support": ["Remote Support", "Technical Documentation", "Plant Care Guidance"],
+          "Plant Care": ["Watering Schedules", "Fertilizing", "Pruning", "Pest Control"]
+        },
+        "intent": "ai.support_request",
+        "critical": false,
+        "description": "Customer support, technical assistance, and plant care inquiries",
+        "n8nEnvVar": "LABEL_SUPPORT"
+      },
+      
+      "SALES": {
+        "color": "SALES",
+        "sub": ["New Project Sales", "Consultations", "Quotes", "Follow-ups"],
+        "nested": {
+          "New Project Sales": ["Residential Projects", "Commercial Projects", "Seasonal Contracts"],
+          "Consultations": ["Site Visits", "Design Consultations", "Custom Quotes"]
+        },
+        "intent": "ai.sales_inquiry",
+        "critical": false,
+        "description": "Sales activities, consultations, and new business development",
+        "n8nEnvVar": "LABEL_SALES"
+      },
+      
+      "SUPPLIERS": {
+        "color": "SUPPLIERS",
+        "sub": ["Plant Suppliers", "Equipment Suppliers", "Material Suppliers", "Tool Suppliers"],
+        "nested": {
+          "Plant Suppliers": ["Orders", "Support", "Warranty Claims"],
+          "Equipment Suppliers": ["Orders", "Support", "Warranty Claims"],
+          "Material Suppliers": ["Orders", "Support", "Warranty Claims"],
+          "Tool Suppliers": ["Orders", "Support", "Warranty Claims"]
+        },
+        "intent": "ai.supplier_communication",
+        "critical": false,
+        "description": "Supplier communications, orders, and vendor management",
+        "n8nEnvVar": "LABEL_SUPPLIERS"
+      },
+      
+      "URGENT": {
+        "color": "URGENT",
+        "sub": ["Emergency Repairs", "Storm Damage", "Tree Down", "Safety Issues"],
+        "intent": "ai.emergency_request",
+        "critical": true,
+        "description": "Urgent and emergency situations requiring immediate attention",
+        "n8nEnvVar": "LABEL_URGENT"
+      },
+      
+      "PHONE": {
+        "color": "PHONE",
+        "sub": ["Incoming Calls", "Outgoing Calls", "Voicemails", "Call Logs"],
+        "intent": "ai.phone_communication",
+        "critical": false,
+        "description": "Phone communications and call management",
+        "n8nEnvVar": "LABEL_PHONE"
+      },
+      
+      "PROMO": {
+        "color": "PROMO",
+        "sub": ["Email Campaigns", "Social Media", "Newsletters", "Special Offers"],
+        "intent": "ai.marketing_communication",
+        "critical": false,
+        "description": "Promotional materials, marketing campaigns, and special offers",
+        "n8nEnvVar": "LABEL_PROMO"
+      },
+      
+      "RECRUITMENT": {
+        "color": "RECRUITMENT",
+        "sub": ["Job Applications", "Interview Scheduling", "New Hires", "HR Communications"],
+        "intent": "ai.hr_communication",
+        "critical": false,
+        "description": "Recruitment, hiring, and human resources communications",
+        "n8nEnvVar": "LABEL_RECRUITMENT"
+      },
+      
+      "SOCIALMEDIA": {
+        "color": "SOCIALMEDIA",
+        "sub": ["Facebook", "Instagram", "Google My Business", "LinkedIn"],
+        "intent": "ai.social_media",
+        "critical": false,
+        "description": "Social media communications and platform management",
+        "n8nEnvVar": "LABEL_SOCIALMEDIA"
+      },
+      
+      "MISC": {
+        "color": "MISC",
+        "sub": ["General", "Archive", "Personal"],
+        "intent": "ai.general_communication",
+        "critical": false,
+        "description": "Miscellaneous communications and general items",
+        "n8nEnvVar": "LABEL_MISC"
+      }
+    },
+    
+    "provisioningOrder": [
+      "BANKING", "FORMSUB", "GOOGLE_REVIEW", "MANAGER", "SERVICE", 
+      "WARRANTY", "SUPPORT", "SALES", "SUPPLIERS", "URGENT", 
+      "PHONE", "PROMO", "RECRUITMENT", "SOCIALMEDIA", "MISC"
+    ],
+    
+    "categoryGroups": {
+      "Operations": ["SERVICE", "SUPPORT", "WARRANTY"],
+      "Sales": ["SALES", "PROMO"],
+      "Administration": ["BANKING", "MANAGER", "RECRUITMENT"],
+      "Communications": ["PHONE", "SOCIALMEDIA"],
+      "Suppliers": ["SUPPLIERS"],
+      "CustomerExperience": ["GOOGLE_REVIEW", "FORMSUB"],
+      "Critical": ["URGENT"],
+      "General": ["MISC"]
+    }
+  },
+
+  "dynamicVariables": {
+    "managers": [
+      { "name": "Project Manager", "email": "project@business.com", "role": "Project Manager" },
+      { "name": "Design Manager", "email": "design@business.com", "role": "Design Manager" },
+      { "name": "Operations Manager", "email": "operations@business.com", "role": "Operations Manager" }
+    ],
+    "suppliers": [
+      { "name": "Plant Suppliers", "email": "orders@plantsupplier.com", "category": "Plants & Trees" },
+      { "name": "Equipment Suppliers", "email": "orders@equipmentsupplier.com", "category": "Landscaping Equipment" },
+      { "name": "Material Suppliers", "email": "orders@materialsupplier.com", "category": "Landscaping Materials" },
+      { "name": "Tool Suppliers", "email": "orders@toolsupplier.com", "category": "Landscaping Tools" }
+    ],
+    "technicians": [
+      { "name": "Lead Landscaper", "email": "lead@business.com", "specialties": ["Lawn Care", "Maintenance"] },
+      { "name": "Tree Specialist", "email": "tree@business.com", "specialties": ["Tree Services", "Removal"] },
+      { "name": "Design Specialist", "email": "design@business.com", "specialties": ["Garden Design", "Planting"] }
+    ]
+  },
+
+  "escalationRules": {
+    "urgent": {
+      "threshold": "immediate",
+      "notify": ["managers", "on_call_landscaper"],
+      "sla": "15 minutes",
+      "autoReply": true
+    },
+    "warranty": {
+      "threshold": "24 hours",
+      "notify": ["managers", "warranty_specialist"],
+      "sla": "4 hours",
+      "autoReply": false
+    },
+    "service": {
+      "threshold": "2 hours",
+      "notify": ["dispatcher"],
+      "sla": "1 hour",
+      "autoReply": true
+    },
+    "sales": {
+      "threshold": "4 hours",
+      "notify": ["sales_team"],
+      "sla": "2 hours",
+      "autoReply": true
+    }
+  },
+
+  "aiPrompts": {
+    "systemMessage": "You are an expert email processing and routing system for {{BUSINESS_NAME}}. Classify this email by returning JSON with summary, reasoning, confidence, primary_category, secondary_category, tertiary_category, entities, and ai_can_reply.",
+    "replyPrompt": "Assistant role: Draft friendly, professional, and helpful replies for {{BUSINESS_NAME}} that:\n\nReflect prior conversation context\nClearly communicate next steps\nResolve concerns without delays or vagueness\nMatch the customer's tone, urgency, and message length\nMaintain a warm, human, and on-brand voice\nUse the structured guidance and rules below to reply with confidence, clarity, and care.\n\nAlways prioritize accuracy, especially for dates and specific details. Strive for conciseness by omitting unnecessary requests or information that might be perceived as a burden to the customer.\n\nIntelligent Conversation Progression\nAssess conversation depth: If the customer is on their second or third message in a thread, avoid repeating earlier answers or re-asking for details they've already provided.\n\nWhen replying to follow-ups, do not summarize prior messages — instead, advance the resolution or confirm the next step.\n\nIf the human reply is incomplete, ensure the AI reply fills in the gaps: confirm all necessary details, include next steps, express gratitude, and close with warmth.\n\nAlways analyze the most recent customer input (e.g., specific attachments, details provided) to understand the current context of their request. Do not rely solely on the original problem statement. Acknowledge provided information and confirm relevant next steps or appointments clearly.\n\n🔄 Follow-up Ownership & Clarity\nAlways state who will follow up and by when. Use concrete phrasing like:\n\n\"You'll hear back from Mark on Thursday with the quote.\"\n\nWhen appropriate, apologize for delays and explain the reason transparently (e.g., weather delay, plant availability, crew scheduling). This builds trust.\n\nPersonal Touch & Human Warmth\nUse friendly, human-like closings that show care and confidence:\n\n\"We'll see you then!\"\n\n\"You're all set — thanks again for choosing us!\"\n\n\"Appreciate your patience — we've got you covered.\"\n\nDon't default to corporate tone; be natural, concise, and helpful — like a trusted friend who happens to know a lot about landscaping.\n\nAvoid Common Mistakes\nDon't offer broad options like \"repair or replace?\" in threads where an inspection is already booked.\n\nDon't say \"We'll get back to you soon\" — say when and how.\n\nDon't suggest services already declined in the thread (e.g., if replacement was rejected, don't re-offer).\n\nAlways provide the most up-to-date and concrete information available, even if not fully finalized. Transparency and specific details build customer confidence.\n\nPrioritize contextual accuracy. Confirm existing details like appointments, payment status, or scheduled work if known or implied. Avoid asking for info already provided.\n\nWhen confirming service appointments, include relevant preparation tips (like clearing the work area) and acknowledge any uncertainty in the customer's initial diagnosis.\n\nWhen replying to confirmations, restate scheduled times, included services, and clarify expectations in advance.\n\nWhen customers share rotating schedules or narrow availability, summarize it and propose a time that matches. Always guide them toward action.\n\nWhen replying to payment link issues, confirm the resend, restate all accepted payment methods, and make it easy for the customer to complete the step.\n\nWhen a customer requests pricing or mentions seasonal concerns, clearly confirm if they qualify, and softly promote our expertise with seasonal maintenance. Don't assume current landscape age.\n\nWhen confirming work, acknowledge prep actions (access to work area, plant delivery), check for any missing details (photos), and offer support from partners (like nurseries).\n\nWhen confirming work times, include pre-visit requests: photos of the current landscape, access points, or specific plant issues. Proactively prevent issues.\n\nWhen replying with technical specs, go beyond generalities — include plant care instructions, warranty periods, or maintenance advice if asked. If info is missing, say so clearly and offer a follow-up.\n\nWhen addressing warranty questions, validate their concern, clarify eligibility, and offer a booking option with a clear link and time. Ask for symptoms only if needed.\n\nWhen handling attachments (photos, videos), always confirm receipt and acknowledge how they helped assess the issue.\n\nWhen a message involves an active thread or confirmed work, prioritize continuity — don't reopen the \"repair vs replace\" question. Stay focused on crew prep and customer expectations.\n\nWhen no response has come in after 3+ days on an active thread, send a friendly nudge like:\n\"Just checking in — would you like us to hold off, or should we go ahead and schedule that inspection?\"\n\nWhen a customer asks about payment timing and incomplete work, confirm payment is due upon completion and acknowledge the unfinished work.\n\nEvery reply should:\n\nBe concise if the customer message is brief.\nConfirm relevant dates, times, and next steps.\nInclude contact methods and booking links when possible.\nExpress gratitude and offer additional help (like bringing plants).\nAlways include human tone and helpful intent.",
+    "classificationRules": [
+      "Identify urgent keywords (storm damage, tree down, emergency) and route to URGENT label",
+      "Recognize service requests (mowing, trimming, pruning, maintenance) and route to SERVICE label", 
+      "Detect financial transactions (invoice, payment, quote) and route to BANKING label",
+      "Identify warranty claims (warranty, claim, plant guarantee) and route to WARRANTY label",
+      "Recognize supplier communications (plant suppliers, equipment suppliers) and route to SUPPLIERS label",
+      "Detect sales inquiries (new project, consultation, quote) and route to SALES label",
+      "Identify support requests (technical help, plant care) and route to SUPPORT label"
+    ]
+  },
+
+  "environmentVariables": {
+    "required": [
+      "BUSINESS_NAME",
+      "BUSINESS_PHONE", 
+      "BUSINESS_DOMAIN_PRIMARY",
+      "PAYMENT_EMAIL",
+      "WEBSITE_BASE_URL",
+      "WEBSITE_REPAIRS_FORM",
+      "WEBSITE_SERVICES_PAGE",
+      "TIMEZONE"
+    ],
+    "optional": [
+      "BUSINESS_DOMAIN_SECONDARY",
+      "SERVICE_AREA_PRIMARY",
+      "DB_PREFIX"
+    ],
+    "pricing": [
+      "PRICE_INSPECTION",
+      "PRICE_LABOUR_HOURLY", 
+      "PRICE_MILEAGE_RATE",
+      "PRICE_MATERIAL_COST"
+    ]
+  },
+
+  "validation": {
+    "requiredFields": ["businessType", "intentMapping", "labelSchema", "keywords"],
+    "colorValidation": "Must use Gmail API allowed colors",
+    "intentValidation": "All intents must map to valid labels",
+    "envVarValidation": "All n8nEnvVar values must be unique"
+  }
+}

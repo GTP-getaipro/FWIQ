@@ -1,0 +1,285 @@
+{
+  "name": "<<<BUSINESS_NAME>>> HVAC Automation Workflow v<<<CONFIG_VERSION>>>",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "custom",
+              "cronExpression": "=0 */2 * * * *"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "q": "in:inbox -(from:(*@<<<EMAIL_DOMAIN>>>))\n\n"
+        },
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.2,
+      "position": [-3024, 2864],
+      "id": "gmail-trigger",
+      "name": "Gmail Trigger1",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "<<<CLIENT_GMAIL_CRED_ID>>>",
+          "name": "<<<BUSINESS_NAME>>> Gmail"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// HVAC business email processing\nconst item = $json;\n\nfunction htmlToText(html) {\n  if (!html) return '';\n  return html\n    .replace(/<script[^>]*>([\\S\\s]*?)<\\/script>/gmi, '')\n    .replace(/<style[^>]*>([\\S\\s]*?)<\\/style>/gmi, '')\n    .replace(/<!--[\\s\\S]*?-->/g, '')\n    .replace(/<br\\s*\\/?>/gi, '\\n')\n    .replace(/<\\/(div|p|h[1-6]|li|tr)>/gi, '\\n')\n    .replace(/<[^>]+>/g, '')\n    .replace(/&nbsp;/g, ' ')\n    .replace(/&amp;/g, '&')\n    .replace(/&lt;/g, '<')\n    .replace(/&gt;/g, '>')\n    .replace(/&quot;/g, '\"')\n    .replace(/&#39;/g, \"'\")\n    .replace(/(\\n\\s*){3,}/g, '\\n\\n')\n    .trim();\n}\n\nconst messageBody = htmlToText(item.html);\nconst messageId = item.headers?.['message-id'] || null;\n\n// HVAC-specific content analysis\nconst hvacKeywords = [\n  'hvac', 'heating', 'cooling', 'air conditioning', 'furnace', 'heat pump',\n  'ductwork', 'thermostat', 'filter', 'refrigerant', 'compressor', 'blower',\n  'ventilation', 'tune-up', 'maintenance'\n];\n\nconst emergencyKeywords = [\n  'urgent', 'emergency', 'not working', 'broken', 'no heat', 'no cooling',\n  'asap', 'immediately', 'freezing', 'overheating'\n];\n\nconst hasHvacContent = hvacKeywords.some(keyword => \n  messageBody.toLowerCase().includes(keyword)\n);\n\nconst isEmergency = emergencyKeywords.some(keyword => \n  messageBody.toLowerCase().includes(keyword)\n);\n\nreturn {\n  json: {\n    id: item.id,\n    threadId: item.threadId,\n    subject: item.subject,\n    from: item.from?.value?.[0]?.address || null,\n    fromName: item.from?.value?.[0]?.name || null,\n    to: item.to?.value?.[0]?.address || null,\n    toName: item.to?.value?.[0]?.name || null,\n    date: item.date,\n    body: messageBody,\n    bodyHtml: item.html,\n    labels: item.labelIds,\n    sizeEstimate: item.sizeEstimate,\n    messageId: messageId,\n    hasHvacContent,\n    isEmergency,\n    businessType: 'HVAC'\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-2800, 2864],
+      "id": "code5",
+      "name": "HVAC Content Analyzer"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {
+          "temperature": 0.1,
+          "maxTokens": 500
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You are an expert email classifier for {{BUSINESS_NAME}}, an HVAC contractor. Classify this email by returning JSON with summary, reasoning, confidence, primary_category, secondary_category, tertiary_category, entities, and ai_can_reply.\n\nBUSINESS CONTEXT:\n- Business Name: {{BUSINESS_NAME}}\n- Business Type: HVAC Services\n- Primary Services: Heating Repair, Cooling Repair, Installation, Maintenance, Ductwork\n- Team Members: {{MANAGERS_TEXT}}\n- Known Suppliers: {{SUPPLIERS_TEXT}}\n\nHVAC-SPECIFIC CATEGORIES:\n- SERVICE: Heating repairs, cooling repairs, installations, maintenance, ductwork\n- URGENT: No heat, no cooling, emergency repairs, safety issues\n- WARRANTY: Warranty claims, defective parts, manufacturer issues\n- SALES: New system sales, consultations, quotes, energy efficiency upgrades\n- SUPPORT: Technical support, troubleshooting, HVAC questions\n- BANKING: Invoices, payments, quotes, estimates, service plan fees\n- SUPPLIERS: Equipment suppliers, parts suppliers, refrigerant suppliers, filter suppliers\n- MANAGER: Management oversight, team assignments, escalations\n- RECRUITMENT: Job applications, technician positions, interviews\n- PROMO: Marketing, seasonal maintenance promotions\n- PHONE: Call logs, voicemails, phone communications\n- SOCIALMEDIA: Facebook, Instagram, Google My Business\n- GOOGLEREVIEW: Google reviews, reputation management\n- FORMSUB: Work order forms, service requests\n- MISC: General communications\n\nESCALATION RULES:\n- URGENT OVERRIDE: If email contains 'no heat', 'no cooling', 'emergency', 'freezing', immediately classify as URGENT\n- SEASONAL PRIORITY: Heating issues in winter, cooling issues in summer get priority\n- ENERGY EFFICIENCY: Route energy efficiency inquiries to sales team\n\nReturn only valid JSON.",
+              "role": "system"
+            },
+            {
+              "content": "Subject: {{$json.subject}}\nFrom: {{$json.from}}\nBody: {{$json.body}}\nHas HVAC Content: {{$json.hasHvacContent}}\nIs Emergency: {{$json.isEmergency}}",
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [-2576, 2864],
+      "id": "openai1",
+      "name": "HVAC AI Classifier",
+      "credentials": {
+        "openAi": {
+          "id": "<<<CLIENT_OPENAI_CRED_ID>>>",
+          "name": "OpenAI Shared"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "urgent-condition",
+              "leftValue": "={{ $json.primary_category }}",
+              "rightValue": "URGENT",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [-2352, 2864],
+      "id": "if1",
+      "name": "Is Emergency?"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 300
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You are an AI assistant for {{BUSINESS_NAME}}, an HVAC contractor. Draft a professional and reassuring reply to this HVAC emergency.\n\nREPLY GUIDELINES:\n- Tone: Urgent and action-oriented\n- Priority: Immediate comfort and safety concerns\n- Include: Emergency contact info, safety instructions, temporary solutions\n- Format: Concise and reassuring\n- Comfort first: Address immediate heating/cooling needs\n\nBe like a knowledgeable HVAC technician who prioritizes customer comfort and safety.",
+              "role": "system"
+            },
+            {
+              "content": "Original email:\nSubject: {{$json.subject}}\nFrom: {{$json.from}}\nBody: {{$json.body}}\n\nClassification: {{$json.primary_category}} - {{$json.reasoning}}",
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [-2128, 2600],
+      "id": "openai2",
+      "name": "Emergency Response Generator",
+      "credentials": {
+        "openAi": {
+          "id": "<<<CLIENT_OPENAI_CRED_ID>>>",
+          "name": "OpenAI Shared"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 400
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You are an AI assistant for {{BUSINESS_NAME}}, an HVAC contractor. Draft a professional and helpful reply.\n\nREPLY GUIDELINES:\n- Tone: Professional and knowledgeable\n- Knowledge: HVAC expertise and energy efficiency\n- Include: Next steps, maintenance tips, energy efficiency advice\n- Format: Clear and informative\n- Trust: Build confidence through HVAC expertise\n\nBe like a knowledgeable HVAC technician who prioritizes energy efficiency and customer comfort.",
+              "role": "system"
+            },
+            {
+              "content": "Original email:\nSubject: {{$json.subject}}\nFrom: {{$json.from}}\nBody: {{$json.body}}\n\nClassification: {{$json.primary_category}} - {{$json.reasoning}}",
+              "role": "user"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [-2128, 3128],
+      "id": "openai3",
+      "name": "General Response Generator",
+      "credentials": {
+        "openAi": {
+          "id": "<<<CLIENT_OPENAI_CRED_ID>>>",
+          "name": "OpenAI Shared"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "email_classifications",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "user_id": "={{ $('gmail-trigger').item.json.from }}",
+            "email_id": "={{ $json.id }}",
+            "subject": "={{ $json.subject }}",
+            "classification": "={{ $json.primary_category }}",
+            "confidence": "={{ $json.confidence }}",
+            "ai_response": "={{ $json.content }}",
+            "business_type": "HVAC",
+            "created_at": "={{ new Date().toISOString() }}"
+          }
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [-1904, 2864],
+      "id": "supabase1",
+      "name": "Store Classification",
+      "credentials": {
+        "supabaseApi": {
+          "id": "<<<CLIENT_SUPABASE_CRED_ID>>>",
+          "name": "Supabase Floworx"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "gmail-trigger": {
+      "main": [
+        [
+          {
+            "node": "code5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "code5": {
+      "main": [
+        [
+          {
+            "node": "openai1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "openai1": {
+      "main": [
+        [
+          {
+            "node": "if1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if1": {
+      "main": [
+        [
+          {
+            "node": "openai2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "openai3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "openai2": {
+      "main": [
+        [
+          {
+            "node": "supabase1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "openai3": {
+      "main": [
+        [
+          {
+            "node": "supabase1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredits": 4
+  },
+  "pinData": {},
+  "versionId": "1"
+}

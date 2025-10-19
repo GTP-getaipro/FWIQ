@@ -1,0 +1,2939 @@
+{
+    "nodes": [
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_1381962670795847883"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -1552,
+          896
+        ],
+        "id": "9b350354-a3a9-422f-84f0-807587db1c96",
+        "name": "SALES1",
+        "webhookId": "272e9e84-fa18-412f-b513-164d3af3be4d",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_3970665389479569628"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -1552,
+          1088
+        ],
+        "id": "89678e0e-4630-4209-8886-3f4af673b163",
+        "name": "RECRUITMENT1",
+        "webhookId": "b36ff38f-0fea-4f74-b1bd-acab389ded71",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_6896136905128060519"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -1552,
+          1280
+        ],
+        "id": "62d0c6a0-53c7-43d5-bc8b-b79cf68ab410",
+        "name": "MISC1",
+        "webhookId": "1de14fdf-c946-4e39-b678-ef9efba3f88e",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_8879565119088926061"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -928,
+          688
+        ],
+        "id": "4ef91415-53c1-4eba-93d0-38144457b6a0",
+        "name": "E-transfer1",
+        "webhookId": "c9fce5ff-f05a-4c8e-8e02-1e2e42f04f06",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_1097875258825754279"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -944,
+          1088
+        ],
+        "id": "bf7cd4f4-08c3-4196-8aca-bfb4098de1b5",
+        "name": "Invoice1",
+        "webhookId": "4179c47a-f3ac-44c3-8188-1a3f29aefdda",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_2672320601196095158"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -1552,
+          704
+        ],
+        "id": "32187f92-936f-4780-945d-1d1ff8be9e7a",
+        "name": "SocialMedia1",
+        "webhookId": "bc9357a8-347c-406f-a888-98cb0231e7f0",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "// Get the input text.\n// It's generally safer to get the input directly from the incoming item\n// rather than referencing a specific node name if not strictly necessary.\n// Replace 'body' with the actual field name where your email content (or relevant text) resides.\n// Common field names could be 'subject', 'html', or 'snippet' depending on your previous node's output.\nconst inputText = $('AI Master Classifier').first().json.output || ''; // Fallback to empty string if 'body' is null/undefined\n\n// Regular expression to find common phone number formats:\n// (XXX) XXX-XXXX, XXX-XXX-XXXX, XXX.XXX.XXXX, XXX XXX XXXX\n// It uses non-capturing groups and makes separators optional.\nconst phoneNumberRegex = /\\(?\\d{3}\\)?[-.\\s]?\\d{3}[-.\\s]?\\d{4}/;\n\nconst match = inputText.match(phoneNumberRegex);\n\nlet extractedPhoneNumber = null;\nlet cleanedPhoneNumber = null;\n\nif (match && match[0]) {\n  extractedPhoneNumber = match[0];\n\n  // Optional: Clean the extracted number to a consistent format (e.g., remove parentheses, spaces, hyphens)\n  // This is often desired for dialing or sending SMS.\n  cleanedPhoneNumber = extractedPhoneNumber.replace(/\\D/g,'').replace(/^(\\d{10})$/, '+1$1'); // Removes all non-digit characters\n}\n\n// If you need to extract multiple phone numbers, you can use:\n// const allMatches = inputText.match(new RegExp(phoneNumberRegex, 'g'));\n// In that case, you would iterate over allMatches and clean each.\n\n// Set the extracted and cleaned phone numbers as new fields in the output\nreturn { \n  json: { \n    extractedPhoneNumber: extractedPhoneNumber, // Original format extracted\n    cleanedPhoneNumber: cleanedPhoneNumber     // Cleaned, digits-only format\n  } \n};"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -2416,
+          2512
+        ],
+        "id": "86367ee7-ed26-416b-a1ab-f9fe5757051d",
+        "name": "Code"
+      },
+      {
+        "parameters": {
+          "sessionIdType": "customKey",
+          "sessionKey": "={{ $('Gmail Trigger1').item.json.id }}{{ $('Gmail Trigger1').item.json.threadId }}",
+          "contextWindowLength": 40
+        },
+        "id": "a9d4229a-59e2-4a85-afdc-ddaa424b8723",
+        "name": "Simple Memory",
+        "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+        "position": [
+          -1184,
+          5936
+        ],
+        "typeVersion": 1.3,
+        "disabled": true
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_2203765197792162701"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -1040,
+          2896
+        ],
+        "id": "9b988cd7-f216-4038-9cb1-bc3435ebdda4",
+        "name": "Stacie",
+        "webhookId": "f534bcdc-36ab-49c5-9df5-73cb1b59340e",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_6185303115826930212"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -448,
+          1776
+        ],
+        "id": "ac79a785-db1a-4dfc-9915-5040cda146ba",
+        "name": "Payment Received",
+        "webhookId": "d713a940-eae4-49cd-806d-83813fcff6f1",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_5910952788693218903"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -2144,
+          2992
+        ],
+        "id": "1bee2ab6-5b97-45e5-bc38-9dedc4778754",
+        "name": "SUPPLIERS",
+        "webhookId": "60626fba-729a-4f9a-8456-da7ed27842e7",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_1754819594410264536"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -1040,
+          4048
+        ],
+        "id": "1317e4bf-7f5b-4fe2-ba4b-783a178190d3",
+        "name": "AquaSpaPoolSupply",
+        "webhookId": "d2c731fb-7b64-44bd-b19c-34fd884ed9ff",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_9221639982004118374"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -1040,
+          4240
+        ],
+        "id": "ad8695dd-b906-4c49-8942-9bcf6a6efe14",
+        "name": "ParadisePatioFurnitureLtd",
+        "webhookId": "427e8e3e-e0a1-465f-81e3-cb1844b73fc3",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_529082710264521909"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -1040,
+          4432
+        ],
+        "id": "ed4e75e2-8133-4076-b8e2-2718affdb5f2",
+        "name": "StrongSpas",
+        "webhookId": "8b550811-3373-42fc-8b08-a69747ecfbde",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_3547461587166103613"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -1040,
+          3088
+        ],
+        "id": "e8f117fc-3d85-4f10-8bc7-df5331a49fe7",
+        "name": "Aaron",
+        "webhookId": "af72a593-5707-49ea-9746-c2d71c40ff86",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "pollTimes": {
+            "item": [
+              {
+                "mode": "custom",
+                "cronExpression": "=0 */2 * * * *"
+              }
+            ]
+          },
+          "simple": false,
+          "filters": {
+            "q": "in:inbox -(from:(*@thehottubman.ca OR *@thtm.ca))\n\n"
+          },
+          "options": {
+            "downloadAttachments": true
+          }
+        },
+        "type": "n8n-nodes-base.gmailTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          -4240,
+          3520
+        ],
+        "id": "ec6c6436-b713-4b07-985d-9a6dceddaf24",
+        "name": "Gmail Trigger1",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $json.parsed_output.primary_category }}",
+                      "rightValue": "Promo",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      },
+                      "id": "b6eaa157-a5b7-44de-94d3-a3f75b0e6064"
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Promo"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "5d7246dd-1257-4570-9939-97851d818fdd",
+                      "leftValue": "={{ $json.parsed_output.primary_category }}",
+                      "rightValue": "Socialmedia",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Socialmedia"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "20ebe13e-b600-4f6f-9565-eae7235ddd67",
+                      "leftValue": "={{ $json.parsed_output.primary_category }}",
+                      "rightValue": "Sales",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Sales"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "4e613344-7029-4eff-82a9-3b272470f2c9",
+                      "leftValue": "={{ $json.parsed_output.primary_category }}",
+                      "rightValue": "Recruitment",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Recruitment"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "ff674e92-a1e8-4aae-b996-d2772a2b7345",
+                      "leftValue": "={{ $json.parsed_output.primary_category }}",
+                      "rightValue": "Misc",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Misc"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "953b1ad2-6e1d-4638-bec3-ba3899508335",
+                      "leftValue": "={{ $json.parsed_output.primary_category }}",
+                      "rightValue": "Banking",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Banking"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "26f7eaea-1370-449c-a4f4-174dce56e8c7",
+                      "leftValue": "={{ $json.parsed_output.primary_category }}",
+                      "rightValue": "FormSub",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "FormSub"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "899fcbb2-96ca-4beb-a81e-235908592bca",
+                      "leftValue": "={{ $json.parsed_output.primary_category }}",
+                      "rightValue": "Urgent",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Urgent"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "2943f5fe-c5af-4582-828b-93ce8a486c1c",
+                      "leftValue": "={{ $json.parsed_output.primary_category }}",
+                      "rightValue": "GoogleReview",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "GoogleReview"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "dbab140a-184a-4a8d-9a2d-ab73149c34bf",
+                      "leftValue": "={{ $json.parsed_output.primary_category }}",
+                      "rightValue": "Phone",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Phone"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "b5549147-1abd-48a7-92a9-3ead5a0b46ff",
+                      "leftValue": "={{ $json.parsed_output.primary_category }}",
+                      "rightValue": "Manager",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Manager"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "ac6a9883-f1cf-41f7-b185-a4e91a97840e",
+                      "leftValue": "={{ $json.parsed_output.primary_category }}",
+                      "rightValue": "Support",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Support"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "ffbf2070-a8dc-402e-a94a-56f16393be17",
+                      "leftValue": "={{ $json.parsed_output.primary_category }}",
+                      "rightValue": "Suppliers",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Suppliers"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.2,
+        "position": [
+          -1904,
+          3360
+        ],
+        "id": "a53efd98-54a7-466b-bf98-68a7067af599",
+        "name": "Switch1"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=Subject: {{ $json.subject }}\nFrom:{{ $json.from }}\nTo: {{ $json.to }}\nDate: {{ $now }}\nThread ID: {{ $json.threadId }}\nMessage ID: {{ $json.id }}\n\nEmail Body:\n{{ $json.body }}",
+          "options": {
+            "systemMessage": "=You are an expert email processing and routing system for You are an expert email processing and routing system for \"The Hot Tub Man Ltd.\"\n\nYour SOLE task is to analyze the provided email and return a single, structured JSON object containing a summary, precise classifications, and extracted entities. Follow all rules precisely.\n\n### Rules:\nIf the email is from an external sender, and primary_category is Support or Sales, and confidence is at least 0.75, always set \"ai_can_reply\": true—including for Support > General complaints, unless the sender is internal or the message is abusive/illegal.\nIf the sender's email address ends with \"@thehottubman.ca\", always set:\n\"ai_can_reply\": false\n\n1.  Analyze the entire email context (sender, subject, body).\n2.  Choose **ONE** `primary_category` from the list provided.\n3.  If the chosen category has sub-categories, select the most appropriate `secondary_category`.\n4.  For specific Banking categories, determine the `tertiary_category`.\n5.  Provide a concise `summary` of the email's core request.\n6.  Extract all available `entities`.\n7.  Provide a confidence score (0.0 to 1.0) and a brief reasoning for your classification.\n8.  `\"ai_can_reply\": true` **only if**:\n- `primary_category` is **Support** *or* **Sales** *or* **Urgent**, **and**\n- `confidence` ≥ 0.75.\nSupport > General: ai_can_reply: true (if confidence ≥ 0.75)\nSupport > TechnicalSupport, PartsAndChemicals, AppointmentScheduling: ai_can_reply: true (if confidence ≥ 0.75)\nSales: ai_can_reply: true (if confidence ≥ 0.75)\nIn **all other cases** set `\"ai_can_reply\": false` (the email will be routed to a human).\nReturn **only** the JSON object—no extra text.\n\n\n### Category Structure:\nPhone: \nOnly emails from phone/SMS/voicemail providers (e.g., service@ringcentral.com) should be tagged PHONE.\nIf the subject or body includes 'New Text Message' and the sender includes 'RingCentral', classify as Phone.\nThis category includes all emails originating specifically from service@ringcentral.com. These notifications typically contain:  Voicemail notifications (voice message transcripts or audio attachments).  Missed call alerts (with caller ID and callback numbers).  SMS/text message alerts (text message transcripts or content).  These messages indicate customer or vendor attempts to communicate via the business phone number managed by RingCentral.  Examples:  \"You have a new voice message from (403) 123-4567.\"  \"New SMS received from customer.\"  \"Missed call alert.\"  Keywords: voicemail, voice message, missed call, SMS, text message, RingCentral, caller ID, message transcript, new message, call recording, callback number, you have a new text, you have a new voicemail  Classifier Rule: ✅ Always classify as RingCentral Communications if the sender is exactly service@ringcentral.com\n\nPromo: Marketing, discounts, sales flyers.\nEmails promoting marketing campaigns, discount announcements, referral programs, or seasonal events. These include vendor offers, sales flyers, promotional codes, limited-time deals, or partnership pitches. They do NOT include direct customer inquiries or leads about purchasing a product or service.|Examples:“Save 25% this weekend only!”“Refer a friend and earn rewards”“Bundle deal on spa accessories”“Exclusive vendor promotion for your business”\n\nSocialmedia: Emails related to social media platforms like Facebook, Instagram, TikTok, YouTube, or Google. These messages typically include:  Engagement alerts (DMs, tags, mentions)  Collaboration or sponsorship requests  Content inquiries (reels, stories, posts)  Influencer or partnership outreach  These emails originate from social platforms or brands/agencies interacting via social channels. This does not include general social media notifications like password resets (those go under Security or System Alerts if applicable).  Keywords: DM, tagged, post, reel, story, influencer, collab, partnership, Facebook, Instagram, TikTok, YouTube, social media\n\nSales: Emails from leads or customers expressing interest in purchasing a hot tub, requesting pricing, or discussing specific models or service packages.\nThis includes:\nNew inquiries about hot tubs or installation services\nReplies to promotions where the sender shows purchase intent\nRequests for quotes, estimates, or follow-up on prior communication\nConversations about available models, features, or packages\nReferral notifications from networking groups (e.g., BNI), business partners, or third parties introducing a new potential customer or business opportunity\n\nRecruitment: Job applications, resumes, interviews.\nEmails related to the recruitment and hiring process at The Hot Tub Man Ltd. Includes job applications, resumes, cover letters, interview scheduling, candidate inquiries, job offers, and hiring updates. Also covers communications from recruitment platforms, hiring managers, and candidates following up on their applications.  Examples:  “Application for Customer Service Position”  “Resume and cover letter for Service Technician role”  “Interview schedule confirmation”  “Inquiry about open positions”  Keywords: job application, resume, cover letter, interview, hiring, candidate, recruitment, job opportunity, position available, apply, job posting, applicant, interview schedule, candidate inquiry, job offer\n\nGoogleReview: Notifications about new Google Reviews.\nWhen an email fits the GoogleReview category, extract and return the following JSON object:\n\n\n{\n  \"type\": \"google_review\",\n  \"reviewerName\": \"<Name of the reviewer, e.g., Brenda>\",\n  \"rating\": <Numeric rating from 1 to 5>,\n  \"reviewText\": \"<The review text left by the customer>\",\n  \"reviewId\": \"<The unique review ID, e.g., g123abc456>\",\n  \"locationName\": \"The Hot Tub Man Ltd.\",\n  \"platform\": \"Google\",\n  \"isPositive\": <true if rating >= 4, false if <= 2, null if 3 or missing>\n}\nExtraction Rules:\nreviewerName: From line like “Brenda left a review…”\n\nrating: From \"Rating: ★★★★☆\" or \"Rating: 4\"\n\nreviewText: Usually inside quotation marks \"...\", or between Rating and \"Manage review\"\n\nreviewId: From line like Review ID: g123abc456\n\nisPositive: Use rating to infer sentiment\n\nIf any field is not found, return null instead of omitting it.\n\nUrgent: E-mails from alerts@servicetitan.com. \nRequests a response by a specific date/time (even without using “urgent”)\nUses phrases like “as soon as possible”, “ASAP”, “immediately”, “today”, “noon”. Emails emergency-related, or requiring immediate action. These often include escalated service issues, last-minute cancellations, equipment failures, or anything flagged with urgency or strong emotional tone.  Keywords may include: urgent, emergency, ASAP, as soon as possible, immediately, critical, need help now, high priority, right away, problem, broken, not working, serious issue, can't wait, urgent matter, please respond quickly. All the emails containing \"Please find your estimate(s) from The Hot Tub Man Ltd. attached below  Click here to view your estimate(s)\"\n\nMisc: Use as a last resort for unclassifiable emails.\nOnly return MISC as a last resort if, after exhaustive evaluation of all other categories and sub-categories, the email's content remains fundamentally unclassifiable or irrelevant to any specific business process. Do NOT use MISC for content that could belong to a specific category but lacks strong signals; instead, aim to provide the strongest possible primary label.\n\nManager:\nEmails that require leadership oversight, involve internal company operations, or are directed at a specific manager (Hailey, Jillian, Stacie). This includes escalations, strategic decisions, high-level vendor comms, and internal alerts. This category will be further sorted into a specific manager or 'Unassigned' in a subsequent step.\n\nsecondary_category: [Hailey, Jillian, Stacie, Aaron, Unassigned]\nHailey - Mail explicitly for Hailey\nJillian - Mail explicitly for Jillian.\nUnassigned - internal alerts or platform notices that must be reviewed by some manager but don’t name one specifically. Examples: security alerts, account verification codes, payroll or attendance reports, “autobatching failed” errors, Housecall Pro employee-invite notifications. Keywords / cues: no-reply@accounts.google.com, donotreply@auth.atb.com, “verification code”, “daily attendance report”, “You’ve invited a new employee”, “autobatching failed payments”.\nStacie - Mail explicitly for Stacie.\nAaron - Mail explicitly for Aaron\n\nFormSub & Urgent FormSub Rules:\nThis category is for automated submissions from your website forms or field service apps. Crucially, the content of a form submission determines its final classification.\n1. URGENT Form Submission Override:\nAn email that is a form submission MUST BE CLASSIFIED AS URGENT if the \"How can we help?\" section contains keywords indicating a critical service issue. This rule takes precedence over a standard FormSub classification.\nKeywords: broken, not working, leaking, won't start, no power, error code, tripping breaker, won't heat.\nExample of an URGENT Form Submission:\nSubject: Schedule a Service got a new submission\nBody: \"...Submission summary: ... How can we help?: I have a strong spa... it worked great. ...now it will not start. First I thought it was an air lock... now the control panel won’t light up.\"\nCorrect Classification: primary_category: Urgent\n2. Standard Form Submission:\nIf an email is a form submission but DOES NOT contain urgent keywords (e.g., it is a simple request for information or to purchase non-service items), classify it as FormSub.\nsecondary_category: [NewSubmission, WorkOrderForms]\nNewSubmission: This applies to all standard website form submissions from ServiceTitan that are not urgent.\nExample of a standard FormSub:\nSubject: Contact us got a new submission\nBody: \"...How can we help?: I would like to purchase 1.5 kg container of Bromating tabs... I can come pay and pick it up...\"\nCorrect Classification: primary_category: FormSub, secondary_category: NewSubmission\nWorkOrderForms: This applies only to emails from noreply@reports.connecteam.com containing completed work forms.\nExample: Subject: Steve Derksen completed Hot Tub Treatment Form-Penhold\nCorrect Classification: primary_category: FormSub, secondary_category: WorkOrderForms\n\nSuppliers:\nEmails from Aqua Spa Pool Supply quotes@asp-supply.com, Paradise patio furniture ltd. , Strong Spas\nsecondary_category: [AquaSpaPoolSupply, ParadisePatioFurnitureLtd, StrongSpas]\nAquaSpaPoolSupply - Emails from supplier emails usually contains \"@asp-supply.com\" also may have a signature \"The Aqua Spa & Pool Supply Team\"\nParadisePatioFurnitureLtd - Emails from supplier emails usually contains \"paradisepatiofurnitureltd\"\nStrongSpas - Emails from supplier emails usually contains \"@strong9.com\" also may have a signature \"www.StrongSpas.com\"\nWaterwayPlastics  - Emails from supplier emails usually contains \"@waterwayplastics.com\"\n\nSupport:\nEmails from existing customers related to post-sales support. This includes technical troubleshooting, questions about parts/chemicals, appointment scheduling, and general inquiries about a product they already own. These emails will be routed to a specific support queue (Technical, Parts, etc.) in a subsequent step.\nsecondary_category: [TechnicalSupport, PartsAndChemicals, AppointmentScheduling, General]\nTechnicalSupport - Emails from customers seeking assistance with troubleshooting, diagnosing issues, or requesting guidance on the functionality and operation of their hot tubs. These are typically for problems that might require instruction, a remote solution, or a technician visit if not resolved virtually.\\n\\nExamples:\\n• 'My jets aren't working, what should I check?'\\n• 'How do I fix the error code on my display?'\\n• 'The water isn't heating, can you help me troubleshoot?'\\n\\nKeywords: troubleshoot, repair, issue, problem, error, functional, broken, diagnostic, help, technical, guide, manual.\nPartsAndChemicals - Emails related to ordering, inquiring about, or discussing specific hot tub parts, filters, covers, or water treatment chemicals. This includes questions about availability, pricing, usage, or recommendations for these items.\\n\\nExamples:\\n• 'Do you stock replacement filters for my hot tub model?'\\n• 'I need to reorder my usual supply of chlorine tablets.'\\n• 'What chemicals should I use for balancing my water?'\\n\\nKeywords: parts, chemicals, filter, cover, accessories, order, purchase, stock, supply, inquire, availability, price, product, recommend.\nAppointmentScheduling - Emails specifically for booking, rescheduling, or canceling service appointments, maintenance visits, or consultations. These messages focus on coordinating timings and logistics for a visit, assuming the request is not initiated via a ServiceTitan form.\\n\\nExamples:\\n• 'I'd like to book my annual hot tub cleaning.'\\n• 'Can I reschedule my service appointment for next week?'\\n• 'I need to cancel my technician visit for tomorrow.'\\n\\nKeywords: schedule, book, appointment, reschedule, cancel, visit, maintenance, time, date, confirm, availability, service.\nGeneral - Any customer support email that does not fit into the specific categories of Technical Support, Parts & Chemicals, or Appointment Scheduling. This includes general inquiries, non-urgent follow-ups, or miscellaneous questions from existing customers.\\n\\nExamples:\\n• 'Can you send me a copy of my last invoice?'\\n• 'What are your updated operating hours?'\\n• 'Just checking in on the status of my order.'\\n\\nKeywords: general, inquiry, miscellaneous, follow-up, question, status, invoice, hours, contact.\n\n\nBanking:\nsecondary_category: [e-transfer, invoice, bank-alert, refund, receipts]\ne-transfer - Interac e-Transfers confirming completed payments either sent or received, typically involving banks or payment platforms. These messages are commonly used to track:  Vendor payments  Reimbursements  Fast business-related fund transfers  Message types may include:  “You received an Interac e-Transfer”  “You sent an e-Transfer”  “Funds have been deposited”  “Transfer completed successfully”  Keywords: interac, e-transfer, you received, you sent, payment received, funds deposited, transfer completed, money sent  Classification Guidance:  ✅ Include only if the email confirms that the transfer has been successfully processed  🚫 Exclude pending, failed, or canceled transfers (those may go under bank-alert)\ninvoice - Emails that include sent or received invoices, typically as part of billing, accounting, or financial tracking. These messages often contain:  Attached invoice PDFs  Payment due notices  Invoice confirmations  Billing summaries or reminders  They are key for financial reconciliation, vendor management, and customer billing.  Common elements:  Invoice number (e.g., INV-12345)  Total amount due  Due date or payment terms  Vendor or customer info  Line items or service descriptions  Keywords: invoice, payment due, invoice attached, bill, amount owing, statement, billing, past due, balance, total due, due date  Classification Guidance:  ✅ Include if the email references or attaches a formal invoice document or clearly outlines payment terms  🚫 Exclude if the email simply mentions a payment has been made or received — use payment-confirmation or e-transfer instead Exclude all  invoices with \"Re: Your Invoice from The Hot Tub Man Ltd\"\nbank-alert - Automated security-related messages sent by a bank or financial platform. They flag events that could affect account safety or require fast action.  Typical alerts  Balance or daily-limit updates  Suspicious-activity or fraud warnings  Password or PIN reset confirmations  New login / new-device sign-ins  2-factor or one-time passcodes (OTP/2FA)  Account-detail changes (e-mail, phone, address)  Trigger keywords (examples) bank alert, suspicious activity, login attempt, password changed, reset your password, security alert, account update, new sign-in, verification code, unauthorized access, device login, fraud detection  Classification rules ✅ Label as BankAlert when the email is an automated, security-focused notification from a bank or financial system. 🚫 Do not use this label for transactional receipts, invoices, or e-transfer notices—those belong in Payment-Confirmation, Invoice, or e-Transfer.\nrefund - Emails indicating that a refund has been issued or received, usually in response to a returned product, canceled service, or failed payment. These messages confirm that funds have been reversed and returned to the sender or original payment method.  Common refund scenarios include:  Canceled orders or subscriptions  Payment failures followed by refund  Returned merchandise or parts  Duplicate charge corrections  Service billing adjustments  Typical content includes:  “Your refund has been processed”  “We’ve issued a refund to your card/account”  “Refund confirmation”  Reference or transaction ID  Amount refunded  Payment method used for the refund  Keywords: refund issued, refund processed, your refund, money returned, credit to your account, refunded, return processed, reversed payment, transaction failed and refunded, you’ll see the funds in\nreceipts - Emails that prove a payment has already cleared—whether The Hot Tub Man Ltd. paid a vendor or a customer paid us. They’re usually auto-generated by banks, payment platforms, or e-commerce systems and include full transaction details.  Typical contents “Thank you for your purchase / payment”  Order, receipt, or confirmation number (e.g., #452319)  Amount paid and date settled  Payment method (Visa, Interac, PayPal, Stripe, ACH, POS, etc.)  Links or attachments (PDF / HTML receipts)  Common subject-line cues Payment completed · Transaction successful · Order summary · Your payment has been confirmed · Here’s your receipt  Keywords receipt, order confirmation, payment summary, transaction details, amount paid, paid with, you’ve been charged, view receipt  Classification guidance ✅ Include when the email confirms a finalized transaction and provides proof of payment. 🚫 Exclude:  Invoices requesting payment (use Invoice category).  Pending, failed, or canceled transfers (use Bank-Alert if security-related).  Interac e-Transfer notices (use E-Transfer sub-labels).\n\n\nIf secondary_category is 'e-transfer', set tertiary_category: [FromBusiness, ToBusiness]\nFrom business - Emails confirming that The Hot Tub Man Ltd. has sent a payment or successfully transferred funds to a vendor, contractor, or external service provider. These are typically receipts, payment confirmations, or e-Transfer acknowledgments indicating money was sent from the business account.  Examples include: \"Transfer from: THE HOT TUB MAN LTD.\" Confirmation of outgoing Interac e-Transfers  Subject lines like: “Funds sent”, “Your e-Transfer was successful”, “Payment completed”  Body text with phrases like:  \"You sent an Interac e-Transfer\"  \"Funds deposited to the recipient\"  \"Your payment has been processed\"  Keywords: you sent, payment completed, funds deposited to, interac e-transfer sent, transaction receipt, payment confirmation, amount paid, transfer successful, Your transfer to, to recipient  Classification Tip: ✅ Classify as To Business only if the email confirms that The Hot Tub Man Ltd. has sent funds. 🚫 Do not use for notifications of incoming transfers (those go under To Business).\nTo business - Emails confirming that a payment has been deposited into The Hot Tub Man Ltd.’s account. These typically come from banks, payment platforms, or customers and indicate successful incoming transfers.  Examples include:  Interac e-Transfer deposit confirmations  Subject lines like: “Funds have been deposited”, “You’ve received money”, “Deposit successful”  Body text mentioning:  \"You received an Interac e-Transfer\"  \"Funds have been deposited into your account\"  \"The payment has been successfully deposited\"  Keywords: e-transfer received, funds deposited, you’ve received, payment received, money has been sent to you, You've received,  deposit completed, interac transfer to The Hot Tub Man  Classification Tip: ✅ Only classify as From Business if the message confirms a completed deposit into your account. 🚫 Do not include messages about pending transfers or sent by your business — those should go under from Business.\n\nIf the email confirms a purchase or payment by The Hot Tub Man Ltd. (or relevant business/person), classify as:\n\"primary_category\": \"Banking\",\n\"secondary_category\": \"receipts\",\n\"tertiary_category\": \"PaymentSent\"\n\nIf the email confirms the business received money (e.g., from a customer):\n\"primary_category\": \"Banking\",\n\"secondary_category\": \"receipts\",\n\"tertiary_category\": \"PaymentReceived\"\n\n\nIf secondary_category is 'receipts', set tertiary_category: [PaymentSent, PaymentReceived]\nPaymentSent -  Email confirming you sent a payment \nPayment Received - Email confirming you've received a payment \n\n\n### JSON Output Format:\nReturn ONLY the following JSON structure. Do not add any other text or explanations.\n\n```json\n{\n  \"summary\": \"A concise, one-sentence summary of the email's purpose.\",\n  \"reasoning\": \"A brief explanation for the chosen categories.\",\n  \"confidence\": 0.9,\n  \"primary_category\": \"The chosen primary category\",\n  \"secondary_category\": \"The chosen secondary category, or null if not applicable.\",\n  \"tertiary_category\": \"The chosen tertiary category, or null if not applicable.\",\n  \"entities\": {\n    \"contact_name\": \"Extracted contact name, or null.\",\n    \"email_address\": \"Extracted email address, or null.\",\n    \"phone_number\": \"Extracted phone number, or null.\",\n    \"order_number\": \"Extracted order/invoice number, or null.\"\n  },\n  \"ai_can_reply\": true\n}\n``` Tub Man Ltd.\"\n\nYour SOLE task is to analyze the provided email (sender, subject, and body) and return a single, well-structured JSON object containing:\nA concise summary of the email’s purpose.\nA precise classification with exactly ONE primary_category.\nThe most appropriate secondary_category if applicable.\nThe appropriate tertiary_category for specific banking emails, or null.\nAll relevant extracted entities (contact name, phone number, order number).\nA confidence score between 0.0 and 1.0.\nA brief reasoning explaining the classification choice.\n\nRules:\nAnalyze the entire email context: sender, subject, and body.\nChoose exactly ONE primary_category from the list below.\nIf the primary category has sub-categories, choose the most fitting secondary_category.\nFor banking-related emails, choose the correct tertiary_category.\nExtract all available entities: contact name, phone number, order/invoice number.\nProvide a confidence score (0.0 to 1.0) based on your certainty.\nProvide a brief explanation of your classification reasoning.\nIf a category or subcategory does not apply, return null for those fields.\nReturn ONLY the JSON object below — no additional text.\n\nCategories:\nPromo: Marketing, discounts, sales flyers.\nSocialmedia: DMs, tags, mentions, influencer outreach.\nSales: New leads asking for quotes, pricing, or models.\nRecruitment: Job applications, resumes, interviews.\nGoogleReview: Notifications about new Google Reviews.\nUrgent: Emails with keywords like ASAP, emergency, broken; or from alerts@servicetitan.com, noreply@reports.connecteam.com; or containing “Please find your estimate(s) from The Hot Tub Man Ltd.”\nMisc: For unclassifiable emails; use as last resort.\nManager:\n\nSecondary categories: Hailey, Jillian, Stacie, Aaron, Unassigned\nHailey, Jillian, Stacie, Aaron: Mail explicitly for that person.\nUnassigned: Internal alerts or platform notices requiring manager review without a specific person (e.g., security alerts, verification codes, payroll reports).\nKeywords include: no-reply@accounts.google.com, donotreply@auth.atb.com, “verification code”, “daily attendance report”, “You’ve invited a new employee”, “autobatching failed payments”.\nPhone: Secondary category: Phone \nThis category includes all emails originating specifically from service@ringcentral.com. These notifications typically contain:  Voicemail notifications (voice message transcripts or audio attachments).  Missed call alerts (with caller ID and callback numbers).  SMS/text message alerts (text message transcripts or content).  These messages indicate customer or vendor attempts to communicate via the business phone number managed by RingCentral.  Examples:  \"You have a new voice message from (403) 123-4567.\"  \"New SMS received from customer.\"  \"Missed call alert.\"  Keywords: voicemail, voice message, missed call, SMS, text message, RingCentral, caller ID, message transcript, new message, call recording, callback number, you have a new text, you have a new voicemail  Classifier Rule: ✅ Always classify as RingCentral Communications if the sender is exactly service@ringcentral.com\nFormSub: Secondary categories: NewSubmission, WorkOrderForms\nNewSubmission: Site visitor submissions with contact details and requests.\nWorkOrderForms: Emails from noreply@reports.connecteam.com about completed Hot Tub Treatment Forms.\nSuppliers: Secondary categories: AquaSpaPoolSupply, ParadisePatioFurnitureLtd, StrongSpas\nAquaSpaPoolSupply: From @asp-supply.com or signature \"The Aqua Spa & Pool Supply Team\".\nParadisePatioFurnitureLtd: From paradisepatiofurnitureltd emails.\nStrongSpas: From @strong9.com or signature www.StrongSpas.com.\nSupport: Secondary categories: TechnicalSupport, PartsAndChemicals, AppointmentScheduling, General\nTechnicalSupport: Troubleshooting and repair requests. Keywords: troubleshoot, repair, error, help, guide.\nPartsAndChemicals: Orders or inquiries about parts and chemicals. Keywords: parts, chemicals, filter, order, price, stock.\nAppointmentScheduling: Booking/rescheduling/canceling visits or service appointments. Keywords: schedule, book, appointment, reschedule, cancel.\nGeneral: Other support inquiries not fitting above categories.\nBanking: Secondary categories: e-transfer, invoice, bank-alert, refund, receipts\ne-transfer: Confirmed completed Interac e-Transfers (sent or received).\nKeywords: interac, e-transfer, you received, you sent, payment received, funds deposited.\n\nTertiary categories:\nFromBusiness: Payments sent by The Hot Tub Man Ltd.\nToBusiness: Payments received by The Hot Tub Man Ltd.\ninvoice: Billing, payment due notices, formal invoices. Exclude simple payment confirmations or internal invoices from The Hot Tub Man Ltd.\nbank-alert: Automated bank security alerts (fraud warnings, password resets, login notifications).\nrefund: Notifications of refunds issued or received.\nreceipts: Confirmed finalized payments (sent or received).\nTertiary categories: PaymentSent (sent by The Hot Tub Man Ltd.) or PaymentReceived (received by The Hot Tub Man Ltd.)."
+          }
+        },
+        "id": "d5814cbc-4733-46a3-8545-e597c59c3cc1",
+        "name": "AI Master Classifier",
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "position": [
+          -3792,
+          3520
+        ],
+        "typeVersion": 1.8
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_4682687869701858437"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -1552,
+          2144
+        ],
+        "id": "dd611bdc-0cfb-4d02-bdc8-bfedd5ff5d8f",
+        "name": "URGENT",
+        "webhookId": "65817e36-0ca0-42b7-91ea-32995eeedf22",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "leftValue": "={{ $json.parsed_output.secondary_category }}",
+                      "rightValue": "e-transfer",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      },
+                      "id": "b6eaa157-a5b7-44de-94d3-a3f75b0e6064"
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "e-transfer"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "5d7246dd-1257-4570-9939-97851d818fdd",
+                      "leftValue": "={{ $json.parsed_output.secondary_category }}",
+                      "rightValue": "invoice",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "invoice"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "20ebe13e-b600-4f6f-9565-eae7235ddd67",
+                      "leftValue": "={{ $json.parsed_output.secondary_category }}",
+                      "rightValue": "bank-alert",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "bank-alert"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "4e613344-7029-4eff-82a9-3b272470f2c9",
+                      "leftValue": "={{ $json.parsed_output.secondary_category }}",
+                      "rightValue": "refund",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "refund"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "ff674e92-a1e8-4aae-b996-d2772a2b7345",
+                      "leftValue": "={{ $json.parsed_output.secondary_category }}",
+                      "rightValue": "receipts",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "receipts"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.2,
+        "position": [
+          -1264,
+          1424
+        ],
+        "id": "8a0d4858-4e42-47ae-ae90-3b806ebaa912",
+        "name": "Switch2"
+      },
+      {
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "5d7246dd-1257-4570-9939-97851d818fdd",
+                      "leftValue": "={{ $json.parsed_output.secondary_category }}",
+                      "rightValue": "TechnicalSupport",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "TechnicalSupport"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "20ebe13e-b600-4f6f-9565-eae7235ddd67",
+                      "leftValue": "={{ $json.parsed_output.secondary_category }}",
+                      "rightValue": "PartsAndChemicals",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "PartsAndChemicals"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "4e613344-7029-4eff-82a9-3b272470f2c9",
+                      "leftValue": "={{ $json.parsed_output.secondary_category }}",
+                      "rightValue": "AppointmentScheduling",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "AppointmentScheduling"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "ff674e92-a1e8-4aae-b996-d2772a2b7345",
+                      "leftValue": "={{ $json.parsed_output.secondary_category }}",
+                      "rightValue": "General",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "General"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.2,
+        "position": [
+          -1264,
+          3584
+        ],
+        "id": "e10d34e8-9526-4f06-a25c-96d84fd8636f",
+        "name": "Support"
+      },
+      {
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "4e613344-7029-4eff-82a9-3b272470f2c9",
+                      "leftValue": "={{ $json.parsed_output.secondary_category }}",
+                      "rightValue": "NewSubmission",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "NewSubmission"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "ff674e92-a1e8-4aae-b996-d2772a2b7345",
+                      "leftValue": "={{ $json.parsed_output.secondary_category }}",
+                      "rightValue": "WorkOrderForms",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "WorkOrderForms"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.2,
+        "position": [
+          -1264,
+          1952
+        ],
+        "id": "6c767cff-1ed9-4a10-8091-3481f2ca3471",
+        "name": "Switch3"
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_9208263245784859855"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -1040,
+          1856
+        ],
+        "id": "acfdede2-4b5b-4577-b5b4-768e5fce8907",
+        "name": "NewSubmission",
+        "webhookId": "2acb71c2-9309-4b2a-9a50-93b7090fa5de",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "2943f5fe-c5af-4582-828b-93ce8a486c1c",
+                      "leftValue": "={{ $json.parsed_output.secondary_category }}",
+                      "rightValue": "Hailey",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Hailey"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "dbab140a-184a-4a8d-9a2d-ab73149c34bf",
+                      "leftValue": "={{ $json.parsed_output.secondary_category }}",
+                      "rightValue": "Jillian",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Jillian"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "b5549147-1abd-48a7-92a9-3ead5a0b46ff",
+                      "leftValue": "={{ $json.parsed_output.secondary_category }}",
+                      "rightValue": "Unassigned",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Unassigned"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "ac6a9883-f1cf-41f7-b185-a4e91a97840e",
+                      "leftValue": "={{ $json.parsed_output.secondary_category }}",
+                      "rightValue": "Stacie",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Stacie"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "ffbf2070-a8dc-402e-a94a-56f16393be17",
+                      "leftValue": "={{ $json.parsed_output.secondary_category }}",
+                      "rightValue": "Aaron",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "Aaron"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.2,
+        "position": [
+          -1264,
+          2800
+        ],
+        "id": "89389da0-2644-4f86-b071-51dea13c9de4",
+        "name": "Switch"
+      },
+      {
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "5d7246dd-1257-4570-9939-97851d818fdd",
+                      "leftValue": "={{ $json.parsed_output.secondary_category }}",
+                      "rightValue": "AquaSpaPoolSupply",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "AquaSpaPoolSupply"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "20ebe13e-b600-4f6f-9565-eae7235ddd67",
+                      "leftValue": "={{ $json.parsed_output.secondary_category }}",
+                      "rightValue": "ParadisePatioFurnitureLtd",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "ParadisePatioFurnitureLtd"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "4e613344-7029-4eff-82a9-3b272470f2c9",
+                      "leftValue": "={{ $json.parsed_output.secondary_category }}",
+                      "rightValue": "StrongSpas",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "StrongSpas"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "b180012a-259a-44e1-9084-dd66ef9a0c48",
+                      "leftValue": "={{ $json.parsed_output.secondary_category }}",
+                      "rightValue": "WaterwayPlastics ",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "WaterwayPlastics "
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.2,
+        "position": [
+          -1264,
+          4352
+        ],
+        "id": "642c048b-2e68-4e31-a84e-d05f1827085d",
+        "name": "Suppliers"
+      },
+      {
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "4e613344-7029-4eff-82a9-3b272470f2c9",
+                      "leftValue": "={{ $json.parsed_output.tertiary_category }}",
+                      "rightValue": "PaymentSent",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "PaymentSent"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "ff674e92-a1e8-4aae-b996-d2772a2b7345",
+                      "leftValue": "={{ $json.parsed_output.tertiary_category }}",
+                      "rightValue": "PaymentReceived",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "PaymentReceived"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.2,
+        "position": [
+          -720,
+          1664
+        ],
+        "id": "bc91ba6b-a528-47b8-ba2a-c33c4d8f6a24",
+        "name": "Switch5"
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "71251a2e-c311-48c1-a2c3-23464d722b92",
+                "leftValue": "={{ $json.error }}",
+                "rightValue": "\"true\"",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          -3216,
+          3520
+        ],
+        "id": "4c235316-a79f-455e-b5b1-7a61262409ea",
+        "name": "If"
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.id }}",
+          "labelIds": [
+            "Label_5531268829132825695"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -3088,
+          3184
+        ],
+        "id": "417f115f-e99b-43b0-8913-8748e737aaaa",
+        "name": "AiError",
+        "webhookId": "979660d1-883f-4c6d-9a61-2b4c442337ed",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict",
+              "version": 2
+            },
+            "conditions": [
+              {
+                "id": "71251a2e-c311-48c1-a2c3-23464d722b92",
+                "leftValue": "={{ $json.parsed_output.ai_can_reply }}",
+                "rightValue": "\"true\"",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true",
+                  "singleValue": true
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          -1840,
+          5216
+        ],
+        "id": "2ed532cc-d0aa-4380-bc21-0b3fafe1aa8b",
+        "name": "If1"
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_3142429667638460093"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -1040,
+          4624
+        ],
+        "id": "a3f4db01-8e88-478c-970a-7aae2c4c1a1e",
+        "name": "WaterwayPlastics",
+        "webhookId": "8b550811-3373-42fc-8b08-a69747ecfbde",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_5194757020768107348"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -1552,
+          512
+        ],
+        "id": "96ce8a83-71b2-48f1-ab4a-05cb480710dc",
+        "name": "PROMO",
+        "webhookId": "53331610-5250-42c5-b480-dcd546c6d5c1",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_6905772575485371098"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -2144,
+          2208
+        ],
+        "id": "9f36fdd5-0778-4d09-9d46-22e324a7fc37",
+        "name": "BANKING",
+        "webhookId": "a21196f3-afae-45df-9826-55201338df60",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}\n",
+          "labelIds": [
+            "Label_7981083321603674402"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -2144,
+          2368
+        ],
+        "id": "7090df77-711e-459c-a67b-4677ab507fa3",
+        "name": "FORMSUB",
+        "webhookId": "b56f5333-6c91-4819-99ea-6997666e8330",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_6681005821284082345"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -1552,
+          2336
+        ],
+        "id": "f30b18a6-6d5e-41b0-92df-ed153279a01e",
+        "name": "GOOGLE REVIEW",
+        "webhookId": "7a0b1728-53df-4b26-88b2-e2547ebd011d",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_3271844147547550208"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -2144,
+          2512
+        ],
+        "id": "61574015-010d-4625-84df-597a0ffdaef7",
+        "name": "PHONE",
+        "webhookId": "ccbdcef4-eb1d-48e4-84eb-f84a68d1a3ee",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_6965707290248133071"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -2144,
+          2688
+        ],
+        "id": "462c3288-2443-4e7c-a7f7-f734b66b7224",
+        "name": "MANAGER",
+        "webhookId": "eb357346-42a6-445a-a777-71a3716ecdc9",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_4911328466776678765"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -2144,
+          2848
+        ],
+        "id": "001841c3-a330-4371-b4c6-ce4203b41af1",
+        "name": "SUPPORT",
+        "webhookId": "bda0d277-ecd2-4c93-8e50-11cf3c3e011a",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_4304044838860378795"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -688,
+          800
+        ],
+        "id": "4456a2dd-3719-4d66-a909-62a49a5886b0",
+        "name": "From Business",
+        "webhookId": "df26a9fc-a341-49ff-876e-3aa1d7070020",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_9175317511209904956"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -688,
+          992
+        ],
+        "id": "bd66fee3-1939-4642-9e7e-ed62c9aef7b8",
+        "name": "To Business",
+        "webhookId": "f21de206-a35b-4f5b-98b4-8913a5955ca6",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "4e613344-7029-4eff-82a9-3b272470f2c9",
+                      "leftValue": "={{ $json.parsed_output.tertiary_category }}",
+                      "rightValue": "FromBusiness",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "FromBusiness"
+              },
+              {
+                "conditions": {
+                  "options": {
+                    "caseSensitive": true,
+                    "leftValue": "",
+                    "typeValidation": "strict",
+                    "version": 2
+                  },
+                  "conditions": [
+                    {
+                      "id": "ff674e92-a1e8-4aae-b996-d2772a2b7345",
+                      "leftValue": "={{ $json.parsed_output.tertiary_category }}",
+                      "rightValue": "ToBusiness",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals",
+                        "name": "filter.operator.equals"
+                      }
+                    }
+                  ],
+                  "combinator": "and"
+                },
+                "renameOutput": true,
+                "outputKey": "ToBusiness"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.2,
+        "position": [
+          -912,
+          848
+        ],
+        "id": "9a75cf17-9981-4b71-88d8-589d04e04228",
+        "name": "Switch6"
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_3597829195270583283"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -944,
+          1248
+        ],
+        "id": "d4e40d07-1cce-4468-83e3-5e81e6c9d631",
+        "name": "BankAlert",
+        "webhookId": "754433b2-82d3-448c-a454-d422e6a1b8ca",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_1577215682212766299"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -944,
+          1440
+        ],
+        "id": "8738fb92-e47f-43c0-9d3f-d39e8b1a9c9c",
+        "name": "Refund",
+        "webhookId": "12da4689-1e97-4284-b69d-abcd60b21c27",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_4043986230994929479"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -720,
+          1824
+        ],
+        "id": "a83e8f07-7d2d-490e-a451-bea85ec90d02",
+        "name": "Receipts",
+        "webhookId": "94466784-7030-4daa-8437-89f3312d88c7",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_3747283905776874329"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -448,
+          1408
+        ],
+        "id": "3298d33e-9b11-4fda-8526-1ac1c2dc24a7",
+        "name": "Payment Sent",
+        "webhookId": "1180c9eb-1636-4db0-bb00-a7a11119e17e",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}\n",
+          "labelIds": [
+            "Label_1818763003348762840"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -1040,
+          2080
+        ],
+        "id": "7ca2d8b3-c1b8-4c92-8267-58ed7700968f",
+        "name": "WorkOrderForms",
+        "webhookId": "16a306f1-e1fb-4c65-a44b-cc015bc4defc",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_4074713227897881784"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -1040,
+          2272
+        ],
+        "id": "bec50885-15a9-4242-a2c7-a7002a4960c3",
+        "name": "Hailey",
+        "webhookId": "f1e3a745-e7c2-4e53-b55f-ba8267f0bacc",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_5658673691380860488"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -1040,
+          2464
+        ],
+        "id": "64028618-6e70-4929-ac67-4c9be508874d",
+        "name": "Jillian",
+        "webhookId": "61531751-8818-4e7c-8aec-a5b9e6159b0f",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_1660693047725572807"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -1040,
+          2704
+        ],
+        "id": "9a536ba3-3cac-49c5-96a2-df53877354e9",
+        "name": "Unassigned",
+        "webhookId": "3e80b4c3-9444-48f4-ba37-eda58287d2e5",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_5207154876416998617"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -1040,
+          3280
+        ],
+        "id": "2de0c344-e72a-4819-b790-ccc31bf8fd79",
+        "name": "TechnicalSupport",
+        "webhookId": "0335367f-de17-4d64-bb16-d8d90a9ed86a",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_6414832157911581695"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -1040,
+          3664
+        ],
+        "id": "60cd4075-9140-451a-843d-d7e2553e560a",
+        "name": "Appointment Scheduling",
+        "webhookId": "b31576dd-ab61-4a21-aed4-2b4bf400888f",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_6426753770050785777"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -1040,
+          3856
+        ],
+        "id": "47e6e5c3-884f-40f9-82a3-f97ae97a553c",
+        "name": "General",
+        "webhookId": "db8c8195-0b9c-4aca-9930-bd9130e1370b",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "resource": "draft",
+          "subject": "={{ $('Code5').first().json.subject }}",
+          "emailType": "html",
+          "message": "={{ $json.output }}",
+          "options": {
+            "replyTo": "={{ /@(thehottubman\\\\.ca|thtm\\\\.ca)$/i.test($('Code5').first().json.from) ? $('Code5').first().json.to : $('Code5').first().json.from }}",
+            "threadId": "={{ $('Code5').first().json.threadId }}",
+            "sendTo": "={{ /@(thehottubman\\\\.ca|thtm\\\\.ca)$/i.test($('Code5').first().json.from) ? $('Code5').first().json.to : $('Code5').first().json.from }}"
+          }
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -736,
+          5808
+        ],
+        "id": "4bc010f0-0b59-4f47-a256-b24647c4a49d",
+        "name": "Create a draft",
+        "webhookId": "8b243dd0-36d0-471e-a069-ce01777d1999",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const outputs = [];\n\nconst aiItems = $input.all();\nconst gmailItems = $('Gmail Trigger1').all();\n\nfor (let i = 0; i < aiItems.length; i++) {\n  const aiOutput = aiItems[i].json.output;\n\n  try {\n    // normalize to a JSON string\n    let clean = typeof aiOutput === 'string' ? aiOutput.trim() : JSON.stringify(aiOutput);\n\n    // strip ``` or ```json fences\n    clean = clean.replace(/^```(?:json)?\\s*/i, '').replace(/\\s*```$/, '');\n\n    // trim anything after the last closing brace (common LLM quirk)\n    const lastBrace = clean.lastIndexOf('}');\n    if (lastBrace !== -1) clean = clean.slice(0, lastBrace + 1);\n\n    const parsedOutput = JSON.parse(clean);\n\n    // align with the same Gmail item index (fallback to last if sizes differ)\n    const g = gmailItems[Math.min(i, gmailItems.length - 1)]?.json || {};\n\n    // attach Gmail IDs\n    if (g.id) parsedOutput.id = g.id;\n    if (g.threadId) parsedOutput.threadId = g.threadId;\n\n    // This is the output for a SUCCESSFUL run\n    outputs.push({ json: { parsed_output: parsedOutput, error: false } });\n\n  } catch (e) {\n    // THIS BLOCK ONLY RUNS IF THERE IS AN ERROR\n    // It now correctly finds the original email and includes its ID\n    const g = gmailItems[Math.min(i, gmailItems.length - 1)]?.json || {};\n    outputs.push({ \n      json: { \n        error: true, \n        id: g.id, \n        errorMessage: e.message, \n        originalOutput: aiOutput \n      } \n    });\n  }\n}\n\nreturn outputs;"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -3440,
+          3520
+        ],
+        "id": "c231cf6d-c645-4892-a217-f021835551ec",
+        "name": "Code1"
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "// This code is designed to work with n8n's simplified Gmail Trigger output.\n\nconst item = $json;\n\n// --- HELPER FUNCTION: HTML to Clean Text ---\nfunction htmlToText(html) {\n  if (!html) return '';\n  return html\n    .replace(/<script[^>]*>([\\S\\s]*?)<\\/script>/gmi, '')\n    .replace(/<style[^>]*>([\\S\\s]*?)<\\/style>/gmi, '')\n    .replace(/<!--[\\s\\S]*?-->/g, '')\n    .replace(/<br\\s*\\/?>/gi, '\\n')\n    .replace(/<\\/(div|p|h[1-6]|li|tr)>/gi, '\\n')\n    .replace(/<[^>]+>/g, '')\n    .replace(/&nbsp;/g, ' ')\n    .replace(/&amp;/g, '&')\n    .replace(/&lt;/g, '<')\n    .replace(/&gt;/g, '>')\n    .replace(/&quot;/g, '\"')\n    .replace(/&#39;/g, \"'\")\n    .replace(/(\\n\\s*){3,}/g, '\\n\\n')\n    .trim();\n}\n\n// --- EXTRACT CORE DATA ---\nconst messageBody = htmlToText(item.html);\nconst messageId = item.headers?.['message-id'] || null;\n\n// --- ASSEMBLE FINAL JSON ---\n// This is the missing part. It must return a single object, not an array.\nreturn {\n  json: {\n    id: item.id,\n    threadId: item.threadId,\n    subject: item.subject,\n    from: item.from?.value?.[0]?.address || null,\n    fromName: item.from?.value?.[0]?.name || null,\n    to: item.to?.value?.[0]?.address || null,\n    toName: item.to?.value?.[0]?.name || null,\n    date: item.date,\n    body: messageBody,\n    bodyHtml: item.html,\n    labels: item.labelIds,\n    sizeEstimate: item.sizeEstimate,\n    messageId: messageId\n  }\n};"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -4016,
+          3520
+        ],
+        "id": "7883653c-cb0c-435c-89f3-9dd3025c6fd1",
+        "name": "Code5"
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "Label_6414832157911581695"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          -1040,
+          3472
+        ],
+        "id": "c5c3877e-9080-4bd5-95ce-8d494ba2c1f9",
+        "name": "PartsAndChemicals",
+        "webhookId": "b31576dd-ab61-4a21-aed4-2b4bf400888f",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "p95XBg8ql3DQME2i",
+            "name": "THTM"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "mode": "list",
+            "value": "gpt-4.1-mini"
+          },
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.2,
+        "position": [
+          -1312,
+          5936
+        ],
+        "id": "c9b9c4bd-6cda-434c-a1fe-ecc22466d671",
+        "name": "OpenAI Chat Model",
+        "credentials": {
+          "openAi": {
+            "id": "uT3Ct5ULcf87MxR0",
+            "name": "OpenAi account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "model": {
+            "__rl": true,
+            "value": "gpt-4o-mini",
+            "mode": "list",
+            "cachedResultName": "gpt-4o-mini"
+          },
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+        "typeVersion": 1.2,
+        "position": [
+          -3728,
+          3744
+        ],
+        "id": "4744beff-a01c-49c2-a14a-518f1eab2a70",
+        "name": "OpenAI Chat Model2",
+        "credentials": {
+          "openAi": {
+            "id": "uT3Ct5ULcf87MxR0",
+            "name": "OpenAi account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "// Replace newlines with <br> for HTML email rendering\nreturn {\n  json: {\n    output: $json.output\n      .replace(/\\n/g, '<br>')\n  }\n};"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -960,
+          5808
+        ],
+        "id": "b176a6b9-b641-4d92-bee8-334e321f9e7f",
+        "name": "Code3"
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "INSERT INTO performance_metrics\n  (`Date`, `Type`, `EmailsProcessed`, `AvgMinutesPerEmail`,\n   `TimeSavedHours`, `ReceptionistHourlyRate`, `MoneySaved`)\nVALUES\n  (\n    STR_TO_DATE('{{ $json.date }}', '%Y-%m-%d'),\n    '{{ $json.type }}',\n    CAST({{ $json.emailsProcessed }} AS SIGNED),\n    CAST({{ $json.avgMinutesPerEmail }} AS DECIMAL(10,2)),\n    CAST({{ $json.timeSavedHours }} AS DECIMAL(10,2)),\n    CAST({{ $json.receptionistHourlyRate }} AS DECIMAL(10,2)),\n    CAST({{ $json.moneySaved }} AS DECIMAL(10,2))\n  );"
+        },
+        "type": "n8n-nodes-base.mySql",
+        "typeVersion": 1,
+        "position": [
+          -832,
+          5216
+        ],
+        "id": "9819d724-6073-4641-98b5-4921e01ccc01",
+        "name": "Insert into performance_metrics",
+        "credentials": {
+          "mySql": {
+            "id": "Iie2ihFvqKtg2KpH",
+            "name": "MySQL account"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=Subject: {{ $json.subject }}\nFrom: {{ $json.from }}\nBody (HTML stripped): {{ $json.body }}\nClassification JSON:\n{{ $json.parsed_output | json }}\nThreadID: \n{{ $json.threadId }}",
+          "options": {
+            "systemMessage": "=Assistant role: Draft friendly, professional, and helpful replies for The Hot Tub Man Ltd. that:\n\nReflect prior conversation context\nClearly communicate next steps\nResolve concerns without delays or vagueness\nMatch the customer’s tone, urgency, and message length\nMaintain a warm, human, and on-brand voice\nUse the structured guidance and rules below to reply with confidence, clarity, and care.\nAlways prioritize accuracy, especially for dates and specific details. Strive for conciseness by omitting unnecessary requests or information that might be perceived as a burden to the customer.\n\nIntelligent Conversation Progression\nAssess conversation depth: If the customer is on their second or third message in a thread, avoid repeating earlier answers or re-asking for details they've already provided.\n\nWhen replying to follow-ups, do not summarize prior messages — instead, advance the resolution or confirm the next step.\n\nIf the human reply is incomplete, ensure the AI reply fills in the gaps: confirm all necessary details, include next steps, express gratitude, and close with warmth.\n\nAlways analyze the most recent customer input (e.g., specific attachments, details provided) to understand the current context of their request. Do not rely solely on the original problem statement. Acknowledge provided information and confirm relevant next steps or appointments clearly.\n\n🔄 Follow-up Ownership & Clarity\nAlways state who will follow up and by when. Use concrete phrasing like:\n\n“You’ll hear back from Mark on Thursday with the quote.”\n\nWhen appropriate, apologize for delays and explain the reason transparently (e.g., tech illness, part on backorder, truck reroute). This builds trust.\n\nPersonal Touch & Human Warmth\nUse friendly, human-like closings that show care and confidence:\n\n“We’ll see you then!”\n\n“You’re all set — thanks again for choosing us!”\n\n“Appreciate your patience — we’ve got you covered.”\n\nDon’t default to corporate tone; be natural, concise, and helpful — like a trusted friend who happens to know a lot about hot tubs.\n\nAvoid Common Mistakes\nDon’t offer broad options like “repair or remove?” in threads where a site inspection is already booked.\n\nDon’t say “We’ll get back to you soon” — say when and how.\n\nDon’t suggest services already declined in the thread (e.g., if removal was rejected, don’t re-offer).\n\nAlways provide the most up-to-date and concrete information available, even if not fully finalized. Transparency and specific details build customer confidence.\n\nPrioritize contextual accuracy. Confirm existing details like appointments, payment status, or scheduled deliveries if known or implied. Avoid asking for info already provided.\n\nWhen confirming service appointments, include relevant technician prep tips (like ensuring the tub is full) and acknowledge any uncertainty in the customer’s initial diagnosis.\n\nWhen replying to confirmations, restate scheduled times, included products (like lids or filters), and clarify expectations in advance.\n\nWhen customers share rotating schedules or narrow availability, summarize it and propose a time that matches. Always guide them toward action.\n\nWhen replying to payment link issues, confirm the resend, restate all accepted payment methods, and make it easy for the customer to complete the step.\n\nWhen a customer requests pricing or mentions discount concerns, clearly confirm if they qualify, and softly promote membership benefits. Don’t assume enrollment.\n\nWhen confirming deliveries, acknowledge prep actions (gate width, electrical readiness), check for any missing details (photos), and offer support from partners (like electricians).\n\nWhen confirming delivery times, include pre-visit requests: photos of the install location, access points, or power setup. Proactively prevent issues.\n\nWhen replying with technical specs, go beyond generalities — include amperage, clearance, or installation advice if asked. If info is missing, say so clearly and offer a follow-up.\n\nWhen addressing warranty questions, validate their frustration, clarify eligibility, and offer a booking option with a clear link and time. Ask for symptoms only if needed.\n\nWhen handling attachments (photos, videos), always confirm receipt and acknowledge how they helped assess the issue.\n\nWhen a message involves an active thread or confirmed service, prioritize continuity — don’t reopen the “repair vs removal” question. Stay focused on technician prep and customer expectations.\n\nWhen no response has come in after 3+ days on an active thread, send a friendly nudge like:\n“Just checking in — would you like us to hold off, or should we go ahead and schedule that visit?”\n\nWhen a customer asks about payment timing and incomplete service, confirm payment is due upon completion and acknowledge the unfinished work.\n\nEvery reply should:\n\nBe concise if the customer message is brief.\nConfirm relevant dates, times, and next steps.\nInclude contact methods and booking links when possible.\nExpress gratitude and offer additional help (like bringing chemicals).\nAlways include human tone and helpful intent.\n\n# Instructions\nUse input information \nSubject:{{ $('Code5').first().json.subject }}\nFrom: {{ $('Code5').first().json.from }}\nBody (HTML stripped): {{ $('Code5').first().json.body }}\nClassification JSON:{{ $('Code5').first().json.subject }}\n{{ $json.parsed_output | json }}\n\nThreadID: \n{{ $('Code5').first().json.threadId }}\n\n\nIdentify the inquiry type.\nClassify each incoming email into one of four categories:\nService Job Inquiry (repairs / site inspections)\nNew Spa Inquiry (shopping for a new hot tub)\nChemicals & Parts Inquiry (supplies or replacement parts)\nTechnical Help / Troubleshooting (advice on error codes, leaks, water chemistry, etc.)\nGather or reference needed info.\n\n🔍 Maintain Continuity Across Threads\nAlways analyze the stage of the conversation. If the customer is already in progress (e.g., confirmed service, delivery scheduled), do not repeat early-stage steps (like asking about tub brand or booking a site inspection).\n\nReference past steps clearly: “Thanks again for confirming access photos — we’re all set for delivery.”\n\n📦 Mailed Items & Deliveries\nWhen customers follow up on mailed items (cheques, parts, etc.):\n\nConfirm the send date and provide a clear delivery expectation (e.g., \"You should receive it by Friday\").\n\nInclude a backup plan: “If it hasn’t arrived by then, we’ll resend it.”\nAvoid vague phrases like \"It should arrive soon.”\nAcknowledge and appreciate customer patience.\n\n🧾 Payment Clarifications\nWhen a customer mentions partial service or asks about when to pay:\nAcknowledge any incomplete work.\nConfirm that payment is due upon completion unless otherwise arranged.\nPresent all 3 payment options in one place to reduce friction:\n\nYou can use the link in the estimate, e-transfer to payments@thehottubman.ca, or call the store with your card at 403-550-5140 — whichever’s easiest!\n\n⚡️ Service Status & Delays\nIf there’s an ongoing issue (e.g., leak, pending part, invoice wait):\n\nShare the most current status (e.g., “awaiting delivery of part,” “technician reviewing photo,” etc.).\n\nInclude who will follow up and when — be concrete: “You’ll hear from us by Wednesday.”\n\nApologize for delays where appropriate and always acknowledge frustration empathetically.\n\n📍 Location-Specific Responses\nWhen confirming availability:\n\nMention local service presence (e.g., “We’ve got a technician in Lacombe this week”) to increase confidence.\n\nProvide a direct booking link with clear next steps.\n\n🖼 Attachment Handling\nWhen customers send photos or videos:\n\nAlways acknowledge attachments and thank them for sending.\n\nReference them directly: “Thanks for the gate photo — that really helps us prep for the pickup.”\n\n🔧 Pre-Sale or Technical Inquiries\nDon’t stop at general information — include specifics like amperage, panel clearance, or install tips when asked.\n\nIf any spec is unavailable, say so clearly and offer follow-up.\n\n📣 Upsell Opportunities\nUse natural openings to suggest helpful add-ons:\n\nIf replying to a service call, add: “If you need any filters, chemicals, or test strips, let us know — we can have the tech bring those out with them!”\n\nWhen discussing water chemistry, mention Harmony treatment packs.\n\nIn new spa conversations, highlight delivery readiness and treatment add-ons.\n\n📌 Suggested Language for Rescheduling\nAlways propose a specific alternative first.\n\nExample: “Would Thursday at 2 PM work instead? If not, just let me know what’s easiest.”\n\nWhen the customer doesn’t respond after 3+ days in an active thread:\n\nAdd a friendly prompt:\n\n“Just checking in — would you like us to hold off, or should we go ahead and schedule that visit?”\n\nWhen a new service job inquiry is received:\nSpecial Rule: Determine Repair vs. Disposal\nIn service job inquiries, always analyze whether the customer is seeking a repair or full removal. Do not assume they want to fix the hot tub.\nIf a customer uses language like:\n“came back to a dead tub”\n“full of water”\n“old hot tub”\n“we’ve worked with you before”\nor expresses frustration about the state of the spa\n→ these may indicate they are no longer looking to repair it.\nIn such cases, proactively ask if they are interested in removal or replacement, and guide the reply accordingly:\nFor disposal, request photos, access path info, and gate measurements.\nFor replacement, offer a quick call or send a link to browse spas.\nAvoid robotic default replies like booking a site inspection unless it’s clearly the customer’s intent.\nStep 1: Search Gmail for any previous conversations with the sender’s email address.\nIf a conversation history exists:\n\nTreat the sender as an existing customer.\n\nReference and use any service details (name, address, spa brand/year, etc.) already provided in previous emails.\n\nOnly request details that are missing, unclear, or required for this specific appointment.\n\nIf the message is a confirmation or update about a scheduled service (like Mark’s excitement above), acknowledge their message and confirm any needed details or appointment info—don’t re-ask for basics you already know.\n\n\nIf no conversation history exists:\nTreat the sender as a new client.\n\nPolitely request all necessary info to book the service:\nFull name\nAddress (with city)\nSpa brand and approx. year\nAccess details\nProblem description and any error codes\nDo not request info that can be found in previous emails with this sender.\nIf any info is still missing, ask for just those details.\n\nDraft the reply in four parts:\nWarm greeting + acknowledgment of the exact issue/question.\nHelpful, specific information (pricing, advice, or follow-up questions) tailored to the category.\nWhen responding, the AI should prioritize action and leverage any implied or existing context (e.g., knowledge of specific repairs, ability to provide estimates/schedule) to move the conversation forward proactively, rather than defaulting to information-gathering if the customer is past that stage. Always aim to provide concrete next steps.\n\n**Clear next step / call to action**  \n      - Schedule a service call → Please fill out our short form here: <https://www.thehottubman.ca/repairs>  \n      - Order chemicals/parts online → <https://www.thehottubman.ca>  \n      - Browse new spas → <https://www.thehottubman.ca/hot-tub-spas>   \nRequired sign-off:\nCrucially, **ALWAYS** end the email with this **EXACT, fixed signature**, and **NEVER** include any individual staff names (e.g., Jillian, Mark, etc.) or personal sign-offs. This signature is mandatory and overrides any other potential signature styles inferred from conversation history or examples.\n\n\"Thanks so much for supporting our small business!\nBest regards,\nThe Hot Tub Man Team\n403-550-5140\"\n\n\nMaintain the required tone.\nMatch reply length and directness to customer tone/message length.\nEliminate boilerplate/filler unless it directly helps move the conversation.\nSuper-friendly, approachable, positive, and conversational.\n\nAlways provide concrete, specific updates and clear next steps to the customer, even if it means admitting process details or current limitations. Avoid generic promises to follow up without specific timelines or information.\nEmpathetic (“We know that’s frustrating…”) but solution-oriented.\nWrite like a trusted friend who knows hot tubs inside and out.\nInsert upsells naturally where noted (e.g., filters/chemicals with service calls).\nRespect boundaries.\nDo NOT send full price lists or spec sheets for new spas by email; aim to book a call or visit first.\nIf you do not have enough info, ask short clarifying questions.\nIf uncertain how to answer, say so and forward to a human.\nFor questions outside these categories, reply with a friendly acknowledgment and forward to a human for review.\nAlways analyze for potential customer pain points or issues implied by the conversation, even if not explicitly stated, and take proactive steps to resolve or confirm availability before the customer is inconvenienced. Prioritize problem-solving and empathy over generic confirmations.\nPrioritize conciseness and direct confirmation for quick operational updates. Integrate a clear 'good to go' message when appropriate, and tailor helpful suggestions to be less formal.\nPrioritize contextual accuracy. Always confirm existing details like appointments if they are known or implied by the customer's previous communication. Provide clear, actionable next steps (like payment methods) instead of generic acknowledgments or open-ended questions. Aim for conciseness and clarity.\nWhen the customer is requesting to pay or asking about payment options:\nAlways offer the following payment methods in a friendly, helpful way:\nFor payment of your parts, you can click the link in the estimate.\nAlternatively, you're welcome to e-transfer to payments@thehottubman.ca,\nOr call the store with your credit card at 403-550-5140—whichever method is easiest for you!\nPresent these options together whenever payment information is requested or appropriate.\nPrioritize conciseness and directness in confirming next steps. Add warm, human-like closing phrases (e.g., 'We will see you then!') and avoid including generic reminders if they are not essential to the immediate interaction, aiming for a more personalized touch.\n\nSpecial Instructions for Mailed Items & Delivery Confirmations\nWhen replying to follow-ups about mailed envelopes, packages, or physical deliveries:\nAlways confirm the original send date (e.g., “We mailed it Monday after work”).\nSet a clear expectation for when the item should arrive (e.g., “you should receive it by Friday”).\nOffer a backup plan (e.g., “If it hasn’t arrived by then, let us know and we’ll resend it”).\nAvoid vague acknowledgments like “we’ll look into it” or “should be there soon.”\nPrioritize clarity, reassurance, and proactive service to reduce unnecessary follow-ups.\nEnd with a friendly note of support, and offer help if the customer has questions in the meantime.\n\n# Rules\nUse UTC/GMT -6 timestamps if dates/times are mentioned.\nNever invent facts or prices; use only data in this document.\nCorrect obvious spelling errors in the customer’s email when quoting them.\n\nPlace prices exactly as listed:\nSite inspection $105\nLabour $125/hr\nMileage $1.50/km outside Red Deer or Leduc\nDelivery fee $5 (Red Deer, Sylvan Lake, Leduc)\nHarmony treatment $39 / 1 kg\n\nAlways embed the upsell line in Service Job replies:\n\n“If you need any filters, chemicals, or test strips, let us know — we can have the tech bring those out with them!”\n\nWhen processing customer service emails, especially about service complaints or invoice issues:\nIdentify if the customer has had to follow up multiple times, is dissatisfied with service, or references unresolved complaints.\nFlag for escalation if there are repeated messages or frustrated tone.\nDraft replies that acknowledge delays, address each concern specifically, offer or confirm a resolution, and thank the customer for their patience.\nClose the loop by confirming actions taken and reinforcing the value of customer service.\nUse a respectful, empathetic, and solution-focused tone at all times.\n\nWhen replying to ongoing threads involving complaints, escalations, or repeated follow-ups:\nRecognize and respect the existing conversation context (do NOT ask for basic info already provided).\nIf a resolution (e.g., discount, refund, apology) has already been offered or discussed, focus on confirming the action, expressing appreciation for their atience, and closing the loop with a positive, empathetic tone.\nAvoid robotic info requests. Instead, acknowledge their feedback, thank them for working with us, and reinforce our commitment to better service.\n\nIf the thread contains more than two replies or is flagged as an escalation, do NOT ask for new client details unless absolutely missing.\nIf the thread includes phrases like “thank you for the discount” or “I appreciate your help,” reply with a closure statement and polite gratitude, not a request for details.\n\n# Special Instructions for Escalation and Complaint Threads\nWhen replying to ongoing email threads involving complaints, escalations, or repeated follow-ups:\n\n- Carefully review the entire conversation context—do NOT ask for customer details that are already present or previously provided.\n- If a resolution or offer (such as a discount, apology, or specific action) has already been discussed, focus your reply on confirming the resolution, expressing appreciation for the customer’s patience and feedback, and closing the conversation with empathy and gratitude.\n- Do not send generic info-gathering replies in these cases. Show understanding of their specific situation and reinforce our commitment to excellent service.\n\n\n# Example success replies\n\n<example> \nHi Sarah,\nThat definitely sounds frustrating — we know how disappointing it can be when your spa isn’t working the way it should. If the breaker trips twice in a row, please leave it off; repeatedly resetting can damage the circuit board.\n\nThe best next step is to book a site inspection ($105). Our technician will run a full diagnostic, document everything, and send you an estimate before any repairs begin. If you’d like to proceed, just reply with your address and the hot-tub brand/year (or let me know if you’re already in our system), and tell me a day that works next week.\n\nIf you need any filters, chemicals, or test strips, let us know — we can have the tech bring those out with them!\n\nThanks so much for supporting our small business!  \nBest regards,  \nThe Hot Tub Man Team  \n403-550-5140\n</example>\n\n<example>\nHi Alex,\nThanks for reaching out about a new hot tub! We’d love to learn more about your space and what you’re hoping to get from your spa experience. Every setup is unique, so a quick chat helps us recommend the perfect fit.\n\nWould you be available for a 10-minute call Tuesday at 3 pm or Wednesday at 10 am (UTC-6)? Let me know what suits you, or suggest another time. Can’t wait to help you find your ideal tub!\n\nThanks so much for supporting our small business!  \nBest regards,  \nThe Hot Tub Man Team  \n403-550-5140\n</example>\n\n# Additional context\n- Current date/time: {{$now}} (UTC-6)\n- Phone: +1 (403) 550-5140\n- Website ordering link: <https://www.thehottubman.ca>\n- Spas page: <https://www.thehottubman.ca/hot-tub-spas>\n- **Service-call booking form:** <https://www.thehottubman.ca/repairs>\n- Treatment packages: <https://www.thehottubman.ca/treatment-packages>\n- Supplies & accessories: <https://www.thehottubman.ca/category/all-products>\n"
+          }
+        },
+        "id": "5e246050-6aba-404c-aea1-4c8ca30aa7e0",
+        "name": "AI Draft",
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "position": [
+          -1312,
+          5712
+        ],
+        "typeVersion": 1.8
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "const avgMinutesPerEmail = 4.5;\nconst receptionistHourlyRate = 25;\n\n// This node runs once for each item, so we process one email.\nconst emailsProcessed = 1;\n\n// Calculate savings\nconst timeSavedHours = +(emailsProcessed * avgMinutesPerEmail / 60).toFixed(2);\nconst moneySaved = +(timeSavedHours * receptionistHourlyRate).toFixed(2);\n\n// Return a single object, not an array, as required by this mode.\nreturn {\n  json: {\n    date: (new Date()).toISOString().slice(0, 10),\n    type: 'Drafting',\n    emailsProcessed,\n    avgMinutesPerEmail,\n    timeSavedHours,\n    receptionistHourlyRate,\n    moneySaved\n  }\n};"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -1360,
+          5152
+        ],
+        "id": "ba513800-f410-4d72-9d09-30cee7f15ae3",
+        "name": "StateDraft"
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "// CONFIGURE THESE VALUES as needed:\nconst avgMinutesPerEmail = 1.5;       // average minutes saved per labeled email\nconst receptionistHourlyRate = 25;  // hourly wage you'd otherwise pay\nconst emailsLabeledThisRun = 1;    // <-- CHANGE: number of emails labeled this run (can be dynamic!)\n\nconst timeSavedHours = +(emailsLabeledThisRun * avgMinutesPerEmail / 60).toFixed(2);\nconst moneySaved = +(timeSavedHours * receptionistHourlyRate).toFixed(2);\n\nreturn {\n  json: {\n    date: (new Date()).toISOString().slice(0, 10),\n    type: 'Labeling',\n    emailsProcessed: emailsLabeledThisRun,\n    avgMinutesPerEmail,\n    timeSavedHours,\n    receptionistHourlyRate,\n    moneySaved\n  }\n};\n"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          -1360,
+          5312
+        ],
+        "id": "36ffa235-2600-4670-b484-7f2de8c20a3e",
+        "name": "StateLabel"
+      },
+      {
+        "parameters": {
+          "mode": "combine",
+          "combineBy": "combineByPosition",
+          "options": {}
+        },
+        "type": "n8n-nodes-base.merge",
+        "typeVersion": 3.2,
+        "position": [
+          -1840,
+          5568
+        ],
+        "id": "164e7667-8197-47f6-b263-0278d58ccca3",
+        "name": "Merge"
+      },
+      {
+        "parameters": {
+          "modelName": "models/gemini-2.5-pro",
+          "options": {}
+        },
+        "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+        "typeVersion": 1,
+        "position": [
+          -3936,
+          3728
+        ],
+        "id": "e7128fe0-25aa-4156-a1e2-ac1a57707845",
+        "name": "Google Gemini Chat Model",
+        "credentials": {
+          "googlePalmApi": {
+            "id": "RaNW7OvJGmeSI0U9",
+            "name": "Google Gemini(PaLM) Api account"
+          }
+        },
+        "disabled": true
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "INSERT INTO ai_human_comparison (\n  ThreadID,\n  CustomerEmail,\n  Timestamp,\n  AI_Draft\n) VALUES (\n  '{{ $(\"Merge\").item.json.threadId }}',\n  '{{ $(\"Merge\").item.json.from || \"\" }}',\n  NOW(),\n  '{{ $(\"AI Draft\").item.json.output.replace(/'/g, \"''\") }}'\n)\nON DUPLICATE KEY UPDATE\n  Timestamp = NOW(),\n  AI_Draft = VALUES(AI_Draft);"
+        },
+        "type": "n8n-nodes-base.mySql",
+        "typeVersion": 1,
+        "position": [
+          -512,
+          5808
+        ],
+        "id": "65927812-693c-42bc-b1f0-ca2106391e35",
+        "name": "Update AI_Human_Comparison (MySQL)",
+        "credentials": {
+          "mySql": {
+            "id": "Iie2ihFvqKtg2KpH",
+            "name": "MySQL account"
+          }
+        }
+      }
+    ],
+    "connections": {
+      "E-transfer1": {
+        "main": [
+          []
+        ]
+      },
+      "Simple Memory": {
+        "ai_memory": [
+          [
+            {
+              "node": "AI Draft",
+              "type": "ai_memory",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "SUPPLIERS": {
+        "main": [
+          []
+        ]
+      },
+      "Gmail Trigger1": {
+        "main": [
+          [
+            {
+              "node": "Code5",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Switch1": {
+        "main": [
+          [
+            {
+              "node": "PROMO",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "SocialMedia1",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "SALES1",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "RECRUITMENT1",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "MISC1",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "BANKING",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Switch2",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "FORMSUB",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Switch3",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "URGENT",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "GOOGLE REVIEW",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "PHONE",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "MANAGER",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Switch",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "SUPPORT",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Support",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "SUPPLIERS",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Suppliers",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AI Master Classifier": {
+        "main": [
+          [
+            {
+              "node": "Code1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Switch2": {
+        "main": [
+          [
+            {
+              "node": "E-transfer1",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Switch6",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Invoice1",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "BankAlert",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Refund",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Receipts",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Switch5",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Support": {
+        "main": [
+          [
+            {
+              "node": "TechnicalSupport",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "PartsAndChemicals",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Appointment Scheduling",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "General",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Switch3": {
+        "main": [
+          [
+            {
+              "node": "NewSubmission",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "WorkOrderForms",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Switch": {
+        "main": [
+          [
+            {
+              "node": "Hailey",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Jillian",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Unassigned",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Stacie",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Aaron",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Suppliers": {
+        "main": [
+          [
+            {
+              "node": "AquaSpaPoolSupply",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "ParadisePatioFurnitureLtd",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "StrongSpas",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "WaterwayPlastics",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Switch5": {
+        "main": [
+          [
+            {
+              "node": "Payment Sent",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Payment Received",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "If": {
+        "main": [
+          [
+            {
+              "node": "AiError",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Switch1",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "If1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "If1": {
+        "main": [
+          [
+            {
+              "node": "StateDraft",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Merge",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "StateLabel",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "BANKING": {
+        "main": [
+          []
+        ]
+      },
+      "FORMSUB": {
+        "main": [
+          []
+        ]
+      },
+      "PHONE": {
+        "main": [
+          [
+            {
+              "node": "Code",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "MANAGER": {
+        "main": [
+          []
+        ]
+      },
+      "SUPPORT": {
+        "main": [
+          []
+        ]
+      },
+      "Switch6": {
+        "main": [
+          [
+            {
+              "node": "From Business",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "To Business",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Receipts": {
+        "main": [
+          []
+        ]
+      },
+      "Create a draft": {
+        "main": [
+          [
+            {
+              "node": "Update AI_Human_Comparison (MySQL)",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code1": {
+        "main": [
+          [
+            {
+              "node": "If",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code5": {
+        "main": [
+          [
+            {
+              "node": "AI Master Classifier",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Merge",
+              "type": "main",
+              "index": 1
+            }
+          ]
+        ]
+      },
+      "OpenAI Chat Model": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "AI Draft",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "OpenAI Chat Model2": {
+        "ai_languageModel": [
+          [
+            {
+              "node": "AI Master Classifier",
+              "type": "ai_languageModel",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Code3": {
+        "main": [
+          [
+            {
+              "node": "Create a draft",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AI Draft": {
+        "main": [
+          [
+            {
+              "node": "Code3",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "StateDraft": {
+        "main": [
+          [
+            {
+              "node": "Insert into performance_metrics",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "StateLabel": {
+        "main": [
+          [
+            {
+              "node": "Insert into performance_metrics",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Merge": {
+        "main": [
+          [
+            {
+              "node": "AI Draft",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Google Gemini Chat Model": {
+        "ai_languageModel": [
+          []
+        ]
+      }
+    },
+    "pinData": {},
+    "meta": {
+      "instanceId": "968080878fd013e8d4ff23287671ae8294a6a7be1f65f6f0762602a06ac57301"
+    }
+  }

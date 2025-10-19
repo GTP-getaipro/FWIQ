@@ -1,0 +1,164 @@
+{
+  "$extends": "base.ai.schema.json",
+  "businessType": "Roofing Contractor",
+  "schemaVersion": "1.3.0",
+  "lastUpdated": "2025-01-05",
+  "author": "Floworx Automation Core",
+  "description": "AI schema for roofing contractor businesses with specialized labels, keywords, and tone for roof-related services.",
+
+  "inheritance": {
+    "allowOverride": [
+      "labels",
+      "keywords",
+      "toneProfile",
+      "intentRouting",
+      "dynamicVariables"
+    ],
+    "requiredKeys": ["businessType", "intentRouting", "labels"]
+  },
+
+  "toneProfile": {
+    "default": "Reassuring and professional",
+    "urgent": "Direct and weather-related",
+    "sales": "Consultative and weather-aware",
+    "support": "Understanding of weather concerns",
+    "financial": "Formal and precise"
+  },
+
+  "keywords": {
+    "urgent": ["leak", "storm", "hail", "wind", "damage", "emergency", "urgent", "asap"],
+    "sales": ["quote", "estimate", "inspection", "consultation", "pricing", "appointment", "roofing"],
+    "service": ["roof", "shingle", "gutter", "flashing", "ventilation", "repair", "installation", "maintenance"],
+    "support": ["warranty", "claim", "insurance", "help", "issue", "problem"],
+    "banking": ["invoice", "payment", "refund", "insurance", "claim", "deductible"],
+    "review": ["review", "feedback", "rating", "google", "testimonial", "roofing"]
+  },
+
+  "labels": [
+    {
+      "name": "INSURANCE",
+      "intent": "ai.claim_management",
+      "critical": true,
+      "color": {
+        "backgroundColor": "#a479e2",
+        "textColor": "#ffffff"
+      },
+      "n8nEnvVar": "INSURANCE_LABEL_ID",
+      "sub": [
+        { "name": "Claims" },
+        { "name": "Pending Review" },
+        { "name": "Approved" },
+        { "name": "Denied" }
+      ]
+    },
+    {
+      "name": "STORM DAMAGE",
+      "intent": "ai.emergency_request",
+      "critical": true,
+      "color": {
+        "backgroundColor": "#ff6b6b",
+        "textColor": "#ffffff"
+      },
+      "n8nEnvVar": "STORM_DAMAGE_LABEL_ID",
+      "sub": [
+        { "name": "Hail Damage" },
+        { "name": "Wind Damage" },
+        { "name": "Water Damage" },
+        { "name": "Tree Damage" }
+      ]
+    },
+    {
+      "name": "INSPECTIONS",
+      "intent": "ai.service_request",
+      "color": {
+        "backgroundColor": "#4ecdc4",
+        "textColor": "#ffffff"
+      },
+      "n8nEnvVar": "INSPECTIONS_LABEL_ID",
+      "sub": [
+        { "name": "Pre-Purchase" },
+        { "name": "Insurance" },
+        { "name": "Maintenance" },
+        { "name": "Warranty" }
+      ]
+    },
+    {
+      "name": "MATERIALS",
+      "intent": "ai.vendor_communication",
+      "color": {
+        "backgroundColor": "#45b7d1",
+        "textColor": "#ffffff"
+      },
+      "n8nEnvVar": "MATERIALS_LABEL_ID",
+      "sub": [
+        { "name": "Shingles" },
+        { "name": "Underlayment" },
+        { "name": "Flashing" },
+        { "name": "Ventilation" }
+      ]
+    },
+    {
+      "name": "WARRANTY",
+      "intent": "ai.support_ticket",
+      "color": {
+        "backgroundColor": "#96ceb4",
+        "textColor": "#ffffff"
+      },
+      "n8nEnvVar": "WARRANTY_LABEL_ID",
+      "sub": [
+        { "name": "Workmanship" },
+        { "name": "Material" },
+        { "name": "Extended" },
+        { "name": "Transfer" }
+      ]
+    }
+  ],
+
+  "dynamicVariables": {
+    "managers": [
+      "{{Project Manager}}",
+      "{{Sales Manager}}",
+      "{{Operations Manager}}",
+      "{{Customer Service Manager}}",
+      "{{Insurance Specialist}}"
+    ],
+    "suppliers": [
+      "{{Shingle Supplier}}",
+      "{{Gutter Supplier}}",
+      "{{Flashing Supplier}}",
+      "{{Ventilation Supplier}}",
+      "{{Underlayment Supplier}}",
+      "{{Tools Supplier}}",
+      "{{Safety Equipment Supplier}}",
+      "{{Insurance Adjuster}}",
+      "{{Permit Service}}",
+      "{{Dumpster Rental}}"
+    ]
+  },
+
+  "escalationRules": {
+    "storm_damage": {
+      "threshold": "5m",
+      "notify": ["project_manager", "insurance_specialist"],
+      "sla": "10m",
+      "autoReply": true
+    },
+    "insurance_claim": {
+      "threshold": "15m",
+      "notify": ["insurance_specialist", "project_manager"],
+      "sla": "30m",
+      "autoReply": true
+    },
+    "urgent_leak": {
+      "threshold": "5m",
+      "notify": ["project_manager", "emergency_crew"],
+      "sla": "15m",
+      "autoReply": true
+    }
+  },
+
+  "aiConfiguration": {
+    "systemMessage": "You are an expert email processing and routing system for {{$env.BUSINESS_NAME}}, a professional roofing contractor. You understand roofing terminology, weather-related concerns, insurance claims, and emergency situations.",
+    "replyPrompt": "Draft a professional, reassuring reply for {{$env.BUSINESS_NAME}} roofing contractor. Consider weather concerns, insurance implications, and emergency situations."
+  }
+}

@@ -1,0 +1,648 @@
+{
+  "businessType": "Electrician",
+  "meta": {
+    "schemaVersion": "v3.0",
+    "industry": "Electrical Services",
+    "author": "Floworx AI System",
+    "lastUpdated": "2025-10-12T00:00:00Z",
+    "enhancedClassification": true
+  },
+  "description": "Enhanced label schema for electrical contractors with AI classification keywords",
+  
+  "labels": [
+    {
+      "name": "URGENT",
+      "intent": "ai.emergency_request",
+      "critical": true,
+      "color": {
+        "backgroundColor": "#fb4c2f",
+        "textColor": "#ffffff"
+      },
+      "description": "Electrical emergencies requiring immediate attention",
+      
+      "classificationRules": {
+        "keywords": {
+          "primary": ["urgent", "emergency", "ASAP", "immediately", "critical", "help"],
+          "electrical": ["spark", "sparking", "shock", "shocked", "fire", "smoke", "burning"],
+          "power": ["no power", "power out", "power outage", "blackout", "lost power", "dead"],
+          "safety": ["hazard", "danger", "dangerous", "unsafe", "life-threatening"],
+          "equipment": ["breaker", "tripping", "panel", "circuit", "not working", "failed"],
+          "negative": ["broken", "faulty", "won't work", "stopped working", "keeps tripping"]
+        },
+        
+        "patterns": [
+          "(no power|power out|power outage) + (in|to|at) + (house|building|property|home|office)",
+          "(spark|sparking|shocked) + (from|at|by) + (outlet|panel|wire|switch|breaker)",
+          "breaker + (keeps|won't|not) + (tripping|stay on|work|reset)",
+          "(smell|smelling|smells like) + (burning|smoke|electrical|wire)",
+          "(urgent|emergency|ASAP) + (electrical|electrician|repair|help)"
+        ],
+        
+        "examples": [
+          "URGENT: Sparking outlet in kitchen!",
+          "No power in half the house since this morning",
+          "Breaker keeps tripping every few minutes",
+          "I smell burning coming from my electrical panel",
+          "Got shocked by light switch - need help ASAP",
+          "Panel is smoking and sparking!"
+        ]
+      },
+      
+      "sub": [
+        {
+          "name": "No Power",
+          "description": "Complete power loss or outage in building/area",
+          "keywords": ["no power", "power out", "power outage", "blackout", "lost power", "dead", "no electricity"],
+          "patterns": [
+            "no power + in + (house|building|room|property|home)",
+            "power + (out|outage|loss) + in",
+            "lost + (power|electricity)"
+          ],
+          "examples": [
+            "No power in half the house",
+            "Power outage affecting my office",
+            "Lost power to entire building"
+          ]
+        },
+        {
+          "name": "Electrical Hazard",
+          "description": "Active electrical hazards like sparking, smoking, or shocking",
+          "keywords": ["spark", "sparking", "shock", "shocked", "shocking", "hazard", "danger", "dangerous"],
+          "patterns": [
+            "(spark|sparking|shocked) + from + (outlet|panel|wire|switch)",
+            "electrical + (hazard|danger|problem)"
+          ],
+          "examples": [
+            "Sparking outlet in bedroom",
+            "Got shocked by bathroom outlet",
+            "Dangerous electrical situation"
+          ]
+        },
+        {
+          "name": "Sparking/Smoking",
+          "description": "Fire hazards with sparks, smoke, or burning smell",
+          "keywords": ["spark", "sparking", "smoke", "smoking", "burning smell", "fire", "flames", "smoldering"],
+          "patterns": [
+            "(smell|smelling|smells) + (burning|smoke|electrical)",
+            "(panel|outlet|wire|switch) + (smoking|sparking|on fire)"
+          ],
+          "examples": [
+            "Panel is sparking and smoking",
+            "Smell burning from electrical outlet",
+            "Outlet smoking in garage"
+          ]
+        },
+        {
+          "name": "Breaker Issues",
+          "description": "Circuit breaker problems - tripping, not staying on",
+          "keywords": ["breaker", "tripping", "trips", "won't stay on", "keeps shutting off", "circuit breaker", "keeps tripping"],
+          "patterns": [
+            "breaker + (keeps|won't|not|constantly) + (tripping|stay on|work|reset)",
+            "circuit + breaker + (trips|tripping|problem|issue)"
+          ],
+          "examples": [
+            "Breaker keeps tripping every hour",
+            "Circuit breaker won't stay on",
+            "Main breaker constantly tripping"
+          ]
+        }
+      ]
+    },
+    
+    {
+      "name": "PERMITS",
+      "intent": "ai.permit_inquiry",
+      "critical": false,
+      "color": {
+        "backgroundColor": "#4a86e8",
+        "textColor": "#ffffff"
+      },
+      "description": "Electrical permits, inspections, and code compliance",
+      
+      "classificationRules": {
+        "keywords": {
+          "primary": ["permit", "permits", "permitting", "inspection", "inspector", "code"],
+          "regulatory": ["ESA", "electrical code", "building code", "NEC", "CEC", "code compliance"],
+          "process": ["application", "approval", "approved", "rejected", "pending", "scheduled"],
+          "inspection": ["inspect", "inspection", "inspector", "final inspection"]
+        },
+        
+        "patterns": [
+          "(permit|permits) + (for|required|needed|application)",
+          "(code|electrical code) + (compliance|requirement|violation)",
+          "(inspection|inspector) + (scheduled|coming|tomorrow|today)"
+        ],
+        
+        "examples": [
+          "Do I need a permit for panel upgrade?",
+          "When will the electrical inspection happen?",
+          "ESA inspection scheduled for tomorrow",
+          "Permit application status update",
+          "Code compliance requirements for new install"
+        ]
+      },
+      
+      "sub": [
+        {
+          "name": "Permit Applications",
+          "description": "New permit applications and submissions",
+          "keywords": ["permit application", "apply for permit", "permit needed", "permit required", "submit permit"],
+          "patterns": [
+            "(apply|applying|submit) + (for|permit) + permit",
+            "need + (permit|permits) + for"
+          ],
+          "examples": [
+            "Need to apply for electrical permit",
+            "Permit application for panel upgrade",
+            "Submitting permit for new service"
+          ]
+        },
+        {
+          "name": "Inspections",
+          "description": "Electrical inspections and inspector visits",
+          "keywords": ["inspection", "inspector", "inspect", "electrical inspection", "ESA inspection", "final inspection"],
+          "patterns": [
+            "(inspection|inspector) + (scheduled|coming|tomorrow|today)",
+            "(pass|passed|failed) + inspection"
+          ],
+          "examples": [
+            "Inspection scheduled for Friday",
+            "Inspector is coming tomorrow morning",
+            "Did we pass the electrical inspection?"
+          ]
+        },
+        {
+          "name": "Code Compliance",
+          "description": "Electrical code requirements and violations",
+          "keywords": ["code", "compliance", "electrical code", "NEC", "CEC", "building code", "violation", "code requirement"],
+          "patterns": [
+            "(code|electrical code) + (compliance|requirement|violation)",
+            "bring + (up to|to) + code"
+          ],
+          "examples": [
+            "Need to meet code requirements",
+            "Code compliance check for renovation",
+            "Bring electrical up to current code"
+          ]
+        }
+      ]
+    },
+    
+    {
+      "name": "INSTALLATIONS",
+      "intent": "ai.installation_request",
+      "critical": false,
+      "color": {
+        "backgroundColor": "#16a766",
+        "textColor": "#ffffff"
+      },
+      "description": "New electrical installations and upgrades",
+      
+      "classificationRules": {
+        "keywords": {
+          "primary": ["install", "installation", "new", "add", "upgrade", "replace"],
+          "electrical": ["panel upgrade", "EV charger", "generator", "outlet", "switch", "lighting", "circuit"],
+          "action": ["install", "add", "upgrade", "replace", "new", "put in"],
+          "equipment": ["panel", "breaker", "outlet", "switch", "light", "fixture", "charger", "generator"]
+        },
+        
+        "patterns": [
+          "(install|add|put in) + (new|another|additional) + (outlet|switch|fixture|light)",
+          "(upgrade|replace) + (panel|service|electrical|breaker)",
+          "EV + charger + (install|installation|quote)",
+          "(generator|backup power) + (install|installation)"
+        ],
+        
+        "examples": [
+          "Install EV charger in garage",
+          "Panel upgrade to 200 amp service",
+          "Add outlets in basement renovation",
+          "Generator installation estimate",
+          "Replace old electrical panel",
+          "Install recessed lighting in kitchen"
+        ]
+      },
+      
+      "sub": [
+        {
+          "name": "Panel Upgrades",
+          "description": "Electrical panel and service upgrades",
+          "keywords": ["panel upgrade", "service upgrade", "200 amp", "upgrade panel", "electrical panel", "main panel", "sub panel"],
+          "patterns": [
+            "(upgrade|replace) + (panel|service|electrical service)",
+            "(100|200) + amp + (upgrade|panel|service)"
+          ],
+          "examples": [
+            "Need 200 amp panel upgrade",
+            "Upgrade electrical service from 100 to 200 amp",
+            "Replace old fuse panel with breaker panel"
+          ]
+        },
+        {
+          "name": "EV Chargers",
+          "description": "Electric vehicle charging station installations",
+          "keywords": ["EV charger", "electric vehicle", "Tesla", "charging station", "car charger", "vehicle charger", "level 2 charger"],
+          "patterns": [
+            "(EV|electric vehicle|Tesla) + charger + (install|installation)",
+            "(install|add) + charging station"
+          ],
+          "examples": [
+            "Install Tesla charger in garage",
+            "EV charging station quote",
+            "Level 2 charger installation for electric car"
+          ]
+        },
+        {
+          "name": "Generator Install",
+          "description": "Backup generator and standby power installations",
+          "keywords": ["generator", "standby generator", "backup power", "Generac", "backup generator", "whole house generator"],
+          "patterns": [
+            "(generator|backup power) + (install|installation)",
+            "(Generac|standby|whole house) + generator"
+          ],
+          "examples": [
+            "Install Generac whole house generator",
+            "Backup generator installation quote",
+            "Standby power system for home"
+          ]
+        },
+        {
+          "name": "Lighting",
+          "description": "Light fixture and lighting system installations",
+          "keywords": ["lighting", "lights", "light fixture", "LED", "recessed lights", "outdoor lighting", "pot lights", "chandelier"],
+          "patterns": [
+            "(install|add) + (lighting|lights|fixtures)",
+            "(recessed|pot|LED) + lights + (install|installation)"
+          ],
+          "examples": [
+            "Install recessed lighting in living room",
+            "LED light fixture upgrade",
+            "Outdoor lighting installation for patio"
+          ]
+        }
+      ]
+    },
+    
+    {
+      "name": "SALES",
+      "intent": "ai.sales_inquiry",
+      "critical": false,
+      "color": {
+        "backgroundColor": "#16a766",
+        "textColor": "#ffffff"
+      },
+      "description": "Sales inquiries, quotes, and estimates",
+      
+      "classificationRules": {
+        "keywords": {
+          "primary": ["quote", "estimate", "price", "cost", "how much", "pricing"],
+          "inquiry": ["interested in", "looking for", "want to", "need", "can you"],
+          "sales": ["quote", "estimate", "proposal", "pricing", "cost", "rate"]
+        },
+        
+        "patterns": [
+          "(quote|estimate|price) + for + (electrical|panel|install|repair)",
+          "how much + (does it cost|would it cost|to)",
+          "(interested in|looking for) + (electrical|service)"
+        ],
+        
+        "examples": [
+          "How much for panel upgrade quote?",
+          "Looking for estimate on EV charger install",
+          "Can you provide pricing for new outlets?",
+          "Interested in generator installation"
+        ]
+      },
+      
+      "sub": []
+    },
+    
+    {
+      "name": "SUPPORT",
+      "intent": "ai.support_ticket",
+      "critical": false,
+      "color": {
+        "backgroundColor": "#4a86e8",
+        "textColor": "#ffffff"
+      },
+      "description": "Technical support and non-emergency service requests",
+      
+      "classificationRules": {
+        "keywords": {
+          "primary": ["support", "help", "question", "issue", "problem", "not working"],
+          "technical": ["troubleshoot", "diagnose", "check", "look at", "fix"],
+          "scheduling": ["appointment", "schedule", "when can you", "availability"]
+        },
+        
+        "patterns": [
+          "(can you|could you) + (help|check|look at)",
+          "(schedule|book) + (appointment|service|visit)",
+          "question + about + (electrical|service|repair)"
+        ],
+        
+        "examples": [
+          "Can you help diagnose this issue?",
+          "Question about my electrical system",
+          "Need to schedule service appointment",
+          "Lights flickering in one room"
+        ]
+      },
+      
+      "sub": []
+    },
+    
+    {
+      "name": "BANKING",
+      "intent": "ai.financial_transaction",
+      "critical": true,
+      "color": {
+        "backgroundColor": "#16a766",
+        "textColor": "#ffffff"
+      },
+      "description": "Financial transactions, invoices, and payments",
+      
+      "classificationRules": {
+        "keywords": {
+          "primary": ["invoice", "payment", "paid", "receipt", "refund", "bill"],
+          "etransfer": ["interac", "e-transfer", "you received", "you sent", "funds deposited"],
+          "invoice": ["invoice", "bill", "payment due", "amount owing", "invoice attached"],
+          "alert": ["bank alert", "security alert", "fraud", "suspicious", "verification code"],
+          "refund": ["refund", "money returned", "credit to your account", "refunded"],
+          "receipts": ["receipt", "order confirmation", "payment summary", "you've been charged"]
+        },
+        
+        "patterns": [
+          "(you received|you sent) + (interac|e-transfer)",
+          "(invoice|bill) + (number|attached|payment due)",
+          "(security|fraud|verification) + (alert|code|warning)",
+          "(refund|credit) + (issued|processed|to your account)",
+          "(receipt|payment) + (confirmation|summary|completed)"
+        ],
+        
+        "examples": [
+          "You received an Interac e-Transfer",
+          "Invoice #12345 attached - payment due",
+          "Bank security alert: verification code",
+          "Refund processed to your account",
+          "Receipt for completed payment"
+        ]
+      },
+      
+      "sub": [
+        {
+          "name": "e-transfer",
+          "description": "Interac e-Transfers confirming completed payments",
+          "keywords": ["interac", "e-transfer", "you received", "you sent", "payment received", "funds deposited"],
+          "patterns": [
+            "(you received|you sent) + (interac|e-transfer)",
+            "(funds|payment) + (deposited|received|sent)"
+          ],
+          "tertiary": [
+            {
+              "name": "FromBusiness",
+              "description": "Payments sent by the business to vendors/suppliers",
+              "keywords": ["you sent", "payment completed", "transfer to", "funds sent", "amount paid"],
+              "examples": ["You sent an e-Transfer to ABC Supply", "Payment completed - $500 sent"]
+            },
+            {
+              "name": "ToBusiness",
+              "description": "Payments received by the business from customers",
+              "keywords": ["you received", "funds deposited", "payment received", "deposit completed", "you've received"],
+              "examples": ["You received an e-Transfer from John Smith", "Funds deposited to your account"]
+            }
+          ]
+        },
+        {
+          "name": "invoice",
+          "description": "Invoices and billing statements",
+          "keywords": ["invoice", "bill", "payment due", "amount owing", "invoice attached", "statement"],
+          "patterns": [
+            "(invoice|bill) + (number|attached|due)",
+            "payment + due + (date|by)"
+          ],
+          "specialRules": [
+            {
+              "name": "Exclude Internal Invoices",
+              "pattern": "Re: Your Invoice from {{businessInfo.name}}",
+              "action": "Skip - internal invoice sent to customer"
+            }
+          ]
+        },
+        {
+          "name": "bank-alert",
+          "description": "Bank security alerts and notifications",
+          "keywords": ["bank alert", "security alert", "fraud", "suspicious activity", "verification code", "password reset"],
+          "patterns": [
+            "(security|fraud) + (alert|warning|detected)",
+            "(verification|OTP) + code",
+            "(password|PIN) + (reset|changed)"
+          ]
+        },
+        {
+          "name": "refund",
+          "description": "Refund notifications",
+          "keywords": ["refund", "money returned", "credit to your account", "refunded", "reversal"],
+          "patterns": [
+            "refund + (issued|processed|completed)",
+            "(money|funds) + returned"
+          ]
+        },
+        {
+          "name": "receipts",
+          "description": "Payment receipts and confirmations",
+          "keywords": ["receipt", "order confirmation", "payment summary", "transaction details", "you've been charged"],
+          "patterns": [
+            "(receipt|confirmation) + (number|for|attached)",
+            "(payment|transaction) + (completed|successful|confirmed)"
+          ],
+          "tertiary": [
+            {
+              "name": "PaymentSent",
+              "description": "Business sent payment to vendor",
+              "keywords": ["you paid", "payment completed", "amount paid", "charged your", "you've been charged"],
+              "examples": ["You paid invoice #123 - $500 charged", "Payment completed to Home Depot"]
+            },
+            {
+              "name": "PaymentReceived",
+              "description": "Business received payment from customer",
+              "keywords": ["payment received", "customer paid", "order confirmed", "thank you for your payment"],
+              "examples": ["Payment received from customer - $1200", "Thank you for your payment"]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  
+  "commonLabels": [
+    {
+      "name": "FORMSUB",
+      "intent": "ai.form_submission",
+      "description": "Website form submissions",
+      "sub": [
+        {"name": "NewSubmission", "description": "Standard website contact forms"},
+        {"name": "WorkOrderForms", "description": "Completed work order forms"}
+      ]
+    },
+    {
+      "name": "PHONE",
+      "intent": "ai.phone_communication",
+      "description": "Phone, voicemail, and SMS notifications",
+      "sub": [
+        {"name": "MissedCalls"},
+        {"name": "Voicemails"},
+        {"name": "SMS"}
+      ]
+    },
+    {
+      "name": "GOOGLE REVIEW",
+      "intent": "ai.customer_feedback",
+      "description": "Google Review notifications"
+    },
+    {
+      "name": "MANAGER",
+      "intent": "ai.internal_routing",
+      "sub": [
+        {"name": "{{Manager1}}", "keywords": []},
+        {"name": "{{Manager2}}", "keywords": []},
+        {"name": "{{Manager3}}", "keywords": []},
+        {"name": "Unassigned", "keywords": ["verification code", "security alert", "system notification"]}
+      ]
+    },
+    {
+      "name": "SUPPLIERS",
+      "intent": "ai.vendor_communication",
+      "sub": [
+        {"name": "{{Supplier1}}", "keywords": []},
+        {"name": "{{Supplier2}}", "keywords": []}
+      ]
+    },
+    {
+      "name": "PROMO",
+      "intent": "ai.marketing",
+      "description": "Marketing campaigns and promotions"
+    },
+    {
+      "name": "RECRUITMENT",
+      "intent": "ai.hr",
+      "description": "Job applications and hiring"
+    },
+    {
+      "name": "SOCIALMEDIA",
+      "intent": "ai.social_engagement",
+      "description": "Social media notifications and DMs"
+    },
+    {
+      "name": "MISC",
+      "intent": "ai.general",
+      "description": "Unclassifiable emails - use as last resort"
+    }
+  ],
+  
+  "specialRules": [
+    {
+      "name": "FormSub Urgent Override",
+      "description": "Form submissions with urgent keywords must be classified as URGENT",
+      "trigger": {
+        "primary_category": "FORMSUB",
+        "keywords_in_body": ["broken", "not working", "leaking", "won't start", "no power", "error code", "sparking", "shock"]
+      },
+      "action": {
+        "override_primary": "URGENT",
+        "reason": "Form contains emergency electrical issue"
+      },
+      "priority": "critical"
+    },
+    {
+      "name": "Phone Provider Detection",
+      "description": "Only classify as PHONE if from phone service provider",
+      "trigger": {
+        "sender_email_exact": ["service@ringcentral.com", "noreply@phone.com", "voicemail@"]
+      },
+      "action": {
+        "force_primary": "PHONE"
+      },
+      "priority": "high"
+    },
+    {
+      "name": "Internal Email Detection",
+      "description": "Never auto-reply to internal company emails",
+      "trigger": {
+        "sender_domain": "@{{businessInfo.emailDomain}}"
+      },
+      "action": {
+        "force_ai_can_reply": false,
+        "route_to": "MANAGER"
+      },
+      "priority": "critical"
+    },
+    {
+      "name": "Emergency Service Provider Emails",
+      "description": "Emails from specific emergency providers",
+      "trigger": {
+        "sender_contains": ["alerts@servicetitan.com", "emergency@", "noreply@reports.connecteam.com"]
+      },
+      "action": {
+        "force_primary": "URGENT",
+        "increase_priority": true
+      },
+      "priority": "high"
+    }
+  ],
+  
+  "autoReplyRules": {
+    "enabled": true,
+    "minConfidence": 0.75,
+    "enabledCategories": ["Support", "Sales", "Urgent"],
+    "conditions": [
+      {
+        "rule": "primary_category in [Support, Sales, Urgent] AND confidence >= 0.75 AND NOT internal_email",
+        "result": "ai_can_reply: true"
+      },
+      {
+        "rule": "sender_domain matches @{{businessInfo.emailDomain}}",
+        "result": "ai_can_reply: false"
+      },
+      {
+        "rule": "primary_category in [Banking, Manager, Suppliers, Phone]",
+        "result": "ai_can_reply: false"
+      }
+    ]
+  },
+  
+  "domainDetection": {
+    "suppliers": [
+      {
+        "name": "{{Supplier1}}",
+        "domains": ["{{Supplier1Domain}}"],
+        "keywords": [],
+        "route_to": "SUPPLIERS/{{Supplier1}}"
+      },
+      {
+        "name": "{{Supplier2}}",
+        "domains": ["{{Supplier2Domain}}"],
+        "keywords": [],
+        "route_to": "SUPPLIERS/{{Supplier2}}"
+      }
+    ],
+    "phoneProviders": [
+      {
+        "provider": "RingCentral",
+        "email": "service@ringcentral.com",
+        "route_to": "PHONE"
+      }
+    ],
+    "internalDomains": ["@{{businessInfo.emailDomain}}"]
+  },
+  
+  "dynamicVariables": {
+    "managers": ["{{Manager1}}", "{{Manager2}}", "{{Manager3}}"],
+    "suppliers": ["{{Supplier1}}", "{{Supplier2}}"]
+  },
+  
+  "validation": {
+    "requiredFields": ["name", "intent", "classificationRules"],
+    "keywordValidation": true,
+    "specialRulesValidation": true
+  }
+}

@@ -1,0 +1,167 @@
+{
+  "meta": {
+    "schemaVersion": "v2.0",
+    "industry": "Example Industry",
+    "author": "AI Config Generator",
+    "lastUpdated": "2025-10-05T00:00:00Z"
+  },
+
+  "description": "Universal label configuration schema for Gmail/Outlook integrations. Supports dynamic placeholders for managers and suppliers.",
+
+  "dynamicVariables": {
+    "managers": [
+      "{{Manager1}}",
+      "{{Manager2}}",
+      "{{Manager3}}",
+      "{{Manager4}}",
+      "{{Manager5}}"
+    ],
+    "suppliers": [
+      "{{Supplier1}}",
+      "{{Supplier2}}",
+      "{{Supplier3}}",
+      "{{Supplier4}}",
+      "{{Supplier5}}",
+      "{{Supplier6}}",
+      "{{Supplier7}}",
+      "{{Supplier8}}",
+      "{{Supplier9}}",
+      "{{Supplier10}}"
+    ]
+  },
+
+  "rootOrder": [
+    "BANKING",
+    "FORMSUB",
+    "GOOGLE REVIEW",
+    "MANAGER",
+    "SALES",
+    "SUPPLIERS",
+    "SUPPORT",
+    "URGENT",
+    "MISC",
+    "PHONE",
+    "PROMO",
+    "RECRUITMENT",
+    "SOCIALMEDIA"
+  ],
+
+  "labels": [
+    {
+      "name": "BANKING",
+      "intent": "ai.financial_transaction",
+      "critical": true,
+      "color": { "backgroundColor": "#16a766", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "BankAlert" },
+        { "name": "e-Transfer", "sub": [{ "name": "From Business" }, { "name": "To Business" }] },
+        { "name": "Invoice" },
+        { "name": "Receipts", "sub": [{ "name": "Payment Received" }, { "name": "Payment Sent" }] },
+        { "name": "Refund" }
+      ]
+    },
+    {
+      "name": "FORMSUB",
+      "intent": "ai.form_submission",
+      "color": { "backgroundColor": "#0b804b", "textColor": "#ffffff" },
+      "sub": [{ "name": "New Submission" }, { "name": "Work Order Forms" }]
+    },
+    {
+      "name": "GOOGLE REVIEW",
+      "intent": "ai.customer_feedback",
+      "color": { "backgroundColor": "#4285f4", "textColor": "#ffffff" },
+      "sub": [{ "name": "New Review" }, { "name": "Response Needed" }, { "name": "Resolved" }]
+    },
+    {
+      "name": "MANAGER",
+      "intent": "ai.internal_routing",
+      "color": { "backgroundColor": "#ffad47", "textColor": "#000000" },
+      "sub": [
+        { "name": "Unassigned" },
+        { "name": "Escalations" },
+        { "name": "{{Manager1}}" },
+        { "name": "{{Manager2}}" },
+        { "name": "{{Manager3}}" },
+        { "name": "{{Manager4}}" },
+        { "name": "{{Manager5}}" }
+      ]
+    },
+    {
+      "name": "SALES",
+      "intent": "ai.sales_inquiry",
+      "color": { "backgroundColor": "#16a766", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "Quotes" },
+        { "name": "New Leads" },
+        { "name": "Follow-ups" },
+        { "name": "Closed Won" },
+        { "name": "Closed Lost" }
+      ]
+    },
+    {
+      "name": "SUPPLIERS",
+      "intent": "ai.vendor_communication",
+      "color": { "backgroundColor": "#ffad47", "textColor": "#000000" },
+      "sub": [
+        { "name": "{{Supplier1}}" },
+        { "name": "{{Supplier2}}" },
+        { "name": "{{Supplier3}}" },
+        { "name": "{{Supplier4}}" },
+        { "name": "{{Supplier5}}" },
+        { "name": "{{Supplier6}}" },
+        { "name": "{{Supplier7}}" },
+        { "name": "{{Supplier8}}" },
+        { "name": "{{Supplier9}}" },
+        { "name": "{{Supplier10}}" }
+      ]
+    },
+    {
+      "name": "SUPPORT",
+      "intent": "ai.support_ticket",
+      "color": { "backgroundColor": "#4a86e8", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "Appointment Scheduling" },
+        { "name": "General" },
+        { "name": "Parts And Materials" },
+        { "name": "Technical Support" }
+      ]
+    },
+    {
+      "name": "URGENT",
+      "intent": "ai.emergency_request",
+      "critical": true,
+      "color": { "backgroundColor": "#fb4c2f", "textColor": "#ffffff" },
+      "sub": [{ "name": "Emergency" }, { "name": "Safety" }, { "name": "Power Outage" }]
+    },
+    {
+      "name": "MISC",
+      "intent": "ai.general",
+      "color": { "backgroundColor": "#999999", "textColor": "#ffffff" },
+      "sub": [{ "name": "General" }, { "name": "Archive" }]
+    },
+    {
+      "name": "PHONE",
+      "intent": "ai.call_log",
+      "color": { "backgroundColor": "#795548", "textColor": "#ffffff" },
+      "sub": [{ "name": "Missed Calls" }, { "name": "Call Backs" }, { "name": "Voicemails" }]
+    },
+    {
+      "name": "PROMO",
+      "intent": "ai.marketing",
+      "color": { "backgroundColor": "#9c27b0", "textColor": "#ffffff" },
+      "sub": [{ "name": "Email Campaigns" }, { "name": "Seasonal Offers" }, { "name": "Newsletters" }]
+    },
+    {
+      "name": "RECRUITMENT",
+      "intent": "ai.hr",
+      "color": { "backgroundColor": "#607d8b", "textColor": "#ffffff" },
+      "sub": [{ "name": "Applications" }, { "name": "Interviews" }, { "name": "New Hires" }]
+    },
+    {
+      "name": "SOCIALMEDIA",
+      "intent": "ai.social_engagement",
+      "color": { "backgroundColor": "#e91e63", "textColor": "#ffffff" },
+      "sub": [{ "name": "Facebook" }, { "name": "Instagram" }, { "name": "LinkedIn" }]
+    }
+  ]
+}

@@ -1,0 +1,373 @@
+{
+  "meta": {
+    "schemaVersion": "v2.0",
+    "industry": "Pools & Spas",
+    "author": "AI Config Generator",
+    "lastUpdated": "2025-10-08T00:00:00Z"
+  },
+  "description": "Label schema for pool and spa businesses — supports installation, repair, maintenance, water care, and seasonal services.",
+  "rootOrder": [
+    "BANKING",
+    "FORMSUB",
+    "GOOGLE REVIEW",
+    "MANAGER",
+    "SALES",
+    "SUPPLIERS",
+    "SUPPORT",
+    "URGENT",
+    "SEASONAL",
+    "MISC",
+    "PHONE",
+    "PROMO",
+    "RECRUITMENT",
+    "SOCIALMEDIA"
+  ],
+  "labels": [
+    {
+      "name": "BANKING",
+      "intent": "ai.financial_transaction",
+      "critical": true,
+      "color": { "backgroundColor": "#16a766", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "BankAlert" },
+        { "name": "e-Transfer", "sub": [{ "name": "From Business" }, { "name": "To Business" }] },
+        { "name": "Invoice" },
+        { "name": "Receipts", "sub": [{ "name": "Payment Received" }, { "name": "Payment Sent" }] },
+        { "name": "Refund" }
+      ]
+    },
+    {
+      "name": "FORMSUB",
+      "intent": "ai.form_submission",
+      "color": { "backgroundColor": "#0b804b", "textColor": "#ffffff" },
+      "sub": [{ "name": "New Submission" }, { "name": "Service Requests" }]
+    },
+    {
+      "name": "GOOGLE REVIEW",
+      "intent": "ai.customer_feedback",
+      "color": { "backgroundColor": "#4285f4", "textColor": "#ffffff" },
+      "sub": [{ "name": "New Review" }, { "name": "Response Needed" }, { "name": "Resolved" }]
+    },
+    {
+      "name": "MANAGER",
+      "intent": "ai.internal_routing",
+      "color": { "backgroundColor": "#ffad47", "textColor": "#000000" },
+      "sub": [
+        { "name": "Unassigned" },
+        { "name": "Escalations" },
+        { "name": "{{Manager1}}" },
+        { "name": "{{Manager2}}" },
+        { "name": "{{Manager3}}" },
+        { "name": "{{Manager4}}" },
+        { "name": "{{Manager5}}" }
+      ]
+    },
+    {
+      "name": "SALES",
+      "intent": "ai.sales_inquiry",
+      "color": { "backgroundColor": "#16a766", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "New Pools" },
+        { "name": "Hot Tubs" },
+        { "name": "Quotes" },
+        { "name": "Follow-ups" },
+        { "name": "Equipment Sales" }
+      ]
+    },
+    {
+      "name": "SUPPLIERS",
+      "intent": "ai.vendor_communication",
+      "color": { "backgroundColor": "#ffad47", "textColor": "#000000" },
+      "sub": [
+        { "name": "Hayward" },
+        { "name": "Pentair" },
+        { "name": "Jandy" },
+        { "name": "Aqua Spa Supply" },
+        { "name": "{{Supplier1}}" },
+        { "name": "{{Supplier2}}" },
+        { "name": "{{Supplier3}}" }
+      ]
+    },
+    {
+      "name": "SUPPORT",
+      "intent": "ai.support_ticket",
+      "color": { "backgroundColor": "#4a86e8", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "Technical Support" },
+        { "name": "Water Chemistry" },
+        { "name": "Parts And Chemicals" },
+        { "name": "Appointment Scheduling" }
+      ]
+    },
+    {
+      "name": "URGENT",
+      "intent": "ai.emergency_request",
+      "critical": true,
+      "color": { "backgroundColor": "#fb4c2f", "textColor": "#ffffff" },
+      "description": "Pool and spa emergencies requiring immediate attention",
+      
+      "classificationRules": {
+        "keywords": {
+          "primary": ["urgent", "emergency", "ASAP", "immediately", "help", "broken"],
+          "water": ["leak", "leaking", "flooding", "water loss", "green water", "cloudy"],
+          "equipment": ["pump", "filter", "heater", "not working", "broken", "failed", "stopped"],
+          "power": ["no power", "won't start", "won't turn on", "dead"],
+          "safety": ["algae", "unsafe", "can't swim", "dangerous", "chemical"]
+        },
+        
+        "patterns": [
+          "(leak|leaking) + (pool|spa|hot tub|pipe|plumbing)",
+          "(pump|filter|heater) + (not working|broken|won't|stopped)",
+          "(green|cloudy|dirty) + water + (pool|spa)",
+          "can't + (swim|use) + (pool|spa|hot tub)"
+        ],
+        
+        "examples": [
+          "Pool is leaking badly - losing water fast!",
+          "Pump not working and pool turning green",
+          "Hot tub heater stopped working",
+          "Filter clogged and water very cloudy",
+          "URGENT: Can't use pool for party tomorrow!"
+        ]
+      },
+      
+      "sub": [
+        {
+          "name": "Leaking",
+          "description": "Water leaks from pool, spa, or equipment",
+          "keywords": ["leak", "leaking", "water loss", "losing water", "draining", "hole"],
+          "patterns": [
+            "(leak|leaking) + (pool|spa|hot tub|pipe|plumbing)",
+            "losing + water + (fast|quickly)"
+          ],
+          "examples": [
+            "Pool leaking from bottom",
+            "Hot tub losing water overnight",
+            "Pump plumbing leaking badly"
+          ]
+        },
+        {
+          "name": "Pump Not Working",
+          "description": "Pool or spa pump failures",
+          "keywords": ["pump", "pump not working", "pump broken", "pump won't start", "pump stopped", "circulation"],
+          "patterns": [
+            "pump + (not working|broken|won't start|stopped|failed)",
+            "no + (circulation|water flow)"
+          ],
+          "examples": [
+            "Pool pump not working",
+            "Pump won't start this morning",
+            "Circulation pump stopped running"
+          ]
+        },
+        {
+          "name": "Filter Clogged",
+          "description": "Filter issues and water quality problems",
+          "keywords": ["filter", "clogged", "dirty", "cloudy water", "green water", "algae", "water quality"],
+          "patterns": [
+            "filter + (clogged|dirty|not working|needs cleaning)",
+            "(cloudy|green|dirty) + water + (pool|spa)"
+          ],
+          "examples": [
+            "Filter completely clogged",
+            "Pool water very cloudy after storm",
+            "Green algae taking over pool"
+          ]
+        },
+        {
+          "name": "Heater Error",
+          "description": "Heating system failures",
+          "keywords": ["heater", "heating", "not heating", "cold water", "won't heat", "temperature"],
+          "patterns": [
+            "(heater|heating) + (not working|broken|error|won't heat)",
+            "(cold|not heating) + water + (spa|hot tub|pool)"
+          ],
+          "examples": [
+            "Hot tub heater not working",
+            "Pool water not heating up",
+            "Heater error code on spa"
+          ]
+        },
+        {
+          "name": "No Power",
+          "description": "Electrical issues with pool/spa equipment",
+          "keywords": ["no power", "won't turn on", "electrical", "breaker", "GFCI", "tripped"],
+          "patterns": [
+            "(no power|won't turn on) + (pump|heater|spa|pool)",
+            "(breaker|GFCI) + (tripped|tripping)"
+          ],
+          "examples": [
+            "No power to pool pump",
+            "GFCI keeps tripping on hot tub",
+            "Spa won't turn on at all"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "SEASONAL",
+      "intent": "ai.seasonal_service",
+      "color": { "backgroundColor": "#00bcd4", "textColor": "#ffffff" },
+      "description": "Seasonal pool and spa services",
+      
+      "classificationRules": {
+        "keywords": {
+          "primary": ["opening", "closing", "winterize", "winterization", "spring", "seasonal"],
+          "opening": ["open", "opening", "start up", "start-up", "spring opening", "summer ready"],
+          "closing": ["close", "closing", "shut down", "end of season", "fall closing"],
+          "winter": ["winterize", "winterization", "winter prep", "freeze protection"],
+          "spring": ["spring start", "spring start-up", "de-winterize", "ready for summer"]
+        },
+        
+        "patterns": [
+          "(open|opening) + (pool|spa) + (for|this) + (spring|summer|season)",
+          "(close|closing|winterize) + (pool|spa) + (for|this) + (winter|fall|season)",
+          "(spring|seasonal) + (opening|closing|service)"
+        ],
+        
+        "examples": [
+          "Need to open pool for summer",
+          "Time to close spa for winter",
+          "Winterization service needed",
+          "Spring start-up appointment"
+        ]
+      },
+      
+      "sub": [
+        {
+          "name": "Opening",
+          "keywords": ["open", "opening", "start up", "spring opening", "summer ready"],
+          "examples": ["Pool opening for summer", "Spring pool opening service"]
+        },
+        {
+          "name": "Closing",
+          "keywords": ["close", "closing", "shut down", "fall closing", "end of season"],
+          "examples": ["Pool closing for winter", "End of season closing"]
+        },
+        {
+          "name": "Winterization",
+          "keywords": ["winterize", "winterization", "winter prep", "freeze protection"],
+          "examples": ["Winterization service needed", "Protect pool from freezing"]
+        },
+        {
+          "name": "Spring Start-up",
+          "keywords": ["spring start", "spring start-up", "de-winterize", "ready for summer"],
+          "examples": ["Spring start-up service", "De-winterize hot tub"]
+        }
+      ]
+    },
+    {
+      "name": "MISC",
+      "intent": "ai.general",
+      "color": { "backgroundColor": "#999999", "textColor": "#ffffff" },
+      "sub": [{ "name": "General" }, { "name": "Archive" }]
+    },
+    {
+      "name": "PHONE",
+      "intent": "ai.call_log",
+      "color": { "backgroundColor": "#795548", "textColor": "#ffffff" },
+      "sub": [{ "name": "Missed Calls" }, { "name": "Call Backs" }, { "name": "Voicemails" }]
+    },
+    {
+      "name": "PROMO",
+      "intent": "ai.marketing",
+      "color": { "backgroundColor": "#9c27b0", "textColor": "#ffffff" },
+      "sub": [{ "name": "Email Campaigns" }, { "name": "Seasonal Offers" }, { "name": "Newsletters" }]
+    },
+    {
+      "name": "RECRUITMENT",
+      "intent": "ai.hr",
+      "color": { "backgroundColor": "#607d8b", "textColor": "#ffffff" },
+      "sub": [{ "name": "Applications" }, { "name": "Interviews" }, { "name": "New Hires" }]
+    },
+    {
+      "name": "SOCIALMEDIA",
+      "intent": "ai.social_engagement",
+      "color": { "backgroundColor": "#e91e63", "textColor": "#ffffff" },
+      "sub": [{ "name": "Facebook" }, { "name": "Instagram" }, { "name": "LinkedIn" }]
+    }
+  ],
+  "specialRules": [
+    {
+      "name": "FormSub Urgent Override",
+      "description": "Form submissions with pool/spa emergency keywords must be classified as URGENT",
+      "trigger": {
+        "primary_category": "FORMSUB",
+        "keywords_in_body": ["leak", "leaking", "pump not working", "heater error", "no power", "green water", "broken", "emergency", "ASAP", "urgent"]
+      },
+      "action": {
+        "override_primary": "URGENT",
+        "reason": "Form contains pool/spa emergency"
+      },
+      "priority": "critical"
+    },
+    {
+      "name": "Phone Provider Detection",
+      "description": "Only classify as PHONE if from known phone service provider",
+      "trigger": {
+        "sender_email_exact": ["service@ringcentral.com", "voicemail@"]
+      },
+      "action": {
+        "force_primary": "PHONE"
+      },
+      "priority": "high"
+    },
+    {
+      "name": "Internal Email Detection",
+      "description": "Never auto-reply to internal company emails",
+      "trigger": {
+        "sender_domain": "@{{businessInfo.emailDomain}}"
+      },
+      "action": {
+        "force_ai_can_reply": false,
+        "route_to": "MANAGER"
+      },
+      "priority": "critical"
+    }
+  ],
+  
+  "autoReplyRules": {
+    "enabled": true,
+    "minConfidence": 0.75,
+    "enabledCategories": ["Support", "Sales", "Urgent"],
+    "conditions": [
+      {
+        "rule": "primary_category in [Support, Sales, Urgent] AND confidence >= 0.75 AND NOT internal_email",
+        "result": "ai_can_reply: true"
+      },
+      {
+        "rule": "sender_domain matches @{{businessInfo.emailDomain}}",
+        "result": "ai_can_reply: false"
+      }
+    ]
+  },
+  
+  "domainDetection": {
+    "suppliers": [
+      {"name": "Hayward", "domains": ["@hayward.com", "@haywardpool.com"], "keywords": []},
+      {"name": "Pentair", "domains": ["@pentair.com"], "keywords": []},
+      {"name": "Jandy", "domains": ["@jandy.com", "@zodiac.com"], "keywords": []},
+      {"name": "{{Supplier1}}", "domains": [], "keywords": []}
+    ],
+    "phoneProviders": [
+      {"provider": "RingCentral", "email": "service@ringcentral.com", "route_to": "PHONE"}
+    ],
+    "internalDomains": ["@{{businessInfo.emailDomain}}"]
+  },
+  
+  "dynamicVariables": {
+    "managers": [
+      "{{Manager1}}",
+      "{{Manager2}}",
+      "{{Manager3}}",
+      "{{Manager4}}",
+      "{{Manager5}}"
+    ],
+    "suppliers": [
+      "{{Supplier1}}",
+      "{{Supplier2}}",
+      "{{Supplier3}}"
+    ]
+  }
+}
+

@@ -1,0 +1,653 @@
+openapi: 3.0.3
+info:
+  title: Floworx API
+  description: |
+    The Floworx API provides endpoints for analytics, health monitoring, security reporting, and user management.
+    All endpoints return responses in a standardized JSON format and use JWT-based authentication.
+  version: 1.0.0
+  contact:
+    name: Floworx Support
+    email: support@floworx.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3001
+    description: Development server
+  - url: https://api.floworx.com
+    description: Production server
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/health:
+    get:
+      tags:
+        - Health
+      summary: Basic health check
+      description: Returns basic health status of the service
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                success: true
+                message: "Health check successful"
+                data:
+                  status: "healthy"
+                  timestamp: "2024-01-01T12:00:00.000Z"
+                  version: "1.0.0"
+                  environment: "development"
+                  uptime: 3600
+                  memory:
+                    rss: 50331648
+                    heapTotal: 20971520
+                    heapUsed: 15728640
+                    external: 1048576
+                  responseTime: 5
+                timestamp: "2024-01-01T12:00:00.000Z"
+
+  /api/health/detailed:
+    get:
+      tags:
+        - Health
+      summary: Detailed health check
+      description: Returns detailed health status with dependency checks
+      security: []
+      responses:
+        '200':
+          description: Detailed health check successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailedHealthResponse'
+        '503':
+          description: Service unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/health/ready:
+    get:
+      tags:
+        - Health
+      summary: Readiness probe
+      description: Kubernetes readiness probe endpoint
+      security: []
+      responses:
+        '200':
+          description: Service is ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadyResponse'
+
+  /api/health/live:
+    get:
+      tags:
+        - Health
+      summary: Liveness probe
+      description: Kubernetes liveness probe endpoint
+      security: []
+      responses:
+        '200':
+          description: Service is alive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LiveResponse'
+
+  /api/health/metrics:
+    get:
+      tags:
+        - Health
+      summary: Service metrics
+      description: Returns service performance metrics
+      security: []
+      responses:
+        '200':
+          description: Metrics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsResponse'
+
+  /api/analytics/events:
+    post:
+      tags:
+        - Analytics
+      summary: Store analytics event
+      description: Store analytics events from the frontend
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalyticsEventRequest'
+            example:
+              type: "page_view"
+              data:
+                page: "/dashboard"
+                duration: 30000
+                userId: "user-123"
+      responses:
+        '200':
+          description: Event stored successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsEventResponse'
+        '400':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/analytics/sessions:
+    post:
+      tags:
+        - Analytics
+      summary: Store session data
+      description: Store user session analytics data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionDataRequest'
+            example:
+              sessionId: "session-123"
+              startTime: "2024-01-01T10:00:00.000Z"
+              endTime: "2024-01-01T11:00:00.000Z"
+              pageViews: 5
+              events: 10
+              userId: "user-123"
+      responses:
+        '200':
+          description: Session data stored successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionDataResponse'
+        '400':
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/analytics/dashboard/{userId}:
+    get:
+      tags:
+        - Analytics
+      summary: Get dashboard data
+      description: Retrieve analytics dashboard data for a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: User ID to retrieve analytics for
+          schema:
+            type: string
+            example: "user-123"
+        - name: timeRange
+          in: query
+          required: false
+          description: Time range for analytics data
+          schema:
+            type: string
+            enum: [1h, 24h, 7d, 30d]
+            default: 24h
+      responses:
+        '200':
+          description: Dashboard data retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/csp-reports:
+    post:
+      tags:
+        - Security
+      summary: Report CSP violation
+      description: Handle Content Security Policy violation reports
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CSPReportRequest'
+            example:
+              csp-report:
+                document-uri: "https://app.floworx.com"
+                violated-directive: "script-src"
+                blocked-uri: "inline"
+                source-file: "https://app.floworx.com/script.js"
+                line-number: 42
+                column-number: 10
+                effective-directive: "script-src"
+                original-policy: "script-src 'self' 'unsafe-inline'"
+                disposition: "enforce"
+      responses:
+        '200':
+          description: CSP violation report received
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CSPReportResponse'
+        '400':
+          description: Invalid CSP report data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained through Supabase authentication
+
+  schemas:
+    StandardResponse:
+      type: object
+      required:
+        - success
+        - message
+        - timestamp
+      properties:
+        success:
+          type: boolean
+          description: Indicates if the request was successful
+        message:
+          type: string
+          description: Human-readable message describing the result
+        timestamp:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp of the response
+
+    ErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/StandardResponse'
+        - type: object
+          required:
+            - error
+          properties:
+            success:
+              type: boolean
+              example: false
+            error:
+              type: string
+              description: Error code identifying the type of error
+              enum:
+                - AUTHENTICATION_REQUIRED
+                - AUTHENTICATION_INVALID
+                - AUTHENTICATION_EXPIRED
+                - AUTHORIZATION_INSUFFICIENT
+                - VALIDATION_FAILED
+                - VALIDATION_EMAIL_INVALID
+                - VALIDATION_PASSWORD_WEAK
+                - VALIDATION_REQUIRED_FIELD
+                - RESOURCE_NOT_FOUND
+                - RESOURCE_CONFLICT
+                - RATE_LIMIT_EXCEEDED
+                - INTERNAL_SERVER_ERROR
+                - SERVICE_UNAVAILABLE
+                - DATABASE_ERROR
+                - EXTERNAL_SERVICE_UNAVAILABLE
+            details:
+              type: object
+              description: Additional error details (optional)
+
+    HealthResponse:
+      allOf:
+        - $ref: '#/components/schemas/StandardResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [healthy, unhealthy]
+                timestamp:
+                  type: string
+                  format: date-time
+                version:
+                  type: string
+                environment:
+                  type: string
+                uptime:
+                  type: number
+                memory:
+                  type: object
+                  properties:
+                    rss:
+                      type: integer
+                    heapTotal:
+                      type: integer
+                    heapUsed:
+                      type: integer
+                    external:
+                      type: integer
+                responseTime:
+                  type: number
+
+    DetailedHealthResponse:
+      allOf:
+        - $ref: '#/components/schemas/StandardResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [healthy, unhealthy]
+                timestamp:
+                  type: string
+                  format: date-time
+                version:
+                  type: string
+                environment:
+                  type: string
+                uptime:
+                  type: number
+                components:
+                  type: object
+                  properties:
+                    database:
+                      type: object
+                      properties:
+                        status:
+                          type: string
+                          enum: [healthy, unhealthy]
+                        responseTime:
+                          type: number
+                    supabase:
+                      type: object
+                      properties:
+                        status:
+                          type: string
+                          enum: [healthy, unhealthy]
+                        responseTime:
+                          type: number
+                responseTime:
+                  type: number
+
+    ReadyResponse:
+      allOf:
+        - $ref: '#/components/schemas/StandardResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [ready, not_ready]
+                responseTime:
+                  type: number
+
+    LiveResponse:
+      allOf:
+        - $ref: '#/components/schemas/StandardResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [alive]
+                uptime:
+                  type: number
+                pid:
+                  type: integer
+
+    MetricsResponse:
+      allOf:
+        - $ref: '#/components/schemas/StandardResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                uptime:
+                  type: number
+                memory:
+                  type: object
+                  properties:
+                    rss:
+                      type: integer
+                    heapTotal:
+                      type: integer
+                    heapUsed:
+                      type: integer
+                    external:
+                      type: integer
+                cpu:
+                  type: object
+                  properties:
+                    usage:
+                      type: number
+                requests:
+                  type: object
+                  properties:
+                    total:
+                      type: integer
+                    successful:
+                      type: integer
+                    failed:
+                      type: integer
+                responseTime:
+                  type: object
+                  properties:
+                    average:
+                      type: number
+                    p95:
+                      type: number
+                    p99:
+                      type: number
+
+    AnalyticsEventRequest:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          description: Event type identifier
+          example: "page_view"
+        data:
+          type: object
+          description: Additional event data
+          example:
+            page: "/dashboard"
+            duration: 30000
+            userId: "user-123"
+
+    AnalyticsEventResponse:
+      allOf:
+        - $ref: '#/components/schemas/StandardResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                eventType:
+                  type: string
+                userId:
+                  type: string
+
+    SessionDataRequest:
+      type: object
+      required:
+        - sessionId
+        - startTime
+        - endTime
+      properties:
+        sessionId:
+          type: string
+          description: Unique session identifier
+          example: "session-123"
+        startTime:
+          type: string
+          format: date-time
+          description: Session start time
+          example: "2024-01-01T10:00:00.000Z"
+        endTime:
+          type: string
+          format: date-time
+          description: Session end time
+          example: "2024-01-01T11:00:00.000Z"
+        pageViews:
+          type: integer
+          description: Number of page views
+          example: 5
+        events:
+          type: integer
+          description: Number of events
+          example: 10
+        userId:
+          type: string
+          description: User identifier
+          example: "user-123"
+
+    SessionDataResponse:
+      allOf:
+        - $ref: '#/components/schemas/StandardResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                userId:
+                  type: string
+
+    DashboardResponse:
+      allOf:
+        - $ref: '#/components/schemas/StandardResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                userId:
+                  type: string
+                totalEvents:
+                  type: integer
+                totalSessions:
+                  type: integer
+                averageSessionDuration:
+                  type: integer
+                topPages:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      page:
+                        type: string
+                      views:
+                        type: integer
+                eventsByType:
+                  type: object
+                  additionalProperties:
+                    type: integer
+                timeRange:
+                  type: string
+
+    CSPReportRequest:
+      type: object
+      required:
+        - csp-report
+      properties:
+        csp-report:
+          type: object
+          properties:
+            document-uri:
+              type: string
+              format: uri
+            violated-directive:
+              type: string
+            blocked-uri:
+              type: string
+            source-file:
+              type: string
+              format: uri
+            line-number:
+              type: integer
+            column-number:
+              type: integer
+            effective-directive:
+              type: string
+            original-policy:
+              type: string
+            disposition:
+              type: string
+              enum: [enforce, report]
+
+    CSPReportResponse:
+      allOf:
+        - $ref: '#/components/schemas/StandardResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                violationId:
+                  type: string
+                  format: date-time
+
+tags:
+  - name: Health
+    description: Health check and monitoring endpoints
+  - name: Analytics
+    description: Analytics and tracking endpoints
+  - name: Security
+    description: Security and monitoring endpoints

@@ -1,0 +1,436 @@
+#!/usr/bin/env node
+
+/**
+ * Database Integrity Test Script
+ * 
+ * This script tests database integrity, relationships, and data consistency.
+ * 
+ * Usage: node scripts/test-database-integrity.js
+ */
+
+import { createClient } from '@supabase/supabase-js';
+
+// Load environment variables
+const supabaseUrl = process.env.VITE_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error('❌ Missing required environment variables:');
+  console.error('   VITE_SUPABASE_URL');
+  console.error('   SUPABASE_SERVICE_ROLE_KEY');
+  process.exit(1);
+}
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+/**
+ * Test foreign key relationships
+ */
+async function testForeignKeyIntegrity() {
+  console.log('🔗 Testing foreign key relationships...');
+  
+  const tests = [
+    {
+      name: 'Integrations -> Profiles',
+      query: `
+        SELECT COUNT(*) as count 
+        FROM integrations i 
+        LEFT JOIN profiles p ON i.client_id = p.id 
+        WHERE p.id IS NULL
+      `
+    },
+    {
+      name: 'Communication Styles -> Profiles',
+      query: `
+        SELECT COUNT(*) as count 
+        FROM communication_styles cs 
+        LEFT JOIN profiles p ON cs.client_id = p.id 
+        WHERE p.id IS NULL
+      `
+    },
+    {
+      name: 'Email Logs -> Profiles',
+      query: `
+        SELECT COUNT(*) as count 
+        FROM email_logs el 
+        LEFT JOIN profiles p ON el.client_id = p.id 
+        WHERE p.id IS NULL
+      `
+    },
+    {
+      name: 'AI Responses -> Email Logs',
+      query: `
+        SELECT COUNT(*) as count 
+        FROM ai_responses ar 
+        LEFT JOIN email_logs el ON ar.email_log_id = el.id 
+        WHERE el.id IS NULL
+      `
+    },
+    {
+      name: 'Workflow Metrics -> Workflows',
+      query: `
+        SELECT COUNT(*) as count 
+        FROM workflow_metrics wm 
+        LEFT JOIN workflows w ON wm.workflow_id = w.id 
+        WHERE w.id IS NULL
+      `
+    },
+    {
+      name: 'Invoices -> Subscriptions',
+      query: `
+        SELECT COUNT(*) as count 
+        FROM invoices inv 
+        LEFT JOIN subscriptions s ON inv.subscription_id = s.id 
+        WHERE s.id IS NULL
+      `
+    }
+  ];
+
+  let totalViolations = 0;
+
+  for (const test of tests) {
+    try {
+      const { data, error } = await supabase.rpc('execute_sql', { sql: test.query });
+      
+      if (error) {
+        console.error(`   ❌ ${test.name}: Query failed - ${error.message}`);
+        continue;
+      }
+
+      const violationCount = data[0]?.count || 0;
+      if (violationCount > 0) {
+        console.error(`   ❌ ${test.name}: ${violationCount} orphaned records found`);
+        totalViolations += violationCount;
+      } else {
+        console.log(`   ✅ ${test.name}: No orphaned records`);
+      }
+    } catch (error) {
+      console.error(`   ❌ ${test.name}: ${error.message}`);
+    }
+  }
+
+  return totalViolations === 0;
+}
+
+/**
+ * Test data consistency
+ */
+async function testDataConsistency() {
+  console.log('\n📊 Testing data consistency...');
+  
+  const tests = [
+    {
+      name: 'Profile client_config is valid JSON',
+      query: `
+        SELECT COUNT(*) as count 
+        FROM profiles 
+        WHERE client_config IS NULL 
+        OR jsonb_typeof(client_config) != 'object'
+      `
+    },
+    {
+      name: 'Email queue status values',
+      query: `
+        SELECT COUNT(*) as count 
+        FROM email_queue 
+        WHERE status NOT IN ('pending', 'processing', 'completed', 'failed')
+      `
+    },
+    {
+      name: 'Email logs status values',
+      query: `
+        SELECT COUNT(*) as count 
+        FROM email_logs 
+        WHERE status NOT IN ('pending', 'processed', 'escalated', 'failed')
+      `
+    },
+    {
+      name: 'Integration provider values',
+      query: `
+        SELECT COUNT(*) as count 
+        FROM integrations 
+        WHERE provider NOT IN ('gmail', 'outlook')
+      `
+    },
+    {
+      name: 'Subscription status values',
+      query: `
+        SELECT COUNT(*) as count 
+        FROM subscriptions 
+        WHERE status NOT IN ('active', 'canceled', 'past_due', 'unpaid')
+      `
+    },
+    {
+      name: 'Error log severity values',
+      query: `
+        SELECT COUNT(*) as count 
+        FROM error_logs 
+        WHERE severity NOT IN ('low', 'medium', 'high', 'critical')
+      `
+    }
+  ];
+
+  let totalViolations = 0;
+
+  for (const test of tests) {
+    try {
+      const { data, error } = await supabase.rpc('execute_sql', { sql: test.query });
+      
+      if (error) {
+        console.error(`   ❌ ${test.name}: Query failed - ${error.message}`);
+        continue;
+      }
+
+      const violationCount = data[0]?.count || 0;
+      if (violationCount > 0) {
+        console.error(`   ❌ ${test.name}: ${violationCount} invalid records found`);
+        totalViolations += violationCount;
+      } else {
+        console.log(`   ✅ ${test.name}: All records valid`);
+      }
+    } catch (error) {
+      console.error(`   ❌ ${test.name}: ${error.message}`);
+    }
+  }
+
+  return totalViolations === 0;
+}
+
+/**
+ * Test unique constraints
+ */
+async function testUniqueConstraints() {
+  console.log('\n🔑 Testing unique constraints...');
+  
+  const tests = [
+    {
+      name: 'Email message_id uniqueness per client',
+      query: `
+        SELECT client_id, message_id, COUNT(*) as count 
+        FROM email_logs 
+        GROUP BY client_id, message_id 
+        HAVING COUNT(*) > 1
+      `
+    },
+    {
+      name: 'One active communication style per client',
+      query: `
+        SELECT client_id, COUNT(*) as count 
+        FROM communication_styles 
+        WHERE is_active = true 
+        GROUP BY client_id 
+        HAVING COUNT(*) > 1
+      `
+    },
+    {
+      name: 'One business hours per client',
+      query: `
+        SELECT client_id, COUNT(*) as count 
+        FROM business_hours 
+        GROUP BY client_id 
+        HAVING COUNT(*) > 1
+      `
+    }
+  ];
+
+  let totalViolations = 0;
+
+  for (const test of tests) {
+    try {
+      const { data, error } = await supabase.rpc('execute_sql', { sql: test.query });
+      
+      if (error) {
+        console.error(`   ❌ ${test.name}: Query failed - ${error.message}`);
+        continue;
+      }
+
+      if (data && data.length > 0) {
+        console.error(`   ❌ ${test.name}: ${data.length} constraint violations found`);
+        totalViolations += data.length;
+      } else {
+        console.log(`   ✅ ${test.name}: No violations found`);
+      }
+    } catch (error) {
+      console.error(`   ❌ ${test.name}: ${error.message}`);
+    }
+  }
+
+  return totalViolations === 0;
+}
+
+/**
+ * Test performance metrics
+ */
+async function testPerformanceMetrics() {
+  console.log('\n⚡ Testing performance metrics...');
+  
+  const tests = [
+    {
+      name: 'Table row counts',
+      query: `
+        SELECT 
+          schemaname,
+          tablename,
+          n_tup_ins as inserts,
+          n_tup_upd as updates,
+          n_tup_del as deletes
+        FROM pg_stat_user_tables 
+        WHERE schemaname = 'public'
+        ORDER BY n_tup_ins + n_tup_upd + n_tup_del DESC
+      `
+    },
+    {
+      name: 'Index usage',
+      query: `
+        SELECT 
+          schemaname,
+          tablename,
+          indexname,
+          idx_scan,
+          idx_tup_read,
+          idx_tup_fetch
+        FROM pg_stat_user_indexes 
+        WHERE schemaname = 'public'
+        AND idx_scan = 0
+        ORDER BY tablename
+      `
+    }
+  ];
+
+  for (const test of tests) {
+    try {
+      const { data, error } = await supabase.rpc('execute_sql', { sql: test.query });
+      
+      if (error) {
+        console.error(`   ❌ ${test.name}: Query failed - ${error.message}`);
+        continue;
+      }
+
+      if (test.name === 'Table row counts') {
+        console.log(`   📊 ${test.name}:`);
+        data.forEach(row => {
+          const totalOps = row.inserts + row.updates + row.deletes;
+          console.log(`      ${row.tablename}: ${totalOps} total operations`);
+        });
+      } else if (test.name === 'Index usage') {
+        const unusedIndexes = data.filter(row => row.idx_scan === 0);
+        if (unusedIndexes.length > 0) {
+          console.warn(`   ⚠️  ${test.name}: ${unusedIndexes.length} unused indexes found`);
+          unusedIndexes.forEach(row => {
+            console.warn(`      ${row.tablename}.${row.indexname}`);
+          });
+        } else {
+          console.log(`   ✅ ${test.name}: All indexes are being used`);
+        }
+      }
+    } catch (error) {
+      console.error(`   ❌ ${test.name}: ${error.message}`);
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Test data retention policies
+ */
+async function testDataRetention() {
+  console.log('\n🗂️  Testing data retention...');
+  
+  const tests = [
+    {
+      name: 'Old email logs (older than 1 year)',
+      query: `
+        SELECT COUNT(*) as count 
+        FROM email_logs 
+        WHERE created_at < NOW() - INTERVAL '1 year'
+      `
+    },
+    {
+      name: 'Old error logs (older than 6 months)',
+      query: `
+        SELECT COUNT(*) as count 
+        FROM error_logs 
+        WHERE created_at < NOW() - INTERVAL '6 months'
+      `
+    },
+    {
+      name: 'Old analytics events (older than 2 years)',
+      query: `
+        SELECT COUNT(*) as count 
+        FROM analytics_events 
+        WHERE timestamp < NOW() - INTERVAL '2 years'
+      `
+    },
+    {
+      name: 'Completed email queue items (older than 1 month)',
+      query: `
+        SELECT COUNT(*) as count 
+        FROM email_queue 
+        WHERE status = 'completed' 
+        AND updated_at < NOW() - INTERVAL '1 month'
+      `
+    }
+  ];
+
+  for (const test of tests) {
+    try {
+      const { data, error } = await supabase.rpc('execute_sql', { sql: test.query });
+      
+      if (error) {
+        console.error(`   ❌ ${test.name}: Query failed - ${error.message}`);
+        continue;
+      }
+
+      const oldRecordCount = data[0]?.count || 0;
+      if (oldRecordCount > 0) {
+        console.warn(`   ⚠️  ${test.name}: ${oldRecordCount} old records found`);
+      } else {
+        console.log(`   ✅ ${test.name}: No old records found`);
+      }
+    } catch (error) {
+      console.error(`   ❌ ${test.name}: ${error.message}`);
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Main integrity test function
+ */
+async function runIntegrityTests() {
+  console.log('🔍 Starting database integrity tests...\n');
+
+  let allTestsPassed = true;
+
+  // Run all tests
+  const fkTest = await testForeignKeyIntegrity();
+  const consistencyTest = await testDataConsistency();
+  const uniqueTest = await testUniqueConstraints();
+  const performanceTest = await testPerformanceMetrics();
+  const retentionTest = await testDataRetention();
+
+  allTestsPassed = fkTest && consistencyTest && uniqueTest;
+
+  // Summary
+  console.log('\n📋 Integrity Test Summary:');
+  console.log(`   Foreign Key Integrity: ${fkTest ? '✅ PASS' : '❌ FAIL'}`);
+  console.log(`   Data Consistency: ${consistencyTest ? '✅ PASS' : '❌ FAIL'}`);
+  console.log(`   Unique Constraints: ${uniqueTest ? '✅ PASS' : '❌ FAIL'}`);
+  console.log(`   Performance Metrics: ${performanceTest ? '✅ PASS' : '❌ FAIL'}`);
+  console.log(`   Data Retention: ${retentionTest ? '✅ PASS' : '❌ FAIL'}`);
+
+  if (allTestsPassed) {
+    console.log('\n✅ All integrity tests passed!');
+  } else {
+    console.log('\n❌ Some integrity tests failed - please review above');
+    process.exit(1);
+  }
+}
+
+// Run tests
+runIntegrityTests().catch(error => {
+  console.error('💥 Integrity test script failed:', error);
+  process.exit(1);
+});

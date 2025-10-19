@@ -1,0 +1,255 @@
+{
+  "meta": {
+    "schemaVersion": "v2.0",
+    "industry": "Painting Contractor",
+    "author": "AI Config Generator",
+    "lastUpdated": "2025-10-05T00:00:00Z"
+  },
+  "description": "Label schema for painting contractors — supports color consultation, estimates, interior/exterior work, and project management.",
+  "rootOrder": [
+    "BANKING",
+    "FORMSUB",
+    "GOOGLE REVIEW",
+    "MANAGER",
+    "SALES",
+    "SUPPLIERS",
+    "SUPPORT",
+    "URGENT",
+    "COLOR_CONSULTATION",
+    "MISC",
+    "PHONE",
+    "PROMO",
+    "RECRUITMENT"
+  ],
+  "labels": [
+    {
+      "name": "BANKING",
+      "intent": "ai.financial_transaction",
+      "color": { "backgroundColor": "#16a766", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "Invoice" },
+        { "name": "Receipts" },
+        { "name": "Refund" },
+        { "name": "E-Transfer" }
+      ]
+    },
+    {
+      "name": "FORMSUB",
+      "intent": "ai.form_submission",
+      "color": { "backgroundColor": "#0b804b", "textColor": "#ffffff" },
+      "sub": [{ "name": "New Submission" }, { "name": "Estimate Requests" }]
+    },
+    {
+      "name": "GOOGLE REVIEW",
+      "intent": "ai.customer_feedback",
+      "color": { "backgroundColor": "#4285f4", "textColor": "#ffffff" },
+      "sub": [{ "name": "New Review" }, { "name": "Response Needed" }, { "name": "Resolved" }]
+    },
+    {
+      "name": "SALES",
+      "intent": "ai.sales_inquiry",
+      "color": { "backgroundColor": "#16a766", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "Interior Painting" },
+        { "name": "Exterior Painting" },
+        { "name": "Quotes" },
+        { "name": "Follow-ups" }
+      ]
+    },
+    {
+      "name": "SUPPLIERS",
+      "intent": "ai.vendor_communication",
+      "color": { "backgroundColor": "#ffad47", "textColor": "#000000" },
+      "sub": [
+        { "name": "Sherwin Williams" },
+        { "name": "Benjamin Moore" },
+        { "name": "Behr" },
+        { "name": "{{Supplier1}}" },
+        { "name": "{{Supplier2}}" }
+      ]
+    },
+    {
+      "name": "SUPPORT",
+      "intent": "ai.support_ticket",
+      "color": { "backgroundColor": "#4a86e8", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "Touch-ups" },
+        { "name": "Warranty Claims" },
+        { "name": "Color Matching" },
+        { "name": "Project Scheduling" }
+      ]
+    },
+    {
+      "name": "URGENT",
+      "intent": "ai.emergency_request",
+      "color": { "backgroundColor": "#fb4c2f", "textColor": "#ffffff" },
+      "critical": true,
+      "description": "Painting emergencies and urgent project issues",
+      
+      "classificationRules": {
+        "keywords": {
+          "primary": ["urgent", "emergency", "ASAP", "immediately", "help"],
+          "defects": ["paint defect", "peeling", "bubbling", "cracking", "blistering"],
+          "damage": ["water damage", "stain", "discoloration"],
+          "delays": ["project delay", "deadline", "behind schedule", "late"]
+        },
+        
+        "patterns": [
+          "(paint|painting) + (peeling|bubbling|cracking)",
+          "(water|moisture) + damage + (to|on) + paint",
+          "(project|job) + (delayed|behind|late)"
+        ],
+        
+        "examples": [
+          "Paint peeling badly",
+          "Water damage to walls",
+          "Project delayed - need help"
+        ]
+      },
+      
+      "sub": [
+        {
+          "name": "Water Damage",
+          "keywords": ["water damage", "stain", "moisture", "discoloration"],
+          "examples": ["Water stained walls"]
+        },
+        {
+          "name": "Emergency Touch-ups",
+          "keywords": ["touch-up", "emergency", "fix paint", "repair"],
+          "examples": ["Emergency touch-ups needed"]
+        },
+        {
+          "name": "Customer Escalation",
+          "keywords": ["escalation", "complaint", "angry", "upset"],
+          "examples": ["Customer unhappy with color"]
+        },
+        {
+          "name": "Project Delays",
+          "keywords": ["delay", "behind", "late", "deadline"],
+          "examples": ["Project behind schedule"]
+        }
+      ]
+    },
+    {
+      "name": "COLOR_CONSULTATION",
+      "intent": "ai.color_consultation",
+      "color": { "backgroundColor": "#ff9800", "textColor": "#ffffff" },
+      "description": "Color consultation and selection services",
+      
+      "classificationRules": {
+        "keywords": {
+          "primary": ["color", "color selection", "color consultation", "paint color"],
+          "selection": ["choose color", "pick color", "color options", "what color"],
+          "samples": ["samples", "color samples", "paint samples", "swatches"],
+          "matching": ["color match", "match color", "exact color"]
+        },
+        
+        "patterns": [
+          "(color|paint color) + (selection|consultation|advice)",
+          "(help|need help) + (choosing|selecting) + color",
+          "(color|paint) + (samples|swatches|matching)"
+        ],
+        
+        "examples": [
+          "Need help choosing paint colors",
+          "Color consultation for living room",
+          "Can I get paint samples?",
+          "Match existing paint color"
+        ]
+      },
+      
+      "sub": [
+        {
+          "name": "Color Selection",
+          "keywords": ["color selection", "choose color", "pick color", "color options"],
+          "examples": ["Help selecting color", "Choose paint for bedroom"]
+        },
+        {
+          "name": "Sample Requests",
+          "keywords": ["samples", "paint samples", "color samples", "swatches"],
+          "examples": ["Request paint samples", "Get swatches"]
+        },
+        {
+          "name": "Color Matching",
+          "keywords": ["color match", "match color", "exact color", "matching paint"],
+          "examples": ["Match existing color", "Color matching service"]
+        },
+        {
+          "name": "Design Advice",
+          "keywords": ["design advice", "color advice", "color scheme", "recommendations"],
+          "examples": ["Color design advice", "Scheme recommendations"]
+        }
+      ]
+    },
+    {
+      "name": "MANAGER",
+      "intent": "ai.internal_routing",
+      "color": { "backgroundColor": "#ffad47", "textColor": "#000000" },
+      "sub": [
+        { "name": "Unassigned" },
+        { "name": "Escalations" },
+        { "name": "{{Manager1}}" },
+        { "name": "{{Manager2}}" },
+        { "name": "{{Manager3}}" }
+      ]
+    },
+    {
+      "name": "MISC",
+      "intent": "ai.general",
+      "color": { "backgroundColor": "#999999", "textColor": "#ffffff" },
+      "sub": [{ "name": "General" }, { "name": "Archive" }]
+    },
+    {
+      "name": "PHONE",
+      "intent": "ai.call_log",
+      "color": { "backgroundColor": "#795548", "textColor": "#ffffff" },
+      "sub": [{ "name": "Missed Calls" }, { "name": "Call Backs" }, { "name": "Voicemails" }]
+    },
+    {
+      "name": "PROMO",
+      "intent": "ai.marketing",
+      "color": { "backgroundColor": "#9c27b0", "textColor": "#ffffff" },
+      "sub": [{ "name": "Email Campaigns" }, { "name": "Seasonal Offers" }, { "name": "Newsletters" }]
+    },
+    {
+      "name": "RECRUITMENT",
+      "intent": "ai.hr",
+      "color": { "backgroundColor": "#607d8b", "textColor": "#ffffff" },
+      "sub": [{ "name": "Applications" }, { "name": "Interviews" }, { "name": "New Hires" }]
+    }
+  ],
+  "specialRules": [
+    {
+      "name": "FormSub Urgent Override",
+      "trigger": {"primary_category": "FORMSUB", "keywords_in_body": ["paint defect", "water damage", "project delay", "emergency", "ASAP", "urgent"]},
+      "action": {"override_primary": "URGENT"},
+      "priority": "critical"
+    },
+    {
+      "name": "Phone Provider Detection",
+      "trigger": {"sender_email_exact": ["service@ringcentral.com"]},
+      "action": {"force_primary": "PHONE"},
+      "priority": "high"
+    },
+    {
+      "name": "Internal Email Detection",
+      "trigger": {"sender_domain": "@{{businessInfo.emailDomain}}"},
+      "action": {"force_ai_can_reply": false, "route_to": "MANAGER"},
+      "priority": "critical"
+    }
+  ],
+  "autoReplyRules": {"enabled": true, "minConfidence": 0.75, "enabledCategories": ["Support", "Sales", "Urgent"]},
+  "domainDetection": {
+    "suppliers": [
+      {"name": "Sherwin-Williams", "domains": ["@sherwin.com"]},
+      {"name": "Benjamin Moore", "domains": ["@benjaminmoore.com"]},
+      {"name": "{{Supplier1}}", "domains": []}
+    ],
+    "phoneProviders": [{"provider": "RingCentral", "email": "service@ringcentral.com"}],
+    "internalDomains": ["@{{businessInfo.emailDomain}}"]
+  },
+  "dynamicVariables": {
+    "managers": ["{{Manager1}}", "{{Manager2}}", "{{Manager3}}"],
+    "suppliers": ["{{Supplier1}}", "{{Supplier2}}"]
+  }
+}

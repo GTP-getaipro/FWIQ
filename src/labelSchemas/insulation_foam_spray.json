@@ -1,0 +1,255 @@
+{
+  "meta": {
+    "schemaVersion": "v2.0",
+    "industry": "Insulation & Foam Spray",
+    "author": "AI Config Generator",
+    "lastUpdated": "2025-10-05T00:00:00Z"
+  },
+  "description": "Label schema for insulation and foam spray businesses — supports energy efficiency, spray foam, sealing, and insulation removal services.",
+  "rootOrder": [
+    "BANKING",
+    "FORMSUB",
+    "GOOGLE REVIEW",
+    "MANAGER",
+    "SALES",
+    "SUPPLIERS",
+    "SUPPORT",
+    "URGENT",
+    "ENERGY_EFFICIENCY",
+    "MISC",
+    "PHONE",
+    "PROMO",
+    "RECRUITMENT"
+  ],
+  "labels": [
+    {
+      "name": "BANKING",
+      "intent": "ai.financial_transaction",
+      "color": { "backgroundColor": "#16a766", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "Invoice" },
+        { "name": "Receipts" },
+        { "name": "Refund" },
+        { "name": "E-Transfer" }
+      ]
+    },
+    {
+      "name": "FORMSUB",
+      "intent": "ai.form_submission",
+      "color": { "backgroundColor": "#0b804b", "textColor": "#ffffff" },
+      "sub": [{ "name": "New Submission" }, { "name": "Energy Assessment Requests" }]
+    },
+    {
+      "name": "GOOGLE REVIEW",
+      "intent": "ai.customer_feedback",
+      "color": { "backgroundColor": "#4285f4", "textColor": "#ffffff" },
+      "sub": [{ "name": "New Review" }, { "name": "Response Needed" }, { "name": "Resolved" }]
+    },
+    {
+      "name": "SALES",
+      "intent": "ai.sales_inquiry",
+      "color": { "backgroundColor": "#16a766", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "Spray Foam Installation" },
+        { "name": "Insulation Upgrades" },
+        { "name": "Quotes" },
+        { "name": "Follow-ups" }
+      ]
+    },
+    {
+      "name": "SUPPLIERS",
+      "intent": "ai.vendor_communication",
+      "color": { "backgroundColor": "#ffad47", "textColor": "#000000" },
+      "sub": [
+        { "name": "Dow Chemical" },
+        { "name": "Huntsman" },
+        { "name": "BASF" },
+        { "name": "{{Supplier1}}" },
+        { "name": "{{Supplier2}}" }
+      ]
+    },
+    {
+      "name": "SUPPORT",
+      "intent": "ai.support_ticket",
+      "color": { "backgroundColor": "#4a86e8", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "Warranty Claims" },
+        { "name": "Performance Issues" },
+        { "name": "Material Questions" },
+        { "name": "Service Scheduling" }
+      ]
+    },
+    {
+      "name": "URGENT",
+      "intent": "ai.emergency_request",
+      "color": { "backgroundColor": "#fb4c2f", "textColor": "#ffffff" },
+      "critical": true,
+      "description": "Insulation emergencies",
+      
+      "classificationRules": {
+        "keywords": {
+          "primary": ["urgent", "emergency", "ASAP", "immediately"],
+          "air": ["air leak", "draft", "air sealing", "cold spots"],
+          "moisture": ["moisture", "condensation", "wet insulation"],
+          "mold": ["mold", "mildew", "smell"]
+        },
+        
+        "patterns": [
+          "(air|draft) + (leak|sealing)",
+          "(moisture|mold) + (in|problem)"
+        ],
+        
+        "examples": [
+          "Major air leaks!",
+          "Moisture in attic",
+          "Mold detected"
+        ]
+      },
+      
+      "sub": [
+        {
+          "name": "Air Leakage",
+          "keywords": ["air leak", "draft", "cold spots"],
+          "examples": ["Major air leaks"]
+        },
+        {
+          "name": "Moisture Issues",
+          "keywords": ["moisture", "condensation", "wet"],
+          "examples": ["Moisture problem"]
+        },
+        {
+          "name": "Customer Escalation",
+          "keywords": ["escalation", "complaint", "upset"],
+          "examples": ["Customer escalation"]
+        },
+        {
+          "name": "Safety Concerns",
+          "keywords": ["safety", "mold", "hazard"],
+          "examples": ["Safety concern"]
+        }
+      ]
+    },
+    {
+      "name": "ENERGY_EFFICIENCY",
+      "intent": "ai.energy_efficiency",
+      "color": { "backgroundColor": "#4caf50", "textColor": "#ffffff" },
+      "description": "Energy efficiency and savings",
+      
+      "classificationRules": {
+        "keywords": {
+          "primary": ["energy", "efficiency", "savings", "audit", "R-value"],
+          "audit": ["energy audit", "assessment"],
+          "rvalue": ["R-value", "insulation value"],
+          "savings": ["savings", "save money", "ROI"],
+          "rebates": ["rebate", "incentive", "grant"]
+        },
+        
+        "patterns": [
+          "(energy|home energy) + (audit|assessment)",
+          "(R-value|insulation) + (calculation|recommendation)",
+          "(savings|save) + (money|energy)",
+          "(rebate|incentive) + (application|program)"
+        ],
+        
+        "examples": [
+          "Energy audit needed",
+          "R-value recommendations",
+          "Calculate savings",
+          "Rebate programs"
+        ]
+      },
+      
+      "sub": [
+        {
+          "name": "Energy Assessments",
+          "keywords": ["energy audit", "assessment", "evaluation"],
+          "examples": ["Energy audit"]
+        },
+        {
+          "name": "R-Value Calculations",
+          "keywords": ["R-value", "calculation", "thermal"],
+          "examples": ["R-value calc"]
+        },
+        {
+          "name": "Air Sealing",
+          "keywords": ["air sealing", "seal", "draft"],
+          "examples": ["Air sealing"]
+        },
+        {
+          "name": "Performance Testing",
+          "keywords": ["testing", "performance", "blower door"],
+          "examples": ["Performance test"]
+        }
+      ]
+    },
+    {
+      "name": "MANAGER",
+      "intent": "ai.internal_routing",
+      "color": { "backgroundColor": "#ffad47", "textColor": "#000000" },
+      "sub": [
+        { "name": "Unassigned" },
+        { "name": "Escalations" },
+        { "name": "{{Manager1}}" },
+        { "name": "{{Manager2}}" },
+        { "name": "{{Manager3}}" }
+      ]
+    },
+    {
+      "name": "MISC",
+      "intent": "ai.general",
+      "color": { "backgroundColor": "#999999", "textColor": "#ffffff" },
+      "sub": [{ "name": "General" }, { "name": "Archive" }]
+    },
+    {
+      "name": "PHONE",
+      "intent": "ai.call_log",
+      "color": { "backgroundColor": "#795548", "textColor": "#ffffff" },
+      "sub": [{ "name": "Missed Calls" }, { "name": "Call Backs" }, { "name": "Voicemails" }]
+    },
+    {
+      "name": "PROMO",
+      "intent": "ai.marketing",
+      "color": { "backgroundColor": "#9c27b0", "textColor": "#ffffff" },
+      "sub": [{ "name": "Email Campaigns" }, { "name": "Seasonal Offers" }, { "name": "Newsletters" }]
+    },
+    {
+      "name": "RECRUITMENT",
+      "intent": "ai.hr",
+      "color": { "backgroundColor": "#607d8b", "textColor": "#ffffff" },
+      "sub": [{ "name": "Applications" }, { "name": "Interviews" }, { "name": "New Hires" }]
+    }
+  ],
+  "specialRules": [
+    {
+      "name": "FormSub Urgent Override",
+      "trigger": {"primary_category": "FORMSUB", "keywords_in_body": ["air leak", "moisture", "mold", "energy loss", "emergency", "ASAP", "urgent"]},
+      "action": {"override_primary": "URGENT"},
+      "priority": "critical"
+    },
+    {
+      "name": "Phone Provider Detection",
+      "trigger": {"sender_email_exact": ["service@ringcentral.com"]},
+      "action": {"force_primary": "PHONE"},
+      "priority": "high"
+    },
+    {
+      "name": "Internal Email Detection",
+      "trigger": {"sender_domain": "@{{businessInfo.emailDomain}}"},
+      "action": {"force_ai_can_reply": false, "route_to": "MANAGER"},
+      "priority": "critical"
+    }
+  ],
+  "autoReplyRules": {"enabled": true, "minConfidence": 0.75, "enabledCategories": ["Support", "Sales", "Urgent"]},
+  "domainDetection": {
+    "suppliers": [
+      {"name": "Icynene", "domains": ["@icynene.com"]},
+      {"name": "{{Supplier1}}", "domains": []}
+    ],
+    "phoneProviders": [{"provider": "RingCentral", "email": "service@ringcentral.com"}],
+    "internalDomains": ["@{{businessInfo.emailDomain}}"]
+  },
+  "dynamicVariables": {
+    "managers": ["{{Manager1}}", "{{Manager2}}", "{{Manager3}}"],
+    "suppliers": ["{{Supplier1}}", "{{Supplier2}}"]
+  }
+}

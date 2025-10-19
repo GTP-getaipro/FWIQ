@@ -1,0 +1,288 @@
+{
+  "meta": {
+    "schemaVersion": "v2.0",
+    "industry": "Hot Tub & Spa",
+    "author": "AI Config Generator",
+    "lastUpdated": "2025-10-08T00:00:00Z"
+  },
+  "description": "Label schema for hot tub and spa businesses — supports sales, installation, repair, maintenance, water care, and winterization services.",
+  "rootOrder": [
+    "BANKING",
+    "FORMSUB",
+    "GOOGLE REVIEW",
+    "MANAGER",
+    "SALES",
+    "SUPPLIERS",
+    "SUPPORT",
+    "URGENT",
+    "SEASONAL",
+    "MISC",
+    "PHONE",
+    "PROMO",
+    "RECRUITMENT",
+    "SOCIALMEDIA"
+  ],
+  "labels": [
+    {
+      "name": "BANKING",
+      "intent": "ai.financial_transaction",
+      "critical": true,
+      "color": { "backgroundColor": "#16a766", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "BankAlert" },
+        { "name": "e-Transfer", "sub": [{ "name": "From Business" }, { "name": "To Business" }] },
+        { "name": "Invoice" },
+        { "name": "Receipts", "sub": [{ "name": "Payment Received" }, { "name": "Payment Sent" }] },
+        { "name": "Refund" }
+      ]
+    },
+    {
+      "name": "FORMSUB",
+      "intent": "ai.form_submission",
+      "color": { "backgroundColor": "#0b804b", "textColor": "#ffffff" },
+      "sub": [{ "name": "New Submission" }, { "name": "Service Requests" }]
+    },
+    {
+      "name": "GOOGLE REVIEW",
+      "intent": "ai.customer_feedback",
+      "color": { "backgroundColor": "#4285f4", "textColor": "#ffffff" },
+      "sub": [{ "name": "New Review" }, { "name": "Response Needed" }, { "name": "Resolved" }]
+    },
+    {
+      "name": "MANAGER",
+      "intent": "ai.internal_routing",
+      "color": { "backgroundColor": "#ffad47", "textColor": "#000000" },
+      "sub": [
+        { "name": "Unassigned" },
+        { "name": "Escalations" },
+        { "name": "{{Manager1}}" },
+        { "name": "{{Manager2}}" },
+        { "name": "{{Manager3}}" },
+        { "name": "{{Manager4}}" },
+        { "name": "{{Manager5}}" }
+      ]
+    },
+    {
+      "name": "SALES",
+      "intent": "ai.sales_inquiry",
+      "color": { "backgroundColor": "#16a766", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "New Hot Tubs" },
+        { "name": "Covers & Accessories" },
+        { "name": "Quotes" },
+        { "name": "Follow-ups" },
+        { "name": "Financing" }
+      ]
+    },
+    {
+      "name": "SUPPLIERS",
+      "intent": "ai.vendor_communication",
+      "color": { "backgroundColor": "#ffad47", "textColor": "#000000" },
+      "sub": [
+        { "name": "Strong Spas" },
+        { "name": "Arctic Spas" },
+        { "name": "Aqua Spa Supply" },
+        { "name": "Paradise Patio" },
+        { "name": "{{Supplier1}}" },
+        { "name": "{{Supplier2}}" },
+        { "name": "{{Supplier3}}" }
+      ]
+    },
+    {
+      "name": "SUPPORT",
+      "intent": "ai.support_ticket",
+      "color": { "backgroundColor": "#4a86e8", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "Technical Support" },
+        { "name": "Water Chemistry" },
+        { "name": "Parts And Chemicals" },
+        { "name": "Appointment Scheduling" }
+      ]
+    },
+    {
+      "name": "URGENT",
+      "intent": "ai.emergency_request",
+      "critical": true,
+      "color": { "backgroundColor": "#fb4c2f", "textColor": "#ffffff" },
+      "description": "Hot tub and spa emergencies",
+      
+      "classificationRules": {
+        "keywords": {
+          "primary": ["urgent", "emergency", "ASAP", "immediately", "help", "broken"],
+          "heater": ["heater", "heating", "not heating", "cold water", "heater error"],
+          "pump": ["pump", "circulation", "jets", "not working", "pump failure"],
+          "leak": ["leak", "leaking", "water loss", "losing water"],
+          "electrical": ["no power", "electrical", "GFCI", "tripped", "won't turn on"]
+        },
+        
+        "patterns": [
+          "(heater|heating) + (not working|broken|error)",
+          "(pump|jets) + (not working|broken)",
+          "(leak|leaking|losing) + water",
+          "(no power|GFCI|electrical) + (problem|tripped)"
+        ],
+        
+        "examples": [
+          "Hot tub heater not working!",
+          "Pump failed - no circulation",
+          "Spa leaking water",
+          "GFCI keeps tripping"
+        ]
+      },
+      
+      "sub": [
+        {
+          "name": "Leaking",
+          "keywords": ["leak", "leaking", "water loss", "losing water", "draining"],
+          "examples": ["Spa leaking", "Water loss overnight"]
+        },
+        {
+          "name": "Pump Not Working",
+          "keywords": ["pump", "circulation", "jets", "pump failure"],
+          "examples": ["Pump not working", "No circulation"]
+        },
+        {
+          "name": "Heater Error",
+          "keywords": ["heater", "not heating", "cold water", "heater error"],
+          "examples": ["Heater not working", "Error code on heater"]
+        },
+        {
+          "name": "No Power",
+          "keywords": ["no power", "won't turn on", "electrical", "GFCI tripped"],
+          "examples": ["No power to spa", "GFCI tripping"]
+        },
+        {
+          "name": "Control Panel Issue",
+          "keywords": ["control panel", "display", "buttons", "controls not working"],
+          "examples": ["Control panel broken", "Display not working"]
+        }
+      ]
+    },
+    {
+      "name": "SEASONAL",
+      "intent": "ai.seasonal_service",
+      "color": { "backgroundColor": "#00bcd4", "textColor": "#ffffff" },
+      "description": "Seasonal services and maintenance",
+      
+      "classificationRules": {
+        "keywords": {
+          "primary": ["seasonal", "winterize", "spring", "annual", "deep clean"],
+          "winter": ["winterize", "winterization", "winter prep", "freeze protection"],
+          "spring": ["spring start", "start-up", "de-winterize"],
+          "maintenance": ["annual service", "yearly", "tune-up", "deep cleaning"]
+        },
+        
+        "patterns": [
+          "(winterize|winterization) + (spa|hot tub)",
+          "(spring|seasonal) + (start-up|opening|service)",
+          "(annual|yearly) + (service|maintenance)"
+        ],
+        
+        "examples": [
+          "Winterize hot tub for season",
+          "Spring start-up service",
+          "Annual maintenance check",
+          "Deep cleaning needed"
+        ]
+      },
+      
+      "sub": [
+        {
+          "name": "Winterization",
+          "keywords": ["winterize", "winterization", "winter prep"],
+          "examples": ["Winterize spa"]
+        },
+        {
+          "name": "Spring Start-up",
+          "keywords": ["spring start", "start-up", "de-winterize"],
+          "examples": ["Spring start-up"]
+        },
+        {
+          "name": "Annual Service",
+          "keywords": ["annual", "yearly", "service", "maintenance"],
+          "examples": ["Annual service"]
+        },
+        {
+          "name": "Deep Cleaning",
+          "keywords": ["deep clean", "deep cleaning", "thorough clean"],
+          "examples": ["Deep cleaning service"]
+        }
+      ]
+    },
+    {
+      "name": "MISC",
+      "intent": "ai.general",
+      "color": { "backgroundColor": "#999999", "textColor": "#ffffff" },
+      "sub": [{ "name": "General" }, { "name": "Archive" }]
+    },
+    {
+      "name": "PHONE",
+      "intent": "ai.call_log",
+      "color": { "backgroundColor": "#795548", "textColor": "#ffffff" },
+      "sub": [{ "name": "Missed Calls" }, { "name": "Call Backs" }, { "name": "Voicemails" }]
+    },
+    {
+      "name": "PROMO",
+      "intent": "ai.marketing",
+      "color": { "backgroundColor": "#9c27b0", "textColor": "#ffffff" },
+      "sub": [{ "name": "Email Campaigns" }, { "name": "Seasonal Offers" }, { "name": "Newsletters" }]
+    },
+    {
+      "name": "RECRUITMENT",
+      "intent": "ai.hr",
+      "color": { "backgroundColor": "#607d8b", "textColor": "#ffffff" },
+      "sub": [{ "name": "Applications" }, { "name": "Interviews" }, { "name": "New Hires" }]
+    },
+    {
+      "name": "SOCIALMEDIA",
+      "intent": "ai.social_engagement",
+      "color": { "backgroundColor": "#e91e63", "textColor": "#ffffff" },
+      "sub": [{ "name": "Facebook" }, { "name": "Instagram" }, { "name": "LinkedIn" }]
+    }
+  ],
+  "specialRules": [
+    {
+      "name": "FormSub Urgent Override",
+      "trigger": {"primary_category": "FORMSUB", "keywords_in_body": ["heater not working", "pump failure", "leak", "no power", "broken", "emergency", "ASAP"]},
+      "action": {"override_primary": "URGENT"},
+      "priority": "critical"
+    },
+    {
+      "name": "Phone Provider Detection",
+      "trigger": {"sender_email_exact": ["service@ringcentral.com"]},
+      "action": {"force_primary": "PHONE"},
+      "priority": "high"
+    },
+    {
+      "name": "Internal Email Detection",
+      "trigger": {"sender_domain": "@{{businessInfo.emailDomain}}"},
+      "action": {"force_ai_can_reply": false, "route_to": "MANAGER"},
+      "priority": "critical"
+    }
+  ],
+  "autoReplyRules": {"enabled": true, "minConfidence": 0.75, "enabledCategories": ["Support", "Sales", "Urgent"]},
+  "domainDetection": {
+    "suppliers": [
+      {"name": "Gecko Alliance", "domains": ["@geckoalliance.com"]},
+      {"name": "Balboa", "domains": ["@balboawater.com"]},
+      {"name": "{{Supplier1}}", "domains": []}
+    ],
+    "phoneProviders": [{"provider": "RingCentral", "email": "service@ringcentral.com"}],
+    "internalDomains": ["@{{businessInfo.emailDomain}}"]
+  },
+  "dynamicVariables": {
+    "managers": [
+      "{{Manager1}}",
+      "{{Manager2}}",
+      "{{Manager3}}",
+      "{{Manager4}}",
+      "{{Manager5}}"
+    ],
+    "suppliers": [
+      "{{Supplier1}}",
+      "{{Supplier2}}",
+      "{{Supplier3}}"
+    ]
+  }
+}
+

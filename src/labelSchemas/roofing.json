@@ -1,0 +1,243 @@
+{
+  "meta": {
+    "schemaVersion": "v2.0",
+    "industry": "Roofing Contractor",
+    "author": "AI Config Generator",
+    "lastUpdated": "2025-10-05T00:00:00Z"
+  },
+  "description": "Label schema for roofing businesses — supports leads, repairs, insurance claims, and supplier management.",
+  "rootOrder": [
+    "BANKING",
+    "FORMSUB",
+    "INSURANCE",
+    "MANAGER",
+    "SALES",
+    "SUPPLIERS",
+    "SUPPORT",
+    "URGENT",
+    "MISC",
+    "PHONE",
+    "PROMO",
+    "RECRUITMENT"
+  ],
+  "labels": [
+    {
+      "name": "BANKING",
+      "intent": "ai.financial_transaction",
+      "color": { "backgroundColor": "#16a766", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "Invoice" },
+        { "name": "Receipts" },
+        { "name": "Refund" },
+        { "name": "E-Transfer" }
+      ]
+    },
+    {
+      "name": "FORMSUB",
+      "intent": "ai.form_submission",
+      "color": { "backgroundColor": "#0b804b", "textColor": "#ffffff" },
+      "sub": [{ "name": "New Submission" }, { "name": "Work Order Forms" }]
+    },
+    {
+      "name": "INSURANCE",
+      "intent": "ai.insurance_claims",
+      "color": { "backgroundColor": "#0b804b", "textColor": "#ffffff" },
+      "description": "Insurance claims and adjuster coordination",
+      
+      "classificationRules": {
+        "keywords": {
+          "primary": ["insurance", "insurance claim", "claim", "adjuster", "insurance company"],
+          "claims": ["file claim", "new claim", "claim number", "claim filed", "claim status"],
+          "adjuster": ["adjuster", "insurance adjuster", "adjuster visit", "inspection"],
+          "documentation": ["photos", "documentation", "estimate", "scope of work", "damage report"],
+          "approval": ["approved", "denied", "pending", "claim approved"]
+        },
+        
+        "patterns": [
+          "(insurance|claim) + (for|from) + (storm|hail|wind) + damage",
+          "(adjuster|insurance adjuster) + (visit|coming|scheduled)",
+          "(file|filing|submit) + (claim|insurance claim)",
+          "(claim|insurance) + (approved|denied|pending|status)"
+        ],
+        
+        "examples": [
+          "Filing insurance claim for storm damage",
+          "Insurance adjuster coming tomorrow",
+          "Claim approved by insurance company",
+          "Need documentation for insurance estimate"
+        ]
+      },
+      
+      "sub": [
+        {
+          "name": "Claims Submitted",
+          "keywords": ["file claim", "new claim", "submit claim", "claim submitted"],
+          "examples": ["Filed insurance claim", "Claim submitted to Allstate"]
+        },
+        {
+          "name": "Pending Review",
+          "keywords": ["pending", "under review", "waiting for approval", "claim pending"],
+          "examples": ["Claim pending review", "Waiting for insurance approval"]
+        },
+        {
+          "name": "Adjuster Communication",
+          "keywords": ["adjuster", "adjuster visit", "inspector", "insurance inspector", "adjuster report"],
+          "examples": ["Adjuster scheduled Tuesday", "Insurance inspector coming"]
+        }
+      ]
+    },
+    {
+      "name": "SALES",
+      "intent": "ai.sales_inquiry",
+      "color": { "backgroundColor": "#16a766", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "Roof Replacement" },
+        { "name": "Inspection Requests" },
+        { "name": "Quotes" },
+        { "name": "Follow-ups" }
+      ]
+    },
+    {
+      "name": "SUPPLIERS",
+      "intent": "ai.vendor_communication",
+      "color": { "backgroundColor": "#ffad47", "textColor": "#000000" },
+      "sub": [
+        { "name": "IKO Roofing" },
+        { "name": "BP Canada" },
+        { "name": "Beacon Supply" },
+        { "name": "{{Supplier1}}" },
+        { "name": "{{Supplier2}}" }
+      ]
+    },
+    {
+      "name": "SUPPORT",
+      "intent": "ai.support_ticket",
+      "color": { "backgroundColor": "#4a86e8", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "Warranty Claims" },
+        { "name": "Leak Repairs" },
+        { "name": "Emergency Tarping" },
+        { "name": "Inspection Follow-up" }
+      ]
+    },
+    {
+      "name": "URGENT",
+      "intent": "ai.emergency_request",
+      "color": { "backgroundColor": "#fb4c2f", "textColor": "#ffffff" },
+      "critical": true,
+      "description": "Roofing emergencies requiring immediate response",
+      
+      "classificationRules": {
+        "keywords": {
+          "primary": ["urgent", "emergency", "ASAP", "immediately", "help", "leak emergency"],
+          "leak": ["roof leak", "leaking roof", "water coming in", "dripping", "leak in ceiling", "active leak"],
+          "damage": ["storm damage", "wind damage", "hail damage", "tree fell", "damaged roof", "missing shingles"],
+          "tarping": ["tarp", "tarping", "emergency tarp", "need tarp", "cover roof", "temporary"]
+        },
+        
+        "patterns": [
+          "(roof|ceiling) + (leak|leaking|dripping)",
+          "(storm|wind|hail) + damage + (to|on) + roof",
+          "(missing|blown off|lost) + shingles",
+          "(emergency|need|ASAP) + (tarp|tarping|cover)"
+        ],
+        
+        "examples": [
+          "URGENT: Roof leaking badly after storm!",
+          "Storm damage - shingles blown off",
+          "Water coming through ceiling",
+          "Need emergency tarping ASAP",
+          "Tree fell on roof - major damage"
+        ]
+      },
+      
+      "sub": [
+        {
+          "name": "Storm Damage",
+          "keywords": ["storm damage", "wind damage", "hail damage", "hurricane", "tree fell", "blown off"],
+          "examples": ["Storm damage from last night", "Hail damaged shingles", "Tree fell on roof"]
+        },
+        {
+          "name": "Active Leak",
+          "keywords": ["roof leak", "active leak", "leaking", "water coming in", "dripping from ceiling"],
+          "examples": ["Roof leaking in bedroom", "Active leak - water everywhere"]
+        },
+        {
+          "name": "Customer Escalation",
+          "keywords": ["escalation", "complaint", "angry", "upset", "dissatisfied", "problem"],
+          "examples": ["Customer very upset about delay", "Escalation - wants manager"]
+        }
+      ]
+    },
+    {
+      "name": "MANAGER",
+      "intent": "ai.internal_routing",
+      "color": { "backgroundColor": "#ffad47", "textColor": "#000000" },
+      "sub": [
+        { "name": "Unassigned" },
+        { "name": "Escalations" },
+        { "name": "{{Manager1}}" },
+        { "name": "{{Manager2}}" },
+        { "name": "{{Manager3}}" }
+      ]
+    },
+    {
+      "name": "MISC",
+      "intent": "ai.general",
+      "color": { "backgroundColor": "#999999", "textColor": "#ffffff" },
+      "sub": [{ "name": "General" }, { "name": "Archive" }]
+    },
+    {
+      "name": "PHONE",
+      "intent": "ai.call_log",
+      "color": { "backgroundColor": "#795548", "textColor": "#ffffff" },
+      "sub": [{ "name": "Missed Calls" }, { "name": "Call Backs" }, { "name": "Voicemails" }]
+    },
+    {
+      "name": "PROMO",
+      "intent": "ai.marketing",
+      "color": { "backgroundColor": "#9c27b0", "textColor": "#ffffff" },
+      "sub": [{ "name": "Email Campaigns" }, { "name": "Seasonal Offers" }, { "name": "Newsletters" }]
+    },
+    {
+      "name": "RECRUITMENT",
+      "intent": "ai.hr",
+      "color": { "backgroundColor": "#607d8b", "textColor": "#ffffff" },
+      "sub": [{ "name": "Applications" }, { "name": "Interviews" }, { "name": "New Hires" }]
+    }
+  ],
+  "specialRules": [
+    {
+      "name": "FormSub Urgent Override",
+      "trigger": {"primary_category": "FORMSUB", "keywords_in_body": ["roof leak", "storm damage", "emergency", "ASAP", "urgent"]},
+      "action": {"override_primary": "URGENT"},
+      "priority": "critical"
+    },
+    {
+      "name": "Phone Provider Detection",
+      "trigger": {"sender_email_exact": ["service@ringcentral.com"]},
+      "action": {"force_primary": "PHONE"},
+      "priority": "high"
+    },
+    {
+      "name": "Internal Email Detection",
+      "trigger": {"sender_domain": "@{{businessInfo.emailDomain}}"},
+      "action": {"force_ai_can_reply": false, "route_to": "MANAGER"},
+      "priority": "critical"
+    }
+  ],
+  "autoReplyRules": {"enabled": true, "minConfidence": 0.75, "enabledCategories": ["Support", "Sales", "Urgent"]},
+  "domainDetection": {
+    "suppliers": [
+      {"name": "IKO", "domains": ["@iko.com"]},
+      {"name": "BP Canada", "domains": ["@bpcanada.ca"]},
+      {"name": "{{Supplier1}}", "domains": []}
+    ],
+    "phoneProviders": [{"provider": "RingCentral", "email": "service@ringcentral.com"}],
+    "internalDomains": ["@{{businessInfo.emailDomain}}"]
+  },
+  "dynamicVariables": {
+    "managers": ["{{Manager1}}", "{{Manager2}}", "{{Manager3}}"],
+    "suppliers": ["{{Supplier1}}", "{{Supplier2}}"]
+  }
+}

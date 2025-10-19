@@ -1,0 +1,57 @@
+{
+  "industry": "Plumber",
+  "version": "v2.0.0",
+  "lastUpdated": "2025-01-05",
+  "author": "Floworx AI Core",
+  "description": "AI classification and routing behavior for plumbing service companies.",
+  "behaviorProfile": {
+    "ai_model": "gpt-4o-mini",
+    "prompt_type": "define",
+    "system_message": "You are an expert email classification and routing agent for a plumbing service company. Your sole task is to analyze incoming emails and output a structured JSON with category, summary, and extracted entities. Focus on burst pipes, drain cleaning, fixture installation, leaks, and plumbing repairs.",
+    "rules": {
+      "ai_can_reply_conditions": {
+        "allowed_primary_categories": ["Support", "Sales", "Urgent"],
+        "minimum_confidence": 0.75,
+        "internal_domain_blocklist": ["@{{businessProfile.emailDomain}}"]
+      },
+      "urgent_keywords": ["urgent", "emergency", "asap", "immediately", "broken", "leak", "burst pipe", "flooding", "no water", "backup", "sewer", "gas leak", "safety issue"],
+      "form_submission_sources": ["noreply@reports.connecteam.com", "alerts@servicetitan.com", "noreply@plumbing.com"]
+    }
+  },
+  "categories": {
+    "Banking": ["e-Transfer", "Invoice", "Refund", "Receipts", "Bank Alert", "Payment Confirmation"],
+    "Support": ["Technical Support", "Appointment Scheduling", "General", "Parts & Supplies", "Maintenance Reminders", "Warranty Questions"],
+    "Sales": ["New Installations", "Consultations", "Service Agreements", "Equipment Quotes", "Fixture Installation", "Drain Cleaning", "Pipe Repair", "Water Heater"],
+    "Warranty": ["Claims", "Resolved", "Pending", "Workmanship Warranty", "Fixture Warranty"],
+    "Urgent": ["Emergency Repair", "Safety Issue", "Burst Pipe", "Flooding", "No Water", "Backup", "Sewer", "Gas Leak"],
+    "FormSub": ["New Submission", "Work Order Form", "Service Request", "Emergency Form", "Installation Form"],
+    "Suppliers": ["Plumbing Supply Co", "Ferguson", "Wolseley", "HD Supply", "White Cap", "Core & Main", "F.W. Webb", "Granite Supply"],
+    "Manager": ["Unassigned", "Escalations", "Team Assignments", "Schedule Conflicts", "Customer Complaints"],
+    "Promo": ["Email Campaigns", "Seasonal Offers", "Maintenance Specials", "Installation Packages"],
+    "Recruitment": ["Applications", "Interviews", "New Hires", "Technician Positions", "Sales Positions"],
+    "Google Review": ["New Review", "Responses", "Requests", "Review Management"],
+    "Misc": ["General", "Archive", "Personal", "Spam"]
+  },
+  "outputFormat": {
+    "summary": "One-line summary of email purpose",
+    "primary_category": "string",
+    "secondary_category": "string or null",
+    "tertiary_category": "string or null",
+    "confidence": "float 0.0–1.0",
+    "ai_can_reply": "boolean",
+    "entities": {
+      "contact_name": "string or null",
+      "email_address": "string or null",
+      "phone_number": "string or null",
+      "order_number": "string or null",
+      "fixture_type": "string or null",
+      "problem_type": "string or null",
+      "service_address": "string or null"
+    }
+  },
+  "meta": {
+    "integration": "n8n",
+    "usecase": "email_classification",
+    "validated": true
+  }
+}

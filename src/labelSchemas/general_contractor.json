@@ -1,0 +1,377 @@
+{
+  "meta": {
+    "schemaVersion": "v2.0",
+    "industry": "General Contractor",
+    "author": "AI Config Generator",
+    "lastUpdated": "2025-10-08T00:00:00Z"
+  },
+  "description": "Label schema for general contractors — supports home renovations, construction projects, permits, subcontractor coordination, and project management.",
+  "rootOrder": [
+    "BANKING",
+    "FORMSUB",
+    "GOOGLE REVIEW",
+    "MANAGER",
+    "SALES",
+    "SUPPLIERS",
+    "SUBCONTRACTORS",
+    "SUPPORT",
+    "URGENT",
+    "PERMITS",
+    "MISC",
+    "PHONE",
+    "PROMO",
+    "RECRUITMENT",
+    "SOCIALMEDIA"
+  ],
+  "labels": [
+    {
+      "name": "BANKING",
+      "intent": "ai.financial_transaction",
+      "critical": true,
+      "color": { "backgroundColor": "#16a766", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "BankAlert" },
+        { "name": "e-Transfer", "sub": [{ "name": "From Business" }, { "name": "To Business" }] },
+        { "name": "Invoice" },
+        { "name": "Receipts", "sub": [{ "name": "Payment Received" }, { "name": "Payment Sent" }] },
+        { "name": "Refund" }
+      ]
+    },
+    {
+      "name": "FORMSUB",
+      "intent": "ai.form_submission",
+      "color": { "backgroundColor": "#0b804b", "textColor": "#ffffff" },
+      "sub": [{ "name": "New Submission" }, { "name": "Project Requests" }]
+    },
+    {
+      "name": "GOOGLE REVIEW",
+      "intent": "ai.customer_feedback",
+      "color": { "backgroundColor": "#4285f4", "textColor": "#ffffff" },
+      "sub": [{ "name": "New Review" }, { "name": "Response Needed" }, { "name": "Resolved" }]
+    },
+    {
+      "name": "MANAGER",
+      "intent": "ai.internal_routing",
+      "color": { "backgroundColor": "#ffad47", "textColor": "#000000" },
+      "sub": [
+        { "name": "Unassigned" },
+        { "name": "Escalations" },
+        { "name": "{{Manager1}}" },
+        { "name": "{{Manager2}}" },
+        { "name": "{{Manager3}}" },
+        { "name": "{{Manager4}}" },
+        { "name": "{{Manager5}}" }
+      ]
+    },
+    {
+      "name": "SALES",
+      "intent": "ai.sales_inquiry",
+      "color": { "backgroundColor": "#16a766", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "Renovations" },
+        { "name": "New Construction" },
+        { "name": "Additions" },
+        { "name": "Quotes" },
+        { "name": "Follow-ups" }
+      ]
+    },
+    {
+      "name": "SUPPLIERS",
+      "intent": "ai.vendor_communication",
+      "color": { "backgroundColor": "#ffad47", "textColor": "#000000" },
+      "sub": [
+        { "name": "Home Depot" },
+        { "name": "Lowes" },
+        { "name": "Local Lumber Yard" },
+        { "name": "{{Supplier1}}" },
+        { "name": "{{Supplier2}}" },
+        { "name": "{{Supplier3}}" }
+      ]
+    },
+    {
+      "name": "SUBCONTRACTORS",
+      "intent": "ai.subcontractor_coordination",
+      "color": { "backgroundColor": "#3f51b5", "textColor": "#ffffff" },
+      "description": "Subcontractor coordination and scheduling",
+      
+      "classificationRules": {
+        "keywords": {
+          "primary": ["subcontractor", "sub", "electrician", "plumber", "HVAC", "drywall", "flooring"],
+          "trades": ["electrical", "plumbing", "heating", "cooling", "framing", "finishing"],
+          "scheduling": ["coordinate", "schedule", "when can", "availability", "timing"],
+          "issues": ["delayed", "no show", "problem with", "need different"]
+        },
+        
+        "patterns": [
+          "(electrician|plumber|HVAC|drywall) + (scheduled|coming|needed)",
+          "coordinate + (with|between) + (electrician|plumber|trades)",
+          "(subcontractor|sub) + (issue|problem|delayed)"
+        ],
+        
+        "examples": [
+          "When is electrician scheduled?",
+          "Need to coordinate plumber and HVAC",
+          "Subcontractor delayed - need update",
+          "Drywall sub coming tomorrow"
+        ]
+      },
+      
+      "sub": [
+        {
+          "name": "Electrician",
+          "keywords": ["electrician", "electrical", "wiring", "electrical sub"],
+          "examples": ["Electrician scheduled for Monday", "Electrical sub needed"]
+        },
+        {
+          "name": "Plumber",
+          "keywords": ["plumber", "plumbing", "plumbing sub", "rough-in plumbing"],
+          "examples": ["Plumber coming Tuesday", "Plumbing rough-in scheduled"]
+        },
+        {
+          "name": "HVAC",
+          "keywords": ["HVAC", "heating", "cooling", "furnace install", "AC install"],
+          "examples": ["HVAC sub scheduled", "Furnace installation Tuesday"]
+        },
+        {
+          "name": "Drywall",
+          "keywords": ["drywall", "drywall sub", "drywaller", "taping", "mudding"],
+          "examples": ["Drywall crew coming Friday", "Taping and mudding next week"]
+        },
+        {
+          "name": "Flooring",
+          "keywords": ["flooring", "flooring sub", "hardwood", "tile", "carpet install"],
+          "examples": ["Flooring install scheduled", "Hardwood sub next month"]
+        },
+        {
+          "name": "{{Supplier4}}",
+          "keywords": []
+        },
+        {
+          "name": "{{Supplier5}}",
+          "keywords": []
+        }
+      ]
+    },
+    {
+      "name": "SUPPORT",
+      "intent": "ai.support_ticket",
+      "color": { "backgroundColor": "#4a86e8", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "Technical Support" },
+        { "name": "Change Orders" },
+        { "name": "Warranty Claims" },
+        { "name": "Project Scheduling" }
+      ]
+    },
+    {
+      "name": "URGENT",
+      "intent": "ai.emergency_request",
+      "critical": true,
+      "color": { "backgroundColor": "#fb4c2f", "textColor": "#ffffff" },
+      "description": "Construction emergencies and urgent project issues",
+      
+      "classificationRules": {
+        "keywords": {
+          "primary": ["urgent", "emergency", "ASAP", "immediately", "critical", "help now"],
+          "structural": ["structural damage", "collapse", "foundation", "structural issue", "crack", "sagging"],
+          "safety": ["safety hazard", "dangerous", "unsafe", "OSHA", "injury", "accident"],
+          "site": ["site emergency", "work stopped", "equipment failure", "crew problem"],
+          "customer": ["escalation", "complaint", "angry", "dissatisfied", "problem", "issue"]
+        },
+        
+        "patterns": [
+          "(structural|foundation) + (damage|issue|problem|crack)",
+          "(safety|unsafe|dangerous) + (hazard|condition|issue)",
+          "(site|work|project) + (emergency|stopped|halted)",
+          "(customer|client) + (escalation|complaint|angry|upset)"
+        ],
+        
+        "examples": [
+          "URGENT: Structural damage found during renovation",
+          "Safety hazard on construction site",
+          "Work stopped due to permit issue",
+          "Customer escalation - very upset about delay",
+          "Foundation crack discovered - need immediate assessment"
+        ]
+      },
+      
+      "sub": [
+        {
+          "name": "Structural Damage",
+          "keywords": ["structural damage", "collapse", "foundation crack", "structural issue", "sagging", "support beam"],
+          "examples": ["Structural damage during demo", "Foundation crack found"]
+        },
+        {
+          "name": "Safety Hazard",
+          "keywords": ["safety hazard", "dangerous", "unsafe", "OSHA", "injury risk", "accident"],
+          "examples": ["Unsafe working condition", "OSHA violation on site"]
+        },
+        {
+          "name": "Site Emergency",
+          "keywords": ["site emergency", "work stopped", "equipment failure", "crew emergency"],
+          "examples": ["Work halted due to emergency", "Equipment breakdown on site"]
+        },
+        {
+          "name": "Customer Escalation",
+          "keywords": ["escalation", "complaint", "angry customer", "dissatisfied", "upset", "problem"],
+          "examples": ["Customer very upset about timeline", "Escalation from homeowner"]
+        }
+      ]
+    },
+    {
+      "name": "PERMITS",
+      "intent": "ai.permit_inspection",
+      "color": { "backgroundColor": "#9c27b0", "textColor": "#ffffff" },
+      "description": "Building permits, inspections, and zoning",
+      
+      "classificationRules": {
+        "keywords": {
+          "primary": ["permit", "permits", "permitting", "inspection", "inspector", "building department"],
+          "application": ["permit application", "apply for permit", "submit permit", "permit approval"],
+          "inspection": ["inspection", "inspector", "inspect", "final inspection", "rough inspection"],
+          "code": ["building code", "code compliance", "code requirement", "code violation"],
+          "zoning": ["zoning", "variance", "setback", "zoning board"]
+        },
+        
+        "patterns": [
+          "(permit|permits) + (application|approval|required|needed)",
+          "(inspection|inspector) + (scheduled|coming|passed|failed)",
+          "(building code|code) + (compliance|requirement|violation)",
+          "(zoning|variance) + (approval|required|board)"
+        ],
+        
+        "examples": [
+          "Building permit application for addition",
+          "Inspection scheduled for Tuesday",
+          "Code compliance review needed",
+          "Zoning variance for property line"
+        ]
+      },
+      
+      "sub": [
+        {
+          "name": "Permit Applications",
+          "keywords": ["permit application", "apply for permit", "submit permit", "building permit"],
+          "examples": ["Apply for building permit", "Permit application for renovation"]
+        },
+        {
+          "name": "Inspections",
+          "keywords": ["inspection", "inspector", "rough inspection", "final inspection", "framing inspection"],
+          "examples": ["Inspection scheduled", "Framing inspection passed"]
+        },
+        {
+          "name": "Code Compliance",
+          "keywords": ["code compliance", "building code", "code requirement", "meet code"],
+          "examples": ["Code compliance review", "Building code requirements"]
+        },
+        {
+          "name": "Zoning",
+          "keywords": ["zoning", "variance", "setback", "zoning board", "lot coverage"],
+          "examples": ["Zoning variance needed", "Setback requirements"]
+        }
+      ]
+    },
+    {
+      "name": "MISC",
+      "intent": "ai.general",
+      "color": { "backgroundColor": "#999999", "textColor": "#ffffff" },
+      "sub": [{ "name": "General" }, { "name": "Archive" }]
+    },
+    {
+      "name": "PHONE",
+      "intent": "ai.call_log",
+      "color": { "backgroundColor": "#795548", "textColor": "#ffffff" },
+      "sub": [{ "name": "Missed Calls" }, { "name": "Call Backs" }, { "name": "Voicemails" }]
+    },
+    {
+      "name": "PROMO",
+      "intent": "ai.marketing",
+      "color": { "backgroundColor": "#9c27b0", "textColor": "#ffffff" },
+      "sub": [{ "name": "Email Campaigns" }, { "name": "Seasonal Offers" }, { "name": "Newsletters" }]
+    },
+    {
+      "name": "RECRUITMENT",
+      "intent": "ai.hr",
+      "color": { "backgroundColor": "#607d8b", "textColor": "#ffffff" },
+      "sub": [{ "name": "Applications" }, { "name": "Interviews" }, { "name": "New Hires" }]
+    },
+    {
+      "name": "SOCIALMEDIA",
+      "intent": "ai.social_engagement",
+      "color": { "backgroundColor": "#e91e63", "textColor": "#ffffff" },
+      "sub": [{ "name": "Facebook" }, { "name": "Instagram" }, { "name": "LinkedIn" }]
+    }
+  ],
+  "specialRules": [
+    {
+      "name": "FormSub Urgent Override",
+      "description": "Form submissions with construction emergency keywords must be classified as URGENT",
+      "trigger": {
+        "primary_category": "FORMSUB",
+        "keywords_in_body": ["structural damage", "safety hazard", "site emergency", "work stopped", "broken", "emergency", "ASAP", "urgent"]
+      },
+      "action": {
+        "override_primary": "URGENT",
+        "reason": "Form contains construction emergency"
+      },
+      "priority": "critical"
+    },
+    {
+      "name": "Phone Provider Detection",
+      "trigger": {
+        "sender_email_exact": ["service@ringcentral.com"]
+      },
+      "action": {
+        "force_primary": "PHONE"
+      },
+      "priority": "high"
+    },
+    {
+      "name": "Internal Email Detection",
+      "trigger": {
+        "sender_domain": "@{{businessInfo.emailDomain}}"
+      },
+      "action": {
+        "force_ai_can_reply": false,
+        "route_to": "MANAGER"
+      },
+      "priority": "critical"
+    }
+  ],
+  
+  "autoReplyRules": {
+    "enabled": true,
+    "minConfidence": 0.75,
+    "enabledCategories": ["Support", "Sales", "Urgent"]
+  },
+  
+  "domainDetection": {
+    "suppliers": [
+      {"name": "Home Depot", "domains": ["@homedepot.com", "@homedepot.ca"]},
+      {"name": "Lowes", "domains": ["@lowes.com", "@lowes.ca"]},
+      {"name": "{{Supplier1}}", "domains": []}
+    ],
+    "phoneProviders": [
+      {"provider": "RingCentral", "email": "service@ringcentral.com"}
+    ],
+    "internalDomains": ["@{{businessInfo.emailDomain}}"]
+  },
+  
+  "dynamicVariables": {
+    "managers": [
+      "{{Manager1}}",
+      "{{Manager2}}",
+      "{{Manager3}}",
+      "{{Manager4}}",
+      "{{Manager5}}"
+    ],
+    "suppliers": [
+      "{{Supplier1}}",
+      "{{Supplier2}}",
+      "{{Supplier3}}",
+      "{{Supplier4}}",
+      "{{Supplier5}}"
+    ]
+  }
+}
+

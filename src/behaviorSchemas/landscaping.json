@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "schemaVersion": "v2.0",
+    "industry": "Landscaping",
+    "author": "AI Config Generator",
+    "lastUpdated": "2025-10-05T00:00:00Z"
+  },
+  "voiceProfile": {
+    "tone": "Natural, growth-focused, and seasonal",
+    "formalityLevel": "casual",
+    "allowPricingInReplies": true,
+    "includeSignature": true
+  },
+  "signature": {
+    "closingText": "Let's make your outdoor space beautiful!",
+    "signatureBlock": "Best regards,\n{{businessProfile.businessName}} Team\n{{contactInfo.afterHoursSupportLine}}"
+  },
+  "aiDraftRules": {
+    "behaviorGoals": [
+      "Help customers create beautiful outdoor spaces",
+      "Provide seasonal landscaping guidance",
+      "Offer maintenance and design solutions",
+      "Ensure healthy plant growth and curb appeal"
+    ],
+    "autoReplyPolicy": {
+      "enableForCategories": ["Support", "Sales", "Maintenance", "Design"],
+      "minConfidence": 0.75,
+      "excludeInternalDomains": ["@landscapingcompany.com"]
+    },
+    "followUpGuidelines": {
+      "acknowledgeDelay": true,
+      "requireNextStep": true,
+      "preferredPhrasing": [
+        "We'll assess your landscape and provide a detailed care plan.",
+        "Your outdoor space will be thriving in no time!",
+        "Let's create the perfect landscape for your property."
+      ]
+    },
+    "replyFormat": {
+      "structure": ["Greeting", "Acknowledgment", "Landscape Assessment", "Care Plan", "Signature"],
+      "requireCTA": true,
+      "exampleCTAs": {
+        "Design": "Schedule a free consultation to discuss your landscaping vision.",
+        "Maintenance": "Let's keep your landscape looking its best year-round.",
+        "Installation": "We'll transform your outdoor space into something special."
+      }
+    },
+    "upsellGuidelines": {
+      "enabled": true,
+      "triggerCategories": ["Maintenance", "Design"],
+      "text": "We can also add seasonal color, mulch, or lighting to enhance your landscape's beauty."
+    },
+    "errorHandling": {
+      "missingDataPolicy": "Request property size, current landscape condition, and specific needs.",
+      "fallbackAction": "Forward to design@businessdomain.com for complex projects"
+    }
+  },
+  "categoryOverrides": {
+    "Urgent": {
+      "priorityLevel": 1,
+      "customLanguage": [
+        "Landscape emergencies need quick attention — we'll restore your outdoor space.",
+        "Your property's curb appeal is our priority."
+      ]
+    },
+    "Sales": {
+      "priorityLevel": 2,
+      "customLanguage": [
+        "We'd love to help you create the outdoor space of your dreams.",
+        "Let's discuss the perfect landscape design for your property."
+      ]
+    },
+    "Maintenance": {
+      "priorityLevel": 3,
+      "customLanguage": [
+        "Regular maintenance keeps your landscape healthy and beautiful.",
+        "We'll ensure your outdoor space thrives in every season."
+      ]
+    }
+  },
+  "validation": {
+    "requiredFields": ["voiceProfile", "aiDraftRules", "signature"],
+    "strictMode": true
+  }
+}

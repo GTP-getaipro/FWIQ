@@ -1,0 +1,229 @@
+{
+  "meta": {
+    "purpose": "Common label sections used across all business types",
+    "version": "v3.0 - Production Style",
+    "note": "These sections are merged into business-specific label schemas"
+  },
+  
+  "commonLabels": [
+    {
+      "name": "BANKING",
+      "intent": "ai.financial_transaction",
+      "critical": true,
+      "description": "Financial transactions, invoices, and payments",
+      "sub": [
+        {
+          "name": "e-transfer",
+          "description": "Interac e-Transfers",
+          "keywords": ["interac", "e-transfer", "you received", "you sent", "funds deposited"],
+          "tertiary": [
+            {"name": "FromBusiness", "keywords": ["you sent", "payment completed", "transfer to"]},
+            {"name": "ToBusiness", "keywords": ["you received", "funds deposited", "payment received"]}
+          ]
+        },
+        {
+          "name": "invoice",
+          "description": "Invoices and billing",
+          "keywords": ["invoice", "bill", "payment due", "amount owing"]
+        },
+        {
+          "name": "bank-alert",
+          "description": "Bank security alerts",
+          "keywords": ["security alert", "fraud", "verification code"]
+        },
+        {
+          "name": "refund",
+          "description": "Refund notifications",
+          "keywords": ["refund", "money returned", "credit"]
+        },
+        {
+          "name": "receipts",
+          "description": "Payment receipts",
+          "keywords": ["receipt", "order confirmation", "payment summary"],
+          "tertiary": [
+            {"name": "PaymentSent", "keywords": ["you paid", "amount paid", "charged your"]},
+            {"name": "PaymentReceived", "keywords": ["payment received", "customer paid", "thank you for your payment"]}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "FORMSUB",
+      "intent": "ai.form_submission",
+      "description": "Website form submissions",
+      "keywords": ["form submission", "new submission", "contact form"],
+      "sub": [
+        {"name": "NewSubmission", "description": "Standard website contact forms"},
+        {"name": "WorkOrderForms", "description": "Completed work order forms", "keywords": ["work order", "completed form"]}
+      ]
+    },
+    {
+      "name": "PHONE",
+      "intent": "ai.phone_communication",
+      "description": "Phone, voicemail, and SMS notifications",
+      "keywords": ["voicemail", "missed call", "SMS", "text message"],
+      "sub": [
+        {"name": "MissedCalls", "keywords": ["missed call", "call back"]},
+        {"name": "Voicemails", "keywords": ["voicemail", "voice message", "new message"]},
+        {"name": "SMS", "keywords": ["SMS", "text message", "new text"]}
+      ]
+    },
+    {
+      "name": "GOOGLE REVIEW",
+      "intent": "ai.customer_feedback",
+      "description": "Google Review notifications",
+      "keywords": ["Google Review", "new review", "rating", "customer feedback"],
+      "extractionRules": {
+        "reviewerName": "From line like 'Name left a review'",
+        "rating": "From 'Rating: ★★★★☆' or 'Rating: 4'",
+        "reviewText": "Inside quotation marks",
+        "reviewId": "From 'Review ID: g123abc456'"
+      }
+    },
+    {
+      "name": "MANAGER",
+      "intent": "ai.internal_routing",
+      "description": "Requires manager oversight or internal routing",
+      "sub": [
+        {"name": "{{Manager1}}", "keywords": [], "dynamicName": true},
+        {"name": "{{Manager2}}", "keywords": [], "dynamicName": true},
+        {"name": "{{Manager3}}", "keywords": [], "dynamicName": true},
+        {"name": "{{Manager4}}", "keywords": [], "dynamicName": true},
+        {"name": "{{Manager5}}", "keywords": [], "dynamicName": true},
+        {
+          "name": "Unassigned",
+          "description": "Internal alerts requiring manager review without specific person",
+          "keywords": ["verification code", "security alert", "system notification", "daily report", "autobatching failed"],
+          "senderPatterns": ["no-reply@accounts.google.com", "donotreply@auth.atb.com"]
+        }
+      ]
+    },
+    {
+      "name": "SUPPLIERS",
+      "intent": "ai.vendor_communication",
+      "description": "Communications with suppliers and vendors",
+      "sub": [
+        {"name": "{{Supplier1}}", "keywords": [], "dynamicName": true},
+        {"name": "{{Supplier2}}", "keywords": [], "dynamicName": true},
+        {"name": "{{Supplier3}}", "keywords": [], "dynamicName": true}
+      ]
+    },
+    {
+      "name": "PROMO",
+      "intent": "ai.marketing",
+      "description": "Marketing campaigns, discounts, sales flyers",
+      "keywords": ["promotion", "discount", "sale", "offer", "limited time", "save", "deal"]
+    },
+    {
+      "name": "RECRUITMENT",
+      "intent": "ai.hr",
+      "description": "Job applications, resumes, interviews",
+      "keywords": ["job application", "resume", "cover letter", "interview", "hiring", "position"]
+    },
+    {
+      "name": "SOCIALMEDIA",
+      "intent": "ai.social_engagement",
+      "description": "Social media DMs, tags, mentions, influencer outreach",
+      "keywords": ["DM", "direct message", "tagged", "Instagram", "Facebook", "TikTok", "social media"]
+    },
+    {
+      "name": "MISC",
+      "intent": "ai.general",
+      "description": "Unclassifiable emails - use as last resort only"
+    }
+  ],
+  
+  "universalSpecialRules": [
+    {
+      "name": "FormSub Urgent Override",
+      "description": "Form submissions with urgent keywords must be classified as URGENT",
+      "trigger": {
+        "primary_category": "FORMSUB",
+        "keywords_in_body_any": ["broken", "not working", "leaking", "won't start", "no power", "error code", "emergency", "ASAP", "urgent"]
+      },
+      "action": {
+        "override_primary": "URGENT",
+        "reason": "Form contains emergency service request"
+      },
+      "priority": "critical"
+    },
+    {
+      "name": "Phone Provider Detection",
+      "description": "Only classify as PHONE if from known phone service provider",
+      "trigger": {
+        "sender_email_exact": ["service@ringcentral.com", "voicemail@"]
+      },
+      "action": {
+        "force_primary": "PHONE"
+      },
+      "priority": "high"
+    },
+    {
+      "name": "Internal Email Detection",
+      "description": "Never auto-reply to internal company emails",
+      "trigger": {
+        "sender_domain": "@{{businessInfo.emailDomain}}"
+      },
+      "action": {
+        "force_ai_can_reply": false,
+        "route_to": "MANAGER"
+      },
+      "priority": "critical"
+    },
+    {
+      "name": "Service Platform Alerts",
+      "description": "Emails from service platforms indicating urgent issues",
+      "trigger": {
+        "sender_contains": ["alerts@servicetitan.com", "noreply@reports.connecteam.com", "emergency@"]
+      },
+      "action": {
+        "force_primary": "URGENT",
+        "increase_priority": true
+      },
+      "priority": "high"
+    },
+    {
+      "name": "Work Order Completion",
+      "description": "Completed work order forms from field service apps",
+      "trigger": {
+        "sender_email": "noreply@reports.connecteam.com",
+        "subject_contains": "completed"
+      },
+      "action": {
+        "force_primary": "FORMSUB",
+        "force_secondary": "WorkOrderForms"
+      },
+      "priority": "medium"
+    }
+  ],
+  
+  "universalAutoReplyRules": {
+    "enabled": true,
+    "minConfidence": 0.75,
+    "enabledCategories": ["Support", "Sales", "Urgent"],
+    "conditions": [
+      {
+        "rule": "primary_category in [Support, Sales, Urgent] AND confidence >= 0.75 AND NOT internal_email",
+        "result": "ai_can_reply: true",
+        "description": "Auto-reply enabled for customer-facing categories with high confidence"
+      },
+      {
+        "rule": "sender_domain matches @{{businessInfo.emailDomain}}",
+        "result": "ai_can_reply: false",
+        "description": "Never auto-reply to internal emails"
+      },
+      {
+        "rule": "primary_category in [Banking, Manager, Suppliers, Phone, FormSub, GoogleReview, Recruitment, Promo, SocialMedia]",
+        "result": "ai_can_reply: false",
+        "description": "Operational categories require human review"
+      },
+      {
+        "rule": "confidence < 0.75",
+        "result": "ai_can_reply: false",
+        "description": "Low confidence requires human review"
+      }
+    ]
+  }
+}
+
+

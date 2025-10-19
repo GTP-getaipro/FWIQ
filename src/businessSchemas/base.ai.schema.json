@@ -1,0 +1,259 @@
+{
+  "schemaVersion": "1.3.0",
+  "lastUpdated": "2025-01-05",
+  "author": "Floworx Automation Core",
+  "description": "Base AI schema template providing a standardized framework for industry-specific automation, classification, tone, and routing.",
+
+  "businessType": "Base",
+  "inheritance": {
+    "allowOverride": [
+      "labels",
+      "keywords",
+      "toneProfile",
+      "intentRouting",
+      "dynamicVariables"
+    ],
+    "requiredKeys": ["businessType", "intentRouting", "labels"]
+  },
+
+  "meta": {
+    "aiEngineVersion": "2.0",
+    "supports": {
+      "gmail": true,
+      "outlook": true,
+      "n8n": true
+    },
+    "notes": "All industry schemas inherit this structure."
+  },
+
+  "intentRouting": {
+    "ai.service_request": "SERVICE",
+    "ai.support_ticket": "SUPPORT",
+    "ai.sales_inquiry": "SALES",
+    "ai.financial_transaction": "BANKING",
+    "ai.emergency_request": "URGENT",
+    "ai.customer_feedback": "GOOGLE REVIEW",
+    "ai.vendor_communication": "SUPPLIERS",
+    "ai.internal_routing": "MANAGER",
+    "ai.general": "MISC",
+    "ai.hr": "RECRUITMENT",
+    "ai.marketing": "PROMO",
+    "ai.call_log": "PHONE",
+    "ai.social_engagement": "SOCIALMEDIA"
+  },
+
+  "toneProfile": {
+    "default": "Professional and friendly",
+    "urgent": "Concise, direct, and reassuring",
+    "sales": "Warm and consultative",
+    "support": "Helpful and empathetic",
+    "financial": "Formal and precise"
+  },
+
+  "keywords": {
+    "urgent": ["urgent", "emergency", "asap", "immediate", "critical"],
+    "sales": ["quote", "estimate", "consultation", "pricing", "appointment"],
+    "service": ["repair", "installation", "maintenance", "inspection", "schedule"],
+    "support": ["help", "issue", "problem", "question", "assistance"],
+    "banking": ["invoice", "payment", "refund", "transfer", "deposit"],
+    "review": ["review", "feedback", "rating", "google", "testimonial"]
+  },
+
+  "systemLabels": [
+    {
+      "name": "BANKING",
+      "intent": "ai.financial_transaction",
+      "critical": true,
+      "color": {
+        "backgroundColor": "#4CAF50",
+        "textColor": "#ffffff"
+      },
+      "n8nEnvVar": "BANKING_LABEL_ID"
+    },
+    {
+      "name": "SERVICE",
+      "intent": "ai.service_request",
+      "critical": true,
+      "color": {
+        "backgroundColor": "#2196F3",
+        "textColor": "#ffffff"
+      },
+      "n8nEnvVar": "SERVICE_LABEL_ID"
+    },
+    {
+      "name": "SUPPORT",
+      "intent": "ai.support_ticket",
+      "color": {
+        "backgroundColor": "#FF9800",
+        "textColor": "#ffffff"
+      },
+      "n8nEnvVar": "SUPPORT_LABEL_ID"
+    },
+    {
+      "name": "SALES",
+      "intent": "ai.sales_inquiry",
+      "color": {
+        "backgroundColor": "#9C27B0",
+        "textColor": "#ffffff"
+      },
+      "n8nEnvVar": "SALES_LABEL_ID"
+    },
+    {
+      "name": "SUPPLIERS",
+      "intent": "ai.vendor_communication",
+      "color": {
+        "backgroundColor": "#607D8B",
+        "textColor": "#ffffff"
+      },
+      "n8nEnvVar": "SUPPLIERS_LABEL_ID"
+    },
+    {
+      "name": "MANAGER",
+      "intent": "ai.internal_routing",
+      "color": {
+        "backgroundColor": "#795548",
+        "textColor": "#ffffff"
+      },
+      "n8nEnvVar": "MANAGER_LABEL_ID"
+    },
+    {
+      "name": "URGENT",
+      "intent": "ai.emergency_request",
+      "critical": true,
+      "color": {
+        "backgroundColor": "#F44336",
+        "textColor": "#ffffff"
+      },
+      "n8nEnvVar": "URGENT_LABEL_ID"
+    },
+    {
+      "name": "GOOGLE REVIEW",
+      "intent": "ai.customer_feedback",
+      "color": {
+        "backgroundColor": "#FFC107",
+        "textColor": "#000000"
+      },
+      "n8nEnvVar": "GOOGLE_REVIEW_LABEL_ID"
+    },
+    {
+      "name": "PROMO",
+      "intent": "ai.marketing",
+      "color": {
+        "backgroundColor": "#E91E63",
+        "textColor": "#ffffff"
+      },
+      "n8nEnvVar": "PROMO_LABEL_ID"
+    },
+    {
+      "name": "RECRUITMENT",
+      "intent": "ai.hr",
+      "color": {
+        "backgroundColor": "#3F51B5",
+        "textColor": "#ffffff"
+      },
+      "n8nEnvVar": "RECRUITMENT_LABEL_ID"
+    },
+    {
+      "name": "PHONE",
+      "intent": "ai.call_log",
+      "color": {
+        "backgroundColor": "#009688",
+        "textColor": "#ffffff"
+      },
+      "n8nEnvVar": "PHONE_LABEL_ID"
+    },
+    {
+      "name": "SOCIALMEDIA",
+      "intent": "ai.social_engagement",
+      "color": {
+        "backgroundColor": "#00BCD4",
+        "textColor": "#ffffff"
+      },
+      "n8nEnvVar": "SOCIALMEDIA_LABEL_ID"
+    },
+    {
+      "name": "MISC",
+      "intent": "ai.general",
+      "color": {
+        "backgroundColor": "#9E9E9E",
+        "textColor": "#ffffff"
+      },
+      "n8nEnvVar": "MISC_LABEL_ID"
+    }
+  ],
+
+  "dynamicVariables": {
+    "managers": [
+      "{{Manager1}}",
+      "{{Manager2}}",
+      "{{Manager3}}",
+      "{{Manager4}}",
+      "{{Manager5}}"
+    ],
+    "suppliers": [
+      "{{Supplier1}}",
+      "{{Supplier2}}",
+      "{{Supplier3}}",
+      "{{Supplier4}}",
+      "{{Supplier5}}",
+      "{{Supplier6}}",
+      "{{Supplier7}}",
+      "{{Supplier8}}",
+      "{{Supplier9}}",
+      "{{Supplier10}}"
+    ]
+  },
+
+  "validation": {
+    "requiredLabels": ["BANKING", "SERVICE", "SUPPORT", "URGENT"],
+    "maxManagers": 5,
+    "maxSuppliers": 10,
+    "schemaIntegrityChecks": {
+      "uniqueIntentMapping": true,
+      "noEmptyLabels": true
+    }
+  },
+
+  "aiConfiguration": {
+    "classificationModel": "gpt-4o-mini",
+    "confidenceThreshold": 0.75,
+    "fallbackLabel": "MISC",
+    "systemMessage": "You are an expert email processing and routing system for {{$env.BUSINESS_NAME}}.",
+    "replyPrompt": "Draft a friendly, professional, and helpful reply for {{$env.BUSINESS_NAME}}."
+  },
+
+  "escalationRules": {
+    "urgent_request": {
+      "threshold": "10m",
+      "notify": ["manager", "on_call_tech"],
+      "sla": "15m",
+      "autoReply": true
+    },
+    "service_request": {
+      "threshold": "2h",
+      "notify": ["manager"],
+      "sla": "4h",
+      "autoReply": true
+    },
+    "sales_inquiry": {
+      "threshold": "1h",
+      "notify": ["sales_manager"],
+      "sla": "2h",
+      "autoReply": true
+    }
+  },
+
+  "environmentVariables": {
+    "required": [
+      "BUSINESS_NAME",
+      "BUSINESS_TYPE",
+      "MANAGER_EMAIL",
+      "SUPPORT_EMAIL"
+    ],
+    "optional": [
+      "SALES_EMAIL",
+      "ACCOUNTING_EMAIL",
+      "EMERGENCY_PHONE"
+    ]
+  }
+}

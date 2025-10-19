@@ -1,0 +1,333 @@
+{
+  "schemaVersion": "1.0.0",
+  "businessType": "Insulation & Foam Spray",
+  "displayName": "Insulation & Foam Spray Business",
+  "description": "AI JSON schema for insulation and foam spray contractors including spray foam application, air sealing, and energy efficiency upgrades",
+  "updatedAt": "2025-10-08",
+  "author": "Floworx Automation Core",
+  
+  "metadata": {
+    "industry": "Insulation Services",
+    "primaryServices": ["Spray Foam Insulation", "Attic Insulation", "Wall Insulation", "Air Sealing", "Soundproofing"],
+    "targetCustomers": ["Residential", "Commercial", "New Construction", "Renovation"],
+    "seasonality": "Year-round with peak in fall/spring",
+    "emergencyServices": false,
+    "warrantyServices": true,
+    "supplierDependent": true
+  },
+
+  "aiConfiguration": {
+    "toneProfile": {
+      "primary": "Professional and energy-focused",
+      "secondary": "Educational and helpful",
+      "emergency": "Direct and solution-oriented",
+      "sales": "Consultative and ROI-focused"
+    },
+    "responseStyle": {
+      "length": "detailed",
+      "formality": "professional",
+      "urgency": "context-aware",
+      "personalization": "medium"
+    },
+    "classificationModel": "gpt-4o-mini",
+    "confidenceThreshold": 0.8,
+    "fallbackLabel": "MISC"
+  },
+
+  "intentMapping": {
+    "ai.service_request": "SERVICE",
+    "ai.financial_transaction": "BANKING",
+    "ai.emergency_request": "URGENT",
+    "ai.warranty_claim": "WARRANTY",
+    "ai.support_request": "SUPPORT",
+    "ai.sales_inquiry": "SALES",
+    "ai.supplier_communication": "SUPPLIERS",
+    "ai.management_oversight": "MANAGER",
+    "ai.review_management": "GOOGLE_REVIEW",
+    "ai.form_submission": "FORMSUB",
+    "ai.phone_communication": "PHONE",
+    "ai.marketing_communication": "PROMO",
+    "ai.hr_communication": "RECRUITMENT",
+    "ai.social_media": "SOCIALMEDIA",
+    "ai.general_communication": "MISC"
+  },
+
+  "keywords": {
+    "primary": ["insulation", "spray foam", "foam", "attic", "wall", "air sealing", "r-value", "energy efficiency"],
+    "secondary": ["soundproofing", "vapor barrier", "moisture control", "thermal barrier", "closed cell", "open cell"],
+    "emergency": ["urgent", "emergency", "water intrusion", "mold", "energy audit", "immediate"],
+    "service": ["install", "application", "spray", "seal", "insulate", "upgrade", "retrofit"],
+    "financial": ["invoice", "payment", "quote", "estimate", "energy rebate"],
+    "warranty": ["warranty", "claim", "defect", "settlement", "R-value guarantee"],
+    "negative": ["problem", "issue", "settling", "gaps", "drafts", "moisture", "odor"]
+  },
+
+  "labelSchema": {
+    "colors": {
+      "BANKING": { "backgroundColor": "#16a766", "textColor": "#ffffff" },
+      "FORMSUB": { "backgroundColor": "#0b804b", "textColor": "#ffffff" },
+      "GOOGLE_REVIEW": { "backgroundColor": "#fad165", "textColor": "#000000" },
+      "MANAGER": { "backgroundColor": "#ffad47", "textColor": "#000000" },
+      "SERVICE": { "backgroundColor": "#4a86e8", "textColor": "#ffffff" },
+      "WARRANTY": { "backgroundColor": "#a479e2", "textColor": "#ffffff" },
+      "SUPPORT": { "backgroundColor": "#4a86e8", "textColor": "#ffffff" },
+      "SALES": { "backgroundColor": "#149e60", "textColor": "#ffffff" },
+      "SUPPLIERS": { "backgroundColor": "#ffad47", "textColor": "#000000" },
+      "URGENT": { "backgroundColor": "#fb4c2f", "textColor": "#ffffff" },
+      "MISC": { "backgroundColor": "#999999", "textColor": "#ffffff" },
+      "PROMO": { "backgroundColor": "#43d692", "textColor": "#000000" },
+      "RECRUITMENT": { "backgroundColor": "#e07798", "textColor": "#ffffff" },
+      "PHONE": { "backgroundColor": "#6d9eeb", "textColor": "#ffffff" },
+      "SOCIALMEDIA": { "backgroundColor": "#ffad47", "textColor": "#000000" }
+    },
+    
+    "labels": {
+      "BANKING": {
+        "color": "BANKING",
+        "sub": ["Invoice", "Receipts", "Refund", "Payment Confirmation", "Bank Alert", "e-Transfer"],
+        "nested": {
+          "Receipts": ["Payment Sent", "Payment Received"],
+          "e-Transfer": ["From Business", "To Business"]
+        },
+        "intent": "ai.financial_transaction",
+        "critical": true,
+        "description": "Financial transactions and payments",
+        "n8nEnvVar": "LABEL_BANKING"
+      },
+      
+      "FORMSUB": {
+        "color": "FORMSUB",
+        "sub": ["New Submission", "Service Requests", "Energy Audit Requests"],
+        "intent": "ai.form_submission",
+        "critical": false,
+        "description": "Customer form submissions",
+        "n8nEnvVar": "LABEL_FORMSUB"
+      },
+      
+      "GOOGLE_REVIEW": {
+        "color": "GOOGLE_REVIEW",
+        "sub": ["New Review", "Response Needed", "Resolved"],
+        "intent": "ai.customer_feedback",
+        "critical": false,
+        "description": "Google reviews",
+        "n8nEnvVar": "LABEL_GOOGLE_REVIEW"
+      },
+      
+      "MANAGER": {
+        "color": "MANAGER",
+        "sub": ["Unassigned", "Escalations"],
+        "intent": "ai.internal_routing",
+        "critical": false,
+        "description": "Management oversight",
+        "n8nEnvVar": "LABEL_MANAGER"
+      },
+      
+      "SERVICE": {
+        "color": "SERVICE",
+        "sub": ["Spray Foam Application", "Attic Insulation", "Wall Insulation", "Air Sealing", "Soundproofing"],
+        "nested": {
+          "Spray Foam Application": ["Closed Cell", "Open Cell", "Attic Spray", "Wall Spray"],
+          "Air Sealing": ["Rim Joist", "Penetrations", "Ductwork", "Windows"]
+        },
+        "intent": "ai.service_request",
+        "critical": true,
+        "description": "All insulation services",
+        "n8nEnvVar": "LABEL_SERVICE"
+      },
+      
+      "SUPPORT": {
+        "color": "SUPPORT",
+        "sub": ["Technical Support", "R-Value Questions", "Energy Efficiency", "Warranty Support"],
+        "nested": {
+          "Technical Support": ["Application Questions", "Curing Time", "Moisture Control"]
+        },
+        "intent": "ai.support_ticket",
+        "critical": false,
+        "description": "Customer support",
+        "n8nEnvVar": "LABEL_SUPPORT"
+      },
+      
+      "SALES": {
+        "color": "SALES",
+        "sub": ["Residential Projects", "Commercial Projects", "Energy Audits", "Quotes", "Follow-ups"],
+        "nested": {
+          "Residential Projects": ["Attic Projects", "Wall Projects", "Basement Projects"],
+          "Commercial Projects": ["New Construction", "Retrofits", "Large Buildings"]
+        },
+        "intent": "ai.sales_inquiry",
+        "critical": false,
+        "description": "Sales and project inquiries",
+        "n8nEnvVar": "LABEL_SALES"
+      },
+      
+      "SUPPLIERS": {
+        "color": "SUPPLIERS",
+        "sub": ["Foam Suppliers", "Equipment Suppliers"],
+        "nested": {
+          "Foam Suppliers": ["Orders", "Material Specs", "Delivery"]
+        },
+        "intent": "ai.vendor_communication",
+        "critical": false,
+        "description": "Supplier communications",
+        "n8nEnvVar": "LABEL_SUPPLIERS"
+      },
+      
+      "URGENT": {
+        "color": "URGENT",
+        "sub": ["Water Intrusion", "Mold Risk", "Safety Concern", "Energy Emergency"],
+        "intent": "ai.emergency_request",
+        "critical": true,
+        "description": "Urgent situations",
+        "n8nEnvVar": "LABEL_URGENT"
+      },
+      
+      "PHONE": {
+        "color": "PHONE",
+        "sub": ["Missed Calls", "Call Backs", "Voicemails"],
+        "intent": "ai.call_log",
+        "critical": false,
+        "description": "Phone communications",
+        "n8nEnvVar": "LABEL_PHONE"
+      },
+      
+      "PROMO": {
+        "color": "PROMO",
+        "sub": ["Email Campaigns", "Seasonal Offers", "Newsletters"],
+        "intent": "ai.marketing",
+        "critical": false,
+        "description": "Marketing campaigns",
+        "n8nEnvVar": "LABEL_PROMO"
+      },
+      
+      "RECRUITMENT": {
+        "color": "RECRUITMENT",
+        "sub": ["Applications", "Interviews", "New Hires"],
+        "intent": "ai.hr",
+        "critical": false,
+        "description": "Recruitment",
+        "n8nEnvVar": "LABEL_RECRUITMENT"
+      },
+      
+      "SOCIALMEDIA": {
+        "color": "SOCIALMEDIA",
+        "sub": ["Facebook", "Instagram", "LinkedIn"],
+        "intent": "ai.social_engagement",
+        "critical": false,
+        "description": "Social media",
+        "n8nEnvVar": "LABEL_SOCIALMEDIA"
+      },
+      
+      "MISC": {
+        "color": "MISC",
+        "sub": ["General", "Archive"],
+        "intent": "ai.general",
+        "critical": false,
+        "description": "Miscellaneous",
+        "n8nEnvVar": "LABEL_MISC"
+      }
+    },
+    
+    "provisioningOrder": [
+      "BANKING", "FORMSUB", "GOOGLE_REVIEW", "MANAGER", "SERVICE",
+      "WARRANTY", "SUPPORT", "SALES", "SUPPLIERS", "URGENT",
+      "PHONE", "PROMO", "RECRUITMENT", "SOCIALMEDIA", "MISC"
+    ],
+    
+    "categoryGroups": {
+      "Operations": ["SERVICE", "SUPPORT", "WARRANTY"],
+      "Sales": ["SALES", "PROMO"],
+      "Administration": ["BANKING", "MANAGER", "RECRUITMENT"],
+      "Communications": ["PHONE", "SOCIALMEDIA"],
+      "Suppliers": ["SUPPLIERS"],
+      "CustomerExperience": ["GOOGLE_REVIEW", "FORMSUB"],
+      "Critical": ["URGENT"],
+      "General": ["MISC"]
+    }
+  },
+
+  "dynamicVariables": {
+    "managers": [
+      { "name": "Operations Manager", "email": "operations@business.com", "role": "Operations Manager" },
+      { "name": "Sales Manager", "email": "sales@business.com", "role": "Sales Manager" }
+    ],
+    "suppliers": [
+      { "name": "Foam Supplier", "email": "orders@foamsupplier.com", "category": "Spray Foam Materials" },
+      { "name": "Equipment Supplier", "email": "orders@equipmentsupplier.com", "category": "Application Equipment" }
+    ],
+    "technicians": [
+      { "name": "Lead Applicator", "email": "lead@business.com", "specialties": ["Spray Foam", "Installations"] },
+      { "name": "Crew Chief", "email": "crew@business.com", "specialties": ["Large Projects", "Commercial"] }
+    ]
+  },
+
+  "escalationRules": {
+    "urgent": {
+      "threshold": "24 hours",
+      "notify": ["managers"],
+      "sla": "4 hours",
+      "autoReply": true
+    },
+    "warranty": {
+      "threshold": "48 hours",
+      "notify": ["managers", "warranty_specialist"],
+      "sla": "24 hours",
+      "autoReply": false
+    },
+    "service": {
+      "threshold": "4 hours",
+      "notify": ["dispatcher"],
+      "sla": "2 hours",
+      "autoReply": true
+    },
+    "sales": {
+      "threshold": "2 hours",
+      "notify": ["sales_team"],
+      "sla": "4 hours",
+      "autoReply": true
+    }
+  },
+
+  "aiPrompts": {
+    "systemMessage": "You are an expert email processing and routing system for {{BUSINESS_NAME}}, an insulation and spray foam contractor. Classify emails by returning JSON with summary, reasoning, confidence, primary_category, secondary_category, tertiary_category, entities, and ai_can_reply. Focus on energy efficiency, R-value, and building science. Use categories: SERVICE (spray foam, air sealing), SALES (energy audits, quotes), SUPPORT (R-value questions, application questions), URGENT (water intrusion, mold concerns), and others as needed.",
+    "replyPrompt": "Draft professional, educational, and helpful replies for {{BUSINESS_NAME}} that demonstrate expertise in building science and energy efficiency. Explain R-values, insulation benefits, and energy savings clearly. For service requests, discuss project scope and energy savings potential. For sales inquiries, emphasize long-term ROI and comfort improvements. Always provide clear next steps and maintain a knowledgeable, trustworthy tone. Sign off professionally.",
+    "classificationRules": [
+      "Identify urgent keywords (water intrusion, mold, energy emergency) and route to URGENT label",
+      "Recognize service requests (spray foam, air sealing, insulation) and route to SERVICE label",
+      "Detect financial transactions (invoice, payment, quote) and route to BANKING label",
+      "Identify warranty claims (settling, gaps, R-value issues) and route to WARRANTY label",
+      "Recognize supplier communications (foam suppliers, equipment) and route to SUPPLIERS label",
+      "Detect sales inquiries (energy audit, insulation quote, R-value improvement) and route to SALES label",
+      "Identify technical questions (R-value, application method, curing time) and route to SUPPORT label"
+    ]
+  },
+
+  "environmentVariables": {
+    "required": [
+      "BUSINESS_NAME",
+      "BUSINESS_PHONE",
+      "BUSINESS_DOMAIN_PRIMARY",
+      "PAYMENT_EMAIL",
+      "WEBSITE_BASE_URL",
+      "WEBSITE_SERVICES_PAGE",
+      "TIMEZONE"
+    ],
+    "optional": [
+      "BUSINESS_DOMAIN_SECONDARY",
+      "SERVICE_AREA_PRIMARY",
+      "WEBSITE_ENERGY_AUDIT_FORM"
+    ],
+    "pricing": [
+      "PRICE_SITE_INSPECTION",
+      "PRICE_PER_SQFT",
+      "PRICE_MILEAGE_RATE"
+    ]
+  },
+
+  "validation": {
+    "requiredFields": ["businessType", "intentMapping", "labelSchema", "keywords"],
+    "colorValidation": "Must use Gmail API allowed colors",
+    "intentValidation": "All intents must map to valid labels",
+    "envVarValidation": "All n8nEnvVar values must be unique"
+  }
+}
+

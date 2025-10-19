@@ -1,0 +1,285 @@
+{
+  "meta": {
+    "schemaVersion": "v2.0",
+    "industry": "Sauna & Icebath",
+    "author": "AI Config Generator",
+    "lastUpdated": "2025-10-08T00:00:00Z"
+  },
+  "description": "Label schema for sauna and cold plunge businesses — supports installation, repair, maintenance, heater repair, and chiller systems.",
+  "rootOrder": [
+    "BANKING",
+    "FORMSUB",
+    "GOOGLE REVIEW",
+    "MANAGER",
+    "SALES",
+    "SUPPLIERS",
+    "SUPPORT",
+    "URGENT",
+    "WELLNESS",
+    "MISC",
+    "PHONE",
+    "PROMO",
+    "RECRUITMENT",
+    "SOCIALMEDIA"
+  ],
+  "labels": [
+    {
+      "name": "BANKING",
+      "intent": "ai.financial_transaction",
+      "critical": true,
+      "color": { "backgroundColor": "#16a766", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "BankAlert" },
+        { "name": "e-Transfer", "sub": [{ "name": "From Business" }, { "name": "To Business" }] },
+        { "name": "Invoice" },
+        { "name": "Receipts", "sub": [{ "name": "Payment Received" }, { "name": "Payment Sent" }] },
+        { "name": "Refund" }
+      ]
+    },
+    {
+      "name": "FORMSUB",
+      "intent": "ai.form_submission",
+      "color": { "backgroundColor": "#0b804b", "textColor": "#ffffff" },
+      "sub": [{ "name": "New Submission" }, { "name": "Service Requests" }]
+    },
+    {
+      "name": "GOOGLE REVIEW",
+      "intent": "ai.customer_feedback",
+      "color": { "backgroundColor": "#4285f4", "textColor": "#ffffff" },
+      "sub": [{ "name": "New Review" }, { "name": "Response Needed" }, { "name": "Resolved" }]
+    },
+    {
+      "name": "MANAGER",
+      "intent": "ai.internal_routing",
+      "color": { "backgroundColor": "#ffad47", "textColor": "#000000" },
+      "sub": [
+        { "name": "Unassigned" },
+        { "name": "Escalations" },
+        { "name": "{{Manager1}}" },
+        { "name": "{{Manager2}}" },
+        { "name": "{{Manager3}}" },
+        { "name": "{{Manager4}}" },
+        { "name": "{{Manager5}}" }
+      ]
+    },
+    {
+      "name": "SALES",
+      "intent": "ai.sales_inquiry",
+      "color": { "backgroundColor": "#16a766", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "Saunas" },
+        { "name": "Cold Plunge" },
+        { "name": "Accessories" },
+        { "name": "Quotes" },
+        { "name": "Follow-ups" }
+      ]
+    },
+    {
+      "name": "SUPPLIERS",
+      "intent": "ai.vendor_communication",
+      "color": { "backgroundColor": "#ffad47", "textColor": "#000000" },
+      "sub": [
+        { "name": "Finnleo" },
+        { "name": "Almost Heaven" },
+        { "name": "Plunge" },
+        { "name": "{{Supplier1}}" },
+        { "name": "{{Supplier2}}" },
+        { "name": "{{Supplier3}}" }
+      ]
+    },
+    {
+      "name": "SUPPORT",
+      "intent": "ai.support_ticket",
+      "color": { "backgroundColor": "#4a86e8", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "Technical Support" },
+        { "name": "Heater Issues" },
+        { "name": "Chiller Issues" },
+        { "name": "Appointment Scheduling" }
+      ]
+    },
+    {
+      "name": "URGENT",
+      "intent": "ai.emergency_request",
+      "critical": true,
+      "color": { "backgroundColor": "#fb4c2f", "textColor": "#ffffff" },
+      "description": "Sauna and ice bath emergencies",
+      
+      "classificationRules": {
+        "keywords": {
+          "primary": ["urgent", "emergency", "ASAP", "immediately", "help", "broken"],
+          "heater": ["heater", "not heating", "won't heat", "heating failure"],
+          "cooling": ["not cooling", "chiller", "ice bath", "won't cool", "too warm"],
+          "temperature": ["temperature", "temp", "too hot", "too cold"],
+          "safety": ["safety issue", "burn", "dangerous", "too hot"]
+        },
+        
+        "patterns": [
+          "(heater|heating) + (not working|broken|failed)",
+          "(chiller|cooling) + (not working|broken|failed)",
+          "(temperature|temp) + (control|issue|problem)",
+          "(too hot|too cold|dangerous) + (sauna|ice bath)"
+        ],
+        
+        "examples": [
+          "Sauna heater not working!",
+          "Ice bath chiller failed",
+          "Temperature control issues",
+          "Sauna too hot - safety concern"
+        ]
+      },
+      
+      "sub": [
+        {
+          "name": "Not Heating",
+          "keywords": ["not heating", "won't heat", "cold sauna", "heater issue"],
+          "examples": ["Sauna not heating", "Won't reach temperature"]
+        },
+        {
+          "name": "Heater Not Working",
+          "keywords": ["heater not working", "heater broken", "heater failed"],
+          "examples": ["Heater completely broken"]
+        },
+        {
+          "name": "Not Cooling",
+          "keywords": ["not cooling", "won't cool", "too warm", "ice bath warm"],
+          "examples": ["Ice bath not cooling"]
+        },
+        {
+          "name": "Chiller Not Working",
+          "keywords": ["chiller", "chiller broken", "chiller failed", "cooling system"],
+          "examples": ["Chiller not working"]
+        },
+        {
+          "name": "Safety Issue",
+          "keywords": ["safety", "too hot", "burn", "dangerous", "overheating"],
+          "examples": ["Sauna overheating", "Safety concern"]
+        }
+      ]
+    },
+    {
+      "name": "WELLNESS",
+      "intent": "ai.wellness_consultation",
+      "color": { "backgroundColor": "#00bcd4", "textColor": "#ffffff" },
+      "description": "Wellness consultation and usage guidance",
+      
+      "classificationRules": {
+        "keywords": {
+          "primary": ["wellness", "health", "usage", "protocol", "consultation"],
+          "usage": ["how to use", "usage guide", "protocol", "frequency", "duration"],
+          "health": ["health benefits", "medical", "consultation", "wellness"],
+          "temperature": ["temperature", "temp settings", "how hot", "how cold"]
+        },
+        
+        "patterns": [
+          "(how to|usage) + (use|sauna|ice bath)",
+          "(health|wellness) + (consultation|benefits|advice)",
+          "(temperature|temp) + (settings|recommendations)"
+        ],
+        
+        "examples": [
+          "How to use sauna safely?",
+          "Health benefits consultation",
+          "Temperature settings advice",
+          "Usage protocol questions"
+        ]
+      },
+      
+      "sub": [
+        {
+          "name": "Usage Guidance",
+          "keywords": ["usage", "how to use", "guidelines", "instructions"],
+          "examples": ["Sauna usage guide", "How to use ice bath"]
+        },
+        {
+          "name": "Health Benefits",
+          "keywords": ["health", "benefits", "wellness", "medical"],
+          "examples": ["Health benefits info", "Wellness consultation"]
+        },
+        {
+          "name": "Temperature Settings",
+          "keywords": ["temperature", "temp settings", "how hot", "how cold"],
+          "examples": ["Temp recommendations", "Temperature settings"]
+        },
+        {
+          "name": "Protocol Advice",
+          "keywords": ["protocol", "advice", "frequency", "duration", "routine"],
+          "examples": ["Usage protocol", "Frequency advice"]
+        }
+      ]
+    },
+    {
+      "name": "MISC",
+      "intent": "ai.general",
+      "color": { "backgroundColor": "#999999", "textColor": "#ffffff" },
+      "sub": [{ "name": "General" }, { "name": "Archive" }]
+    },
+    {
+      "name": "PHONE",
+      "intent": "ai.call_log",
+      "color": { "backgroundColor": "#795548", "textColor": "#ffffff" },
+      "sub": [{ "name": "Missed Calls" }, { "name": "Call Backs" }, { "name": "Voicemails" }]
+    },
+    {
+      "name": "PROMO",
+      "intent": "ai.marketing",
+      "color": { "backgroundColor": "#9c27b0", "textColor": "#ffffff" },
+      "sub": [{ "name": "Email Campaigns" }, { "name": "Seasonal Offers" }, { "name": "Newsletters" }]
+    },
+    {
+      "name": "RECRUITMENT",
+      "intent": "ai.hr",
+      "color": { "backgroundColor": "#607d8b", "textColor": "#ffffff" },
+      "sub": [{ "name": "Applications" }, { "name": "Interviews" }, { "name": "New Hires" }]
+    },
+    {
+      "name": "SOCIALMEDIA",
+      "intent": "ai.social_engagement",
+      "color": { "backgroundColor": "#e91e63", "textColor": "#ffffff" },
+      "sub": [{ "name": "Facebook" }, { "name": "Instagram" }, { "name": "LinkedIn" }]
+    }
+  ],
+  "specialRules": [
+    {
+      "name": "FormSub Urgent Override",
+      "trigger": {"primary_category": "FORMSUB", "keywords_in_body": ["not heating", "chiller broken", "temperature issue", "safety", "broken", "emergency", "ASAP"]},
+      "action": {"override_primary": "URGENT"},
+      "priority": "critical"
+    },
+    {
+      "name": "Phone Provider Detection",
+      "trigger": {"sender_email_exact": ["service@ringcentral.com"]},
+      "action": {"force_primary": "PHONE"},
+      "priority": "high"
+    },
+    {
+      "name": "Internal Email Detection",
+      "trigger": {"sender_domain": "@{{businessInfo.emailDomain}}"},
+      "action": {"force_ai_can_reply": false, "route_to": "MANAGER"},
+      "priority": "critical"
+    }
+  ],
+  "autoReplyRules": {"enabled": true, "minConfidence": 0.75, "enabledCategories": ["Support", "Sales", "Urgent"]},
+  "domainDetection": {
+    "suppliers": [
+      {"name": "{{Supplier1}}", "domains": []}
+    ],
+    "phoneProviders": [{"provider": "RingCentral", "email": "service@ringcentral.com"}],
+    "internalDomains": ["@{{businessInfo.emailDomain}}"]
+  },
+  "dynamicVariables": {
+    "managers": [
+      "{{Manager1}}",
+      "{{Manager2}}",
+      "{{Manager3}}",
+      "{{Manager4}}",
+      "{{Manager5}}"
+    ],
+    "suppliers": [
+      "{{Supplier1}}",
+      "{{Supplier2}}",
+      "{{Supplier3}}"
+    ]
+  }
+}
+

@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "schemaVersion": "v2.0",
+    "industry": "Plumber",
+    "author": "AI Config Generator",
+    "lastUpdated": "2025-10-05T00:00:00Z"
+  },
+  "voiceProfile": {
+    "tone": "Emergency-focused, reliable, and solution-oriented",
+    "formalityLevel": "medium",
+    "allowPricingInReplies": true,
+    "includeSignature": true
+  },
+  "signature": {
+    "closingText": "We keep the water flowing!",
+    "signatureBlock": "Best regards,\n{{businessProfile.businessName}} Team\n{{contactInfo.afterHoursSupportLine}}"
+  },
+  "aiDraftRules": {
+    "behaviorGoals": [
+      "Address plumbing emergencies with urgency and expertise",
+      "Provide clear diagnostic information and solutions",
+      "Offer preventive maintenance to avoid future issues",
+      "Ensure water safety and system reliability"
+    ],
+    "autoReplyPolicy": {
+      "enableForCategories": ["Urgent", "Support", "Sales", "Maintenance"],
+      "minConfidence": 0.8,
+      "excludeInternalDomains": ["@plumbingcompany.com"]
+    },
+    "followUpGuidelines": {
+      "acknowledgeDelay": true,
+      "requireNextStep": true,
+      "preferredPhrasing": [
+        "Our emergency plumber will be there as soon as possible.",
+        "We'll diagnose the issue and provide a clear solution.",
+        "Your plumbing system will be back to normal quickly."
+      ]
+    },
+    "replyFormat": {
+      "structure": ["Greeting", "Acknowledgment", "Diagnostic Info", "Emergency Plan", "Signature"],
+      "requireCTA": true,
+      "exampleCTAs": {
+        "Emergency": "Call our 24/7 emergency line immediately for urgent issues.",
+        "Maintenance": "Schedule preventive maintenance to avoid future problems.",
+        "Installation": "Let's discuss upgrading your plumbing system for better efficiency."
+      }
+    },
+    "upsellGuidelines": {
+      "enabled": true,
+      "triggerCategories": ["Maintenance", "Repair"],
+      "text": "While we're there, we can also check your water pressure, inspect for leaks, and clean your drains."
+    },
+    "errorHandling": {
+      "missingDataPolicy": "Request specific symptoms, affected areas, and water pressure issues.",
+      "fallbackAction": "Forward to emergency@businessdomain.com for urgent situations"
+    }
+  },
+  "categoryOverrides": {
+    "Urgent": {
+      "priorityLevel": 1,
+      "customLanguage": [
+        "Plumbing emergencies are urgent — our team is standing by 24/7.",
+        "We understand how stressful water issues can be — we'll fix it fast."
+      ]
+    },
+    "Sales": {
+      "priorityLevel": 2,
+      "customLanguage": [
+        "We'd love to help you upgrade your plumbing system for better efficiency.",
+        "Let's discuss modern plumbing solutions for your home."
+      ]
+    },
+    "Maintenance": {
+      "priorityLevel": 3,
+      "customLanguage": [
+        "Regular maintenance prevents costly plumbing emergencies.",
+        "We'll keep your plumbing system running smoothly year-round."
+      ]
+    }
+  },
+  "validation": {
+    "requiredFields": ["voiceProfile", "aiDraftRules", "signature"],
+    "strictMode": true
+  }
+}

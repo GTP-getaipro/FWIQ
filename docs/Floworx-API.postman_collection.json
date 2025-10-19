@@ -1,0 +1,361 @@
+{
+  "info": {
+    "name": "Floworx API",
+    "description": "Complete API collection for Floworx endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3001",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "user-123",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Basic Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/health",
+              "host": ["{{base_url}}"],
+              "path": ["api", "health"]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Detailed Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/health/detailed",
+              "host": ["{{base_url}}"],
+              "path": ["api", "health", "detailed"]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Readiness Probe",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/health/ready",
+              "host": ["{{base_url}}"],
+              "path": ["api", "health", "ready"]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Liveness Probe",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/health/live",
+              "host": ["{{base_url}}"],
+              "path": ["api", "health", "live"]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Service Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/health/metrics",
+              "host": ["{{base_url}}"],
+              "path": ["api", "health", "metrics"]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "Store Analytics Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"page_view\",\n  \"data\": {\n    \"page\": \"/dashboard\",\n    \"duration\": 30000,\n    \"userId\": \"{{user_id}}\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/analytics/events",
+              "host": ["{{base_url}}"],
+              "path": ["api", "analytics", "events"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Store Session Data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"session-{{$timestamp}}\",\n  \"startTime\": \"2024-01-01T10:00:00.000Z\",\n  \"endTime\": \"2024-01-01T11:00:00.000Z\",\n  \"pageViews\": 5,\n  \"events\": 10,\n  \"userId\": \"{{user_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/analytics/sessions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "analytics", "sessions"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Dashboard Data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/analytics/dashboard/{{user_id}}?timeRange=24h",
+              "host": ["{{base_url}}"],
+              "path": ["api", "analytics", "dashboard", "{{user_id}}"],
+              "query": [
+                {
+                  "key": "timeRange",
+                  "value": "24h"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Security",
+      "item": [
+        {
+          "name": "Report CSP Violation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"csp-report\": {\n    \"document-uri\": \"https://app.floworx.com\",\n    \"violated-directive\": \"script-src\",\n    \"blocked-uri\": \"inline\",\n    \"source-file\": \"https://app.floworx.com/script.js\",\n    \"line-number\": 42,\n    \"column-number\": 10,\n    \"effective-directive\": \"script-src\",\n    \"original-policy\": \"script-src 'self' 'unsafe-inline'\",\n    \"disposition\": \"enforce\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/csp-reports",
+              "host": ["{{base_url}}"],
+              "path": ["api", "csp-reports"]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Error Testing",
+      "item": [
+        {
+          "name": "Test Authentication Required",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"test\",\n  \"data\": {}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/analytics/events",
+              "host": ["{{base_url}}"],
+              "path": ["api", "analytics", "events"]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Test Validation Error",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/analytics/events",
+              "host": ["{{base_url}}"],
+              "path": ["api", "analytics", "events"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Test Not Found",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/nonexistent-endpoint",
+              "host": ["{{base_url}}"],
+              "path": ["api", "nonexistent-endpoint"]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-generate session ID if needed",
+          "if (pm.request.body && pm.request.body.mode === 'raw') {",
+          "    let body = JSON.parse(pm.request.body.raw);",
+          "    if (body.sessionId && body.sessionId.includes('{{$timestamp}}')) {",
+          "        body.sessionId = 'session-' + Date.now();",
+          "        pm.request.body.raw = JSON.stringify(body);",
+          "    }",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Common tests for all requests",
+          "pm.test('Response has success field', function () {",
+          "    pm.expect(pm.response.json()).to.have.property('success');",
+          "});",
+          "",
+          "pm.test('Response has message field', function () {",
+          "    pm.expect(pm.response.json()).to.have.property('message');",
+          "});",
+          "",
+          "pm.test('Response has timestamp field', function () {",
+          "    pm.expect(pm.response.json()).to.have.property('timestamp');",
+          "});",
+          "",
+          "pm.test('Timestamp is valid ISO 8601', function () {",
+          "    const timestamp = pm.response.json().timestamp;",
+          "    pm.expect(new Date(timestamp)).to.be.a('date');",
+          "});",
+          "",
+          "pm.test('Response time is acceptable', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+          "});",
+          "",
+          "// Test for success responses",
+          "if (pm.response.json().success === true) {",
+          "    pm.test('Success response should not have error field', function () {",
+          "        pm.expect(pm.response.json()).to.not.have.property('error');",
+          "    });",
+          "    ",
+          "    pm.test('Success response should have data field', function () {",
+          "        pm.expect(pm.response.json()).to.have.property('data');",
+          "    });",
+          "}",
+          "",
+          "// Test for error responses",
+          "if (pm.response.json().success === false) {",
+          "    pm.test('Error response should have error field', function () {",
+          "        pm.expect(pm.response.json()).to.have.property('error');",
+          "    });",
+          "    ",
+          "    pm.test('Error response should not have data field', function () {",
+          "        pm.expect(pm.response.json()).to.not.have.property('data');",
+          "    });",
+          "}"
+        ]
+      }
+    }
+  ]
+}

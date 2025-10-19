@@ -1,0 +1,1535 @@
+﻿// Deno Edge Function: Deploy per-client n8n workflow
+// - Creates/ensures Gmail credential in n8n using the client's refresh_token
+// - Resolves shared credential IDs (openai-shared, supabase-metrics)
+// - Injects client data into workflow template and creates/updates + activates in n8n
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+// Inline OpenAI key rotation (avoids shared dependency issues)
+let cachedKeys = null;
+let keyCounter = 0;
+function loadKeys() {
+  if (cachedKeys) return cachedKeys;
+  const envKeys = [
+    Deno.env.get('OPENAI_KEY_1'),
+    Deno.env.get('OPENAI_KEY_2'),
+    Deno.env.get('OPENAI_KEY_3'),
+    Deno.env.get('OPENAI_KEY_4'),
+    Deno.env.get('OPENAI_KEY_5')
+  ].filter((k)=>Boolean(k)); // Type assertion for filter
+  cachedKeys = envKeys;
+  return envKeys;
+}
+function getNextKey() {
+  const keys = loadKeys();
+  if (keys.length === 0) {
+    throw new Error('No OpenAI keys configured in Edge Function secrets');
+  }
+  const key = keys[keyCounter % keys.length];
+  keyCounter++;
+  const ref = key.slice(0, 10) + '...';
+  return {
+    key,
+    ref
+  };
+}
+const N8N_BASE_URL = Deno.env.get('N8N_BASE_URL') || Deno.env.get('NBN_BASE_URL') || '';
+const N8N_API_KEY = Deno.env.get('N8N_API_KEY') || Deno.env.get('NBN_API_KEY') || '';
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+const GMAIL_CLIENT_ID = Deno.env.get('GMAIL_CLIENT_ID') || Deno.env.get('GOOGLE_CLIENT_ID') || '';
+const GMAIL_CLIENT_SECRET = Deno.env.get('GMAIL_CLIENT_SECRET') || Deno.env.get('GOOGLE_CLIENT_SECRET') || '';
+const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
+function slugify(input, fallback) {
+  const s = (input || fallback || 'client').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+  return s.slice(0, 20);
+}
+/**
+ * Fetch merged business type template from database
+ * Supports multi-business selection with intelligent template merging
+ */ async function fetchBusinessTypeTemplate(businessTypes) {
+  if (!businessTypes || businessTypes.length === 0) {
+    console.log('⚠️ No business types provided, skipping template fetch');
+    return null;
+  }
+
+  try {
+    console.log(`📋 Fetching merged template for business types: ${businessTypes.join(', ')}`);
+
+    // Call database function to get merged template
+    const { data, error } = await supabaseAdmin.rpc('get_merged_business_template', {
+      business_types: businessTypes
+    });
+
+    if (error) {
+      console.error('❌ Failed to fetch business type template:', error);
+      return null;
+    }
+
+    if (!data) {
+      console.log('⚠️ No template data returned from database');
+      return null;
+    }
+
+    console.log(`✅ Fetched merged template for ${data.template_count} business type(s)`);
+    return data;
+  } catch (err) {
+    console.error('❌ Error fetching business type template:', err);
+    return null;
+  }
+}
+
+/**
+ * Generate comprehensive AI system message with all business-specific rules
+ * Fetches complete profile from database for truly personalized system messages
+ * This is the server-side version that matches dynamicAISystemMessageGenerator.js
+ */ async function generateDynamicAISystemMessage(userId) {
+  // Fetch complete business profile from database
+  const { data: profile, error } = await supabaseAdmin.from('profiles').select(`
+      client_config,
+      managers,
+      suppliers,
+      business_type,
+      business_types,
+      email_labels
+    `).eq('id', userId).single(); // Type assertion for profile
+  if (error || !profile) {
+    console.error('❌ Failed to fetch profile for dynamic AI system message:', error);
+    // Return a basic fallback
+    return 'You are an email classifier. Categorize emails accurately and return JSON with summary, primary_category, confidence, and ai_can_reply fields.';
+  }
+  // Extract business configuration
+  const businessConfig = profile.client_config || {};
+  const business = businessConfig.business || {};
+  const rules = businessConfig.rules || {};
+  const services = businessConfig.services || [];
+  const businessName = business.name || 'the business';
+  const emailDomain = business.emailDomain || 'yourbusiness.com';
+  // Ensure businessTypes is always an array
+  const businessTypes = profile.business_types || (profile.business_type ? [
+    profile.business_type
+  ] : []);
+
+  // Fetch business type template from database
+  const businessTemplate = await fetchBusinessTypeTemplate(businessTypes);
+  // Extract managers from profile
+  const managers = profile.managers || [];
+  const managerNames = managers.map((m)=>m.name).filter(Boolean);
+  const managerCategories = managerNames.length > 0 ? managerNames.join(', ') + ', Unassigned' : 'Unassigned';
+  // Extract suppliers from profile
+  const suppliers = profile.suppliers || [];
+  const supplierNames = suppliers.map((s)=>s.name).filter(Boolean);
+  const supplierCategories = supplierNames.length > 0 ? supplierNames.join(', ') : 'General Suppliers';
+  // Build services list
+  const servicesList = services.length > 0 ? services.map((s)=>`- ${s.name}: ${s.description || ''}`).join('\n') : '- No specific services configured yet';
+  // Get phone provider info
+  const phoneProvider = rules?.phoneProvider?.name || 'RingCentral';
+  const phoneSenders = rules?.phoneProvider?.senders || [
+    'service@ringcentral.com'
+  ];
+  // Get CRM alert emails
+  const crmAlertEmails = rules?.crmAlertEmails || [
+    'alerts@servicetitan.com'
+  ];
+  // Get urgent keywords from rules
+  const urgentKeywords = rules?.urgentKeywords || [
+    'urgent',
+    'asap',
+    'immediately',
+    'emergency',
+    'leaking',
+    'leak',
+    'water leak',
+    'won\'t heat',
+    'not heating',
+    'no power',
+    'tripping breaker',
+    'error code'
+  ];
+  // Build business-specific inquiry types and protocols from template
+  let inquiryTypesSection = '';
+  let protocolsSection = '';
+  let specialRulesSection = '';
+  let upsellPromptsSection = '';
+
+  if (businessTemplate) {
+    // Build inquiry types section
+    if (businessTemplate.inquiry_types && Array.isArray(businessTemplate.inquiry_types)) {
+      const inquiryTypesList = businessTemplate.inquiry_types.map((type: any) => {
+        const keywords = type.keywords || '';
+        const pricing = type.pricing || 'Contact for pricing';
+        return `- **${type.name}**: ${type.description}\n  Keywords: ${keywords}\n  Pricing: ${pricing}`;
+      }).join('\n');
+
+      inquiryTypesSection = `\n### Inquiry Types:\n${inquiryTypesList}\n`;
+    }
+
+    // Build protocols section
+    if (businessTemplate.protocols) {
+      protocolsSection = `\n### Business Protocols:\n${businessTemplate.protocols}\n`;
+    }
+
+    // Build special rules section
+    if (businessTemplate.special_rules && Array.isArray(businessTemplate.special_rules)) {
+      const rulesList = businessTemplate.special_rules.map((rule: string, idx: number) => `${idx + 1}. ${rule}`).join('\n');
+      specialRulesSection = `\n### Special Business Rules:\n${rulesList}\n`;
+    }
+
+    // Build upsell prompts section
+    if (businessTemplate.upsell_prompts && Array.isArray(businessTemplate.upsell_prompts)) {
+      const upsellList = businessTemplate.upsell_prompts.map((prompt: string) => `- ${prompt}`).join('\n');
+      upsellPromptsSection = `\n### Upsell Opportunities:\n${upsellList}\n`;
+    }
+  }
+
+  // Build comprehensive system message (matches the structure from HOT_TUB_SPA_OUTLOOK_FOLDER_STRUCTURE.md)
+  const systemMessage = `You are an expert email processing and routing system for "${businessName}".
+
+Your SOLE task is to analyze the provided email and return a single, structured JSON object containing a summary, precise classifications, and extracted entities. Follow all rules precisely.
+
+### Business Context:
+- **Business Name:** ${businessName}
+- **Business Type(s):** ${businessTypes.join(', ')}
+- **Email Domain:** ${emailDomain}
+- **Service Area:** ${business.serviceArea || 'Not specified'}
+- **Phone Provider:** ${phoneProvider}
+- **CRM System:** ${crmAlertEmails.join(', ')}
+${inquiryTypesSection}${protocolsSection}${specialRulesSection}${upsellPromptsSection}
+### Team Members:
+${managerNames.length > 0 ? managerNames.map((name, idx)=>`- ${name}: ${managers[idx]?.email || 'Email not specified'}`).join('\n') : '- No team members configured'}
+
+### Known Suppliers:
+${supplierNames.length > 0 ? supplierNames.map((name, idx)=>{
+    const domains = suppliers[idx]?.domains || [];
+    return `- ${name}${domains.length > 0 ? ': ' + domains.join(', ') : ''}`;
+  }).join('\n') : '- No suppliers configured'}
+
+### Rules:
+If the email is from an external sender, and primary_category is Support or Sales, and confidence is at least 0.75, always set "ai_can_reply": true—including for Support > General complaints, unless the sender is internal or the message is abusive/illegal.
+
+If the sender's email address ends with "@${emailDomain}", always set:
+"ai_can_reply": false
+
+1. Analyze the entire email context (sender, subject, body).
+2. Choose **ONE** \`primary_category\` from the list provided.
+3. If the chosen category has sub-categories, select the most appropriate \`secondary_category\`.
+4. For Banking categories with available tertiary sub-categories, determine the most appropriate \`tertiary_category\`.
+5. Provide a concise \`summary\` of the email's core request.
+6. Extract all available \`entities\`.
+7. Provide a confidence score (0.0 to 1.0) and a brief reasoning for your classification.
+8. \`"ai_can_reply": true\` **only if**:
+   - \`primary_category\` is **Support** *or* **Sales** *or* **Urgent**, **and**
+   - \`confidence\` ≥ 0.75.
+
+In **all other cases** set \`"ai_can_reply": false\` (the email will be routed to a human).
+Return **only** the JSON object—no extra text.
+
+### Category Structure:
+
+**Phone:** 
+Only emails from phone/SMS/voicemail providers should be tagged PHONE.
+This category includes all emails originating specifically from your configured phone provider. These notifications typically contain:
+• Voicemail notifications (voice message transcripts or audio attachments)
+• Missed call alerts (with caller ID and callback numbers)
+• SMS/text message alerts (text message transcripts or content)
+
+These messages indicate customer or vendor attempts to communicate via the business phone number managed by your provider.
+
+**Configured Phone Provider:** ${phoneProvider}
+**Known Sender Addresses:** ${phoneSenders.join(', ')}
+
+Examples:
+• "You have a new voice message from (403) 123-4567."
+• "New SMS received from customer."
+• "Missed call alert."
+• "New Text Message from [Customer Name]"
+• RingCentral: "You have a new text message" / "Thank you for using RingCentral"
+• Google Voice: "has sent you a text message" / "voice.google.com"
+• Dialpad: "New voicemail" / "dialpad.com"
+• Vonage: "You have a new message" / "vonage.com"
+
+Universal Keywords: voicemail, voice message, missed call, SMS, text message, caller ID, message transcript, new message, call recording, callback number, you have a new text, you have a new voicemail, you have a new call, missed call from, call from, message from, sent you a text, sent you a voicemail, voice mail, phone notification, call notification, sms notification
+
+Classification Rule: ✅ Always classify as Phone if ANY of these conditions are met:
+1. Sender email matches any of: ${phoneSenders.join(', ')}
+2. Subject OR body contains any combination:
+   - ("new" OR "missed" OR "received" OR "sent you") + ("text" OR "voicemail" OR "voice message" OR "call" OR "sms" OR "message")
+3. Body contains provider-specific phrases:
+   - "thank you for using ${phoneProvider}"
+   - References to ${phoneProvider.toLowerCase()} domain
+   - Common phone provider domains: ringcentral.com, voice.google.com, dialpad.com, vonage.com, 8x8.com, nextiva.com, grasshopper.com
+4. Body structure indicates phone notification:
+   - Contains "From:" and "To:" fields with names/numbers
+   - Contains "Received:" with timestamp
+   - Contains callback instructions or phone app links
+   - Contains caller ID or phone number formatting like (xxx) xxx-xxxx
+
+**Promo:** Marketing, discounts, sales flyers.
+Examples: "Save 25% this weekend only!" "Refer a friend and earn rewards"
+
+**Socialmedia:** Emails related to social media platforms like Facebook, Instagram, TikTok, YouTube.
+Keywords: DM, tagged, post, reel, story, influencer, collab
+
+**Sales:** Emails from leads or customers expressing interest in purchasing products or services.
+This includes new inquiries, quote requests, pricing discussions, and referral notifications.
+
+**Recruitment:** Job applications, resumes, interviews.
+Keywords: job application, resume, cover letter, interview, hiring
+
+**GoogleReview:** Notifications about new Google Reviews.
+Extract reviewerName, rating, reviewText, reviewId if available.
+
+**Urgent:** Emergency emails requiring immediate attention.
+Keywords: ${urgentKeywords.join(', ')}
+Also includes emails from alerts@servicetitan.com or containing "Please find your estimate(s)"
+
+**Misc:** Use as a last resort for unclassifiable emails.
+
+**Manager:**
+secondary_category: [${managerCategories}]
+Route emails explicitly mentioning manager names or internal alerts requiring management review.
+${managerNames.map((name)=>`${name} - Mail explicitly for ${name}`).join('\n')}
+Unassigned - Internal alerts or platform notices requiring manager review
+
+**FormSub:** Website form submissions and work order forms.
+secondary_category: [NewSubmission, WorkOrderForms]
+NewSubmission: Standard website form submissions from ${crmAlertEmails.filter((e)=>e.includes('servicetitan')).join(', ') || 'CRM system'}
+WorkOrderForms: Emails from noreply@reports.connecteam.com containing completed work forms
+URGENT OVERRIDE: If form submission contains urgent keywords (${urgentKeywords.slice(0, 8).join(', ')}), classify as URGENT instead of FormSub.
+
+**Suppliers:**
+secondary_category: [${supplierCategories}]
+${supplierNames.map((name)=>`${name} - Emails from this supplier`).join('\n')}
+
+**Support:** Post-sales customer support.
+secondary_category: [TechnicalSupport, PartsAndChemicals, AppointmentScheduling, General]
+TechnicalSupport - Troubleshooting and repair requests
+PartsAndChemicals - Orders or inquiries about parts and chemicals
+AppointmentScheduling - Booking/rescheduling/canceling visits
+General - Other support inquiries
+
+**Banking:** Financial transactions, invoices, and payments.
+secondary_category: [e-transfer, invoice, bank-alert, refund, receipts]
+
+If secondary_category is 'e-transfer', set tertiary_category: [FromBusiness, ToBusiness]
+FromBusiness: Emails confirming that ${businessName} has sent a payment or successfully transferred funds to a vendor, contractor, or external service provider. These are typically receipts, payment confirmations, or e-Transfer acknowledgments indicating money was sent from the business account.
+Examples: "Transfer from: ${businessName}", "Your e-Transfer was successful", "Payment completed"
+Subject lines: "Funds sent", "Your e-Transfer was successful", "Payment completed"
+Body text: "You sent an Interac e-Transfer", "Funds deposited to the recipient", "Your payment has been processed"
+Keywords: you sent, payment completed, funds deposited to, interac e-transfer sent, transaction receipt, payment confirmation, amount paid, transfer successful, Your transfer to, to recipient
+Classification Tip: ✅ Classify as FromBusiness only if the email confirms that ${businessName} has sent funds.
+
+ToBusiness: Emails confirming that a payment has been deposited into ${businessName}'s account. These typically come from banks, payment platforms, or customers and indicate successful incoming transfers.
+Examples: Interac e-Transfer deposit confirmations
+Subject lines: "Funds have been deposited", "You've received money", "Deposit successful"
+Body text: "You received an Interac e-Transfer", "Funds have been deposited into your account", "The payment has been successfully deposited"
+Keywords: e-transfer received, funds deposited, you've received, payment received, money has been sent to you, You've received, deposit completed, interac transfer to ${businessName}
+Classification Tip: ✅ Only classify as ToBusiness if the message confirms a completed deposit into your account.
+
+If secondary_category is 'invoice', set tertiary_category: [BillingDocument, PaymentDue, FormalInvoice]
+BillingDocument: Billing documents, payment due notices, or formal invoices from external parties received by, or formal invoices sent by, ${businessName}. Exclude simple payment confirmations or internal invoices generated by ${businessName} for its own records.
+PaymentDue: Payment due notices and billing statements requiring payment action.
+FormalInvoice: Official invoices from vendors, suppliers, or service providers.
+
+If secondary_category is 'bank-alert', set tertiary_category: [SecurityAlert, FraudWarning, PasswordReset]
+SecurityAlert: Automated security alerts from a bank or financial institution (e.g., fraud warnings, password resets, suspicious login notifications, transaction alerts).
+FraudWarning: Specific fraud detection alerts or suspicious activity notifications.
+PasswordReset: Password change confirmations or reset notifications.
+
+If secondary_category is 'refund', set tertiary_category: [RefundIssued, RefundReceived]
+RefundIssued: Notifications confirming that a refund has been issued by ${businessName}.
+RefundReceived: Notifications confirming that a refund has been received by ${businessName}.
+
+If secondary_category is 'receipts', set tertiary_category: [PaymentSent, PaymentReceived]
+**IMPORTANT: You MUST always select either PaymentSent or PaymentReceived for receipts. Never return null for tertiary_category when secondary_category is 'receipts'.**
+
+PaymentSent: Emails confirming that ${businessName} has made a payment or purchase. Look for keywords like "payment sent", "purchase confirmed", "payment processed", "you paid", "amount charged", "transaction completed" from the business perspective.
+Examples: "Your payment has been processed", "Purchase confirmation", "Payment sent to vendor"
+Keywords: you paid, payment sent, purchase confirmed, amount charged, transaction completed, payment processed
+
+PaymentReceived: Emails confirming that ${businessName} has received payment from a customer, client, or external party. Look for keywords like "you just got paid", "payment received", "amount paid", "funds received", "payment confirmation" indicating money coming INTO the business.
+Examples: "You just got paid!", "Payment received from customer", "Amount paid: $X", "Funds received"
+Keywords: you just got paid, payment received, amount paid, funds received, payment confirmation, you've been paid, money received, payment deposited
+
+**Classification Rules for Receipts:**
+- If the email shows ${businessName} RECEIVED money (from customers, clients, etc.), use "PaymentReceived"
+- If the email shows ${businessName} SENT money (to vendors, suppliers, etc.), use "PaymentSent"
+- If uncertain, default to "PaymentReceived" for business receipts
+
+
+
+**Service:** Service requests and appointments.
+secondary_category: [Repairs, Installations, Maintenance, EmergencyService]
+
+**Warranty:** Warranty claims and parts.
+secondary_category: [Claims, PendingReview, Resolved, Denied]
+
+### Services Offered:
+${servicesList}
+
+### JSON Output Format:
+Return ONLY the following JSON structure:
+
+\`\`\`json
+{
+  "summary": "A concise, one-sentence summary of the email's purpose.",
+  "reasoning": "A brief explanation for the chosen categories.",
+  "confidence": 0.9,
+  "primary_category": "The chosen primary category",
+  "secondary_category": "The chosen secondary category, or null if not applicable.",
+  "tertiary_category": "The chosen tertiary category, or null if not applicable.",
+  "entities": {
+    "contact_name": "Extracted contact name, or null.",
+    "email_address": "Extracted email address, or null.",
+    "phone_number": "Extracted phone number, or null.",
+    "order_number": "Extracted order/invoice number, or null."
+  },
+  "ai_can_reply": true
+}
+\`\`\`
+`;
+  return systemMessage;
+}
+async function n8nRequest(path, init = {}) {
+  const url = `${N8N_BASE_URL.replace(/\/$/, '')}/api/v1${path}`;
+  const headers = {
+    'Content-Type': 'application/json',
+    'X-N8N-API-KEY': N8N_API_KEY
+  };
+  console.log(`🔗 Making n8n API request: ${init.method || 'GET'} ${url}`);
+  console.log(`🔑 Using API Key: ${N8N_API_KEY ? N8N_API_KEY.substring(0, 20) + '...' : 'Not set'}`);
+  const res = await fetch(url, {
+    ...init,
+    headers: {
+      ...headers,
+      ...init.headers
+    }
+  });
+  console.log(`📡 n8n API response: ${res.status} ${res.statusText}`);
+  if (!res.ok) {
+    const text = await res.text();
+    console.error(`❌ n8n API error: ${res.status} ${res.statusText} - ${text}`);
+    throw new Error(`n8n ${init.method || 'GET'} ${path} failed: ${res.status} ${res.statusText} - ${text}`);
+  }
+  return res.json();
+}
+async function resolveCredentialIdByName(name) {
+  try {
+    // Try to get credentials list, but handle the case where GET is not allowed
+    const list = await n8nRequest('/credentials');
+    const found = Array.isArray(list) ? list.find((c)=>c.name === name) : null;
+    return found?.id || null;
+  } catch (error) {
+    // If GET /credentials fails (405 Method Not Allowed), assume credential doesn't exist
+    console.log(`⚠️ Cannot list credentials via API (${error.message}), assuming ${name} doesn't exist`);
+    return null;
+  }
+}
+/**
+ * Load workflow template based on email provider (Gmail or Outlook)
+ * Loads from the actual template JSON files
+ */ async function loadWorkflowTemplateByProvider(provider) {
+  const templateFileName = provider === 'outlook' ? 'outlook-template.json' : 'gmail-template.json';
+  const templatePath = `./templates/${templateFileName}`;
+  console.log(`📂 Loading template from: ${templatePath}`);
+  try {
+    const templateText = await Deno.readTextFile(templatePath);
+    const template = JSON.parse(templateText);
+    console.log(`✅ ${provider} template loaded successfully`);
+    return template;
+  } catch (error) {
+    console.error(`❌ Failed to load ${provider} template:`, error);
+    throw new Error(`Failed to load ${provider} template: ${error.message}`);
+  }
+}
+async function loadWorkflowTemplate(businessType) {
+  // DEPRECATED: Use loadWorkflowTemplateByProvider instead
+  // This function is kept for backward compatibility
+  // For now, returning a comprehensive base template with all placeholders
+  return {
+    "name": "<<<BUSINESS_NAME>>> Automation Workflow v<<<CONFIG_VERSION>>>",
+    "nodes": [
+      {
+        "parameters": {
+          "pollTimes": {
+            "item": [
+              {
+                "mode": "custom",
+                "cronExpression": "0 */2 * * * *"
+              }
+            ]
+          },
+          "simple": false,
+          "filters": {
+            "q": "in:inbox -(from:(*@<<<EMAIL_DOMAIN>>>))"
+          },
+          "options": {
+            "downloadAttachments": true
+          }
+        },
+        "type": "n8n-nodes-base.gmailTrigger",
+        "typeVersion": 1.2,
+        "position": [
+          200,
+          300
+        ],
+        "id": "gmail-trigger",
+        "name": "Gmail Trigger",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "<<<CLIENT_GMAIL_CRED_ID>>>",
+            "name": "<<<BUSINESS_NAME>>> Gmail"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=Subject: {{ $json.subject }}\nFrom: {{ $json.from }}\nBody: {{ $json.body }}",
+          "options": {
+            "systemMessage": "<<<AI_SYSTEM_MESSAGE>>>",
+            "temperature": 0.3,
+            "maxTokens": 1000
+          }
+        },
+        "id": "ai-classifier",
+        "name": "AI Master Classifier",
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "position": [
+          600,
+          300
+        ],
+        "typeVersion": 1.8,
+        "credentials": {
+          "openAiApi": {
+            "id": "<<<CLIENT_OPENAI_CRED_ID>>>",
+            "name": "OpenAI"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "rules": {
+            "values": [
+              {
+                "conditions": {
+                  "conditions": [
+                    {
+                      "id": "urgent",
+                      "leftValue": "={{ $json.parsed_output.primary_category }}",
+                      "rightValue": "URGENT",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      }
+                    }
+                  ]
+                },
+                "outputKey": "urgent_flow"
+              },
+              {
+                "conditions": {
+                  "conditions": [
+                    {
+                      "id": "sales",
+                      "leftValue": "={{ $json.parsed_output.primary_category }}",
+                      "rightValue": "SALES",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      }
+                    }
+                  ]
+                },
+                "outputKey": "sales_flow"
+              },
+              {
+                "conditions": {
+                  "conditions": [
+                    {
+                      "id": "support",
+                      "leftValue": "={{ $json.parsed_output.primary_category }}",
+                      "rightValue": "SUPPORT",
+                      "operator": {
+                        "type": "string",
+                        "operation": "equals"
+                      }
+                    }
+                  ]
+                },
+                "outputKey": "support_flow"
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3.2,
+        "position": [
+          1000,
+          300
+        ],
+        "id": "category-router",
+        "name": "Category Router"
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "<<<LABEL_URGENT_ID>>>"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          1400,
+          100
+        ],
+        "id": "route-urgent",
+        "name": "Route to URGENT",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "<<<CLIENT_GMAIL_CRED_ID>>>",
+            "name": "<<<BUSINESS_NAME>>> Gmail"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "<<<LABEL_SALES_ID>>>"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          1400,
+          250
+        ],
+        "id": "route-sales",
+        "name": "Route to SALES",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "<<<CLIENT_GMAIL_CRED_ID>>>",
+            "name": "<<<BUSINESS_NAME>>> Gmail"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "addLabels",
+          "messageId": "={{ $json.parsed_output.id }}",
+          "labelIds": [
+            "<<<LABEL_SUPPORT_ID>>>"
+          ]
+        },
+        "type": "n8n-nodes-base.gmail",
+        "typeVersion": 2.1,
+        "position": [
+          1400,
+          400
+        ],
+        "id": "route-support",
+        "name": "Route to SUPPORT",
+        "credentials": {
+          "gmailOAuth2": {
+            "id": "<<<CLIENT_GMAIL_CRED_ID>>>",
+            "name": "<<<BUSINESS_NAME>>> Gmail"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "conditions": [
+              {
+                "id": "can-reply",
+                "leftValue": "={{ $json.parsed_output.ai_can_reply }}",
+                "rightValue": "true",
+                "operator": {
+                  "type": "boolean",
+                  "operation": "true"
+                }
+              }
+            ]
+          }
+        },
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          1800,
+          100
+        ],
+        "id": "check-reply",
+        "name": "Check: Can Reply?"
+      },
+      {
+        "parameters": {
+          "promptType": "define",
+          "text": "=Email: {{ $json.parsed_output.subject }}\nFrom: {{ $json.parsed_output.from }}\nBody: {{ $json.parsed_output.body }}",
+          "options": {
+            "systemMessage": "<<<BEHAVIOR_REPLY_PROMPT>>>",
+            "temperature": 0.7,
+            "maxTokens": 500
+          }
+        },
+        "id": "ai-reply",
+        "name": "AI Reply Agent",
+        "type": "@n8n/n8n-nodes-langchain.agent",
+        "position": [
+          2200,
+          100
+        ],
+        "typeVersion": 1.8,
+        "credentials": {
+          "openAiApi": {
+            "id": "<<<CLIENT_OPENAI_CRED_ID>>>",
+            "name": "OpenAI"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "operation": "insert",
+          "tableId": "performance_metrics",
+          "columns": {
+            "client_id": "={{ \"<<<USER_ID>>>\" }}",
+            "metric_date": "={{ $json.date }}",
+            "metric_name": "={{ \"email_processing\" }}",
+            "metric_value": "={{ $json.emailsProcessed }}",
+            "dimensions": "={{ JSON.stringify({ type: $json.type, timeSavedHours: $json.timeSavedHours, moneySaved: $json.moneySaved, avgMinutesPerEmail: $json.avgMinutesPerEmail, receptionistHourlyRate: $json.receptionistHourlyRate, workflow: 'email-automation' }) }}"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          2400,
+          100
+        ],
+        "id": "save-metrics",
+        "name": "Save Performance Metrics",
+        "credentials": {
+          "supabaseApi": {
+            "id": "<<<CLIENT_SUPABASE_CRED_ID>>>",
+            "name": "Supabase FWIQ"
+          }
+        },
+        "continueOnFail": true
+      },
+      {
+        "parameters": {
+          "operation": "insert",
+          "tableId": "ai_draft_learning",
+          "columns": {
+            "user_id": "={{ \"<<<USER_ID>>>\" }}",
+            "thread_id": "={{ $('Prepare Email Data').first().json.threadId }}",
+            "email_id": "={{ $('Prepare Email Data').first().json.id }}",
+            "original_email": "={{ $('Prepare Email Data').first().json.body }}",
+            "ai_draft": "={{ $('Format Reply as HTML').first().json.output }}",
+            "classification": "={{ JSON.stringify($('Parse AI Classification').first().json.parsed_output) }}",
+            "confidence_score": "={{ $('Parse AI Classification').first().json.parsed_output.confidence }}",
+            "model_used": "={{ \"gpt-4o-mini\" }}"
+          },
+          "options": {}
+        },
+        "type": "n8n-nodes-base.supabase",
+        "typeVersion": 1,
+        "position": [
+          2400,
+          300
+        ],
+        "id": "save-to-learning-db",
+        "name": "Save AI Draft for Learning",
+        "credentials": {
+          "supabaseApi": {
+            "id": "<<<CLIENT_SUPABASE_CRED_ID>>>",
+            "name": "Supabase FWIQ"
+          }
+        },
+        "continueOnFail": true
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForEachItem",
+          "jsCode": "const avgMinutesPerEmail = 4.5;\nconst receptionistHourlyRate = 25;\n\n// This node runs once for each item, so we process one email.\nconst emailsProcessed = 1;\n\n// Calculate savings\nconst timeSavedHours = +(emailsProcessed * avgMinutesPerEmail / 60).toFixed(2);\nconst moneySaved = +(timeSavedHours * receptionistHourlyRate).toFixed(2);\n\n// Determine type based on ai_can_reply flag\nconst type = $json.parsed_output?.ai_can_reply ? 'Drafting' : 'Labeling';\n\n// Return a single object, not an array, as required by this mode.\nreturn {\n  json: {\n    date: (new Date()).toISOString().slice(0, 10),\n    type: type,\n    emailsProcessed,\n    avgMinutesPerEmail,\n    timeSavedHours,\n    receptionistHourlyRate,\n    moneySaved\n  }\n};"
+        },
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2200,
+          200
+        ],
+        "id": "calculate-metrics",
+        "name": "Calculate Performance Metrics"
+      }
+    ],
+    "connections": {
+      "Gmail Trigger": {
+        "main": [
+          [
+            {
+              "node": "AI Master Classifier",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AI Master Classifier": {
+        "main": [
+          [
+            {
+              "node": "Category Router",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Category Router": {
+        "main": [
+          [
+            {
+              "node": "Route to URGENT",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Route to SALES",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Route to SUPPORT",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Route to URGENT": {
+        "main": [
+          [
+            {
+              "node": "Check: Can Reply?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Route to SALES": {
+        "main": [
+          [
+            {
+              "node": "Check: Can Reply?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Route to SUPPORT": {
+        "main": [
+          [
+            {
+              "node": "Check: Can Reply?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check: Can Reply?": {
+        "main": [
+          [
+            {
+              "node": "AI Reply Agent",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          []
+        ]
+      },
+      "AI Reply Agent": {
+        "main": [
+          [
+            {
+              "node": "Calculate Performance Metrics",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Save AI Draft for Learning",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Calculate Performance Metrics": {
+        "main": [
+          [
+            {
+              "node": "Save Performance Metrics",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "pinData": {},
+    "settings": {
+      "executionOrder": "v1"
+    },
+    "staticData": null,
+    "tags": []
+  };
+}
+async function injectOnboardingData(clientData, workflowTemplate) {
+  let templateString = JSON.stringify(workflowTemplate);
+  const { business = {}, contact = {}, services = [], rules = {}, integrations = {}, id: clientId, version } = clientData;
+  // Build signature block
+  const signatureBlock = `\n\nBest regards,\nThe ${business.name || 'Your Business'} Team\n${contact.phone || ''}`;
+  const serviceCatalogText = (services || []).map((s)=>`- ${s.name} (${s.pricingType} ${s.price} ${business.currency || 'USD'}): ${s.description}`).join('\n');
+  const managersText = (clientData.managers || []).map((m)=>m.name).join(', ');
+  // Extract business types
+  const businessTypes = clientData.business?.types || (clientData.business?.type ? [
+    clientData.business.type
+  ] : []);
+  const businessTypesText = Array.isArray(businessTypes) ? businessTypes.join(' + ') : businessTypes;
+  // BUILD AI CONFIGURATION (Layer 1)
+  // Use the frontend-generated AI system message from buildProductionClassifier()
+  // The frontend already generates comprehensive system messages with all business context
+  const aiSystemMessage = clientData.aiSystemMessage || 'You are an email classifier. Categorize emails accurately and return JSON with summary, primary_category, confidence, and ai_can_reply fields.';
+  // BUILD BEHAVIOR CONFIGURATION (Layer 2 + Voice Training)
+  // Use the frontend-generated behavior configuration instead of building our own
+  // The frontend already generates comprehensive behavior prompts with voice training
+  const behaviorTone = rules?.tone || 'Professional, friendly, and helpful';
+  const behaviorReplyPrompt = clientData.behaviorReplyPrompt || `You are drafting professional email replies for ${business.name || 'Your Business'}.
+
+BASELINE TONE (from business type):
+- Tone: ${behaviorTone}
+- Formality: Professional
+- Be clear, concise, and helpful
+
+BEHAVIOR GOALS:
+1. Acknowledge the customer's request or concern
+2. Provide helpful information or next steps
+3. Maintain a ${behaviorTone} tone throughout
+4. End with a clear call-to-action or next step
+
+${rules?.aiGuardrails?.allowPricing ? 'You may discuss pricing and provide estimates when asked.' : 'Do not discuss pricing. Direct customers to request a formal quote.'}
+
+SIGNATURE: ${signatureBlock}
+`;
+  // BASE REPLACEMENTS
+  const replacements = {
+    // Business info
+    '<<<BUSINESS_NAME>>>': business.name || 'Your Business',
+    '<<<CONFIG_VERSION>>>': String(version || 1),
+    '<<<CLIENT_ID>>>': clientId,
+    '<<<USER_ID>>>': clientId,
+    '<<<EMAIL_DOMAIN>>>': business.emailDomain || '',
+    '<<<CURRENCY>>>': business.currency || 'USD',
+    '<<<EXCLUDED_DOMAINS>>>': business.excludedDomains || 'noreply,notification',
+    '<<<HOURLY_RATE>>>': String(business.hourlyRate || 25),
+    '<<<WORKFLOW_VERSION_ID>>>': String(version || 1),
+    '<<<LABEL_MAPPINGS>>>': JSON.stringify(clientData.email_labels || {}),
+    // Credentials
+    '<<<CLIENT_GMAIL_CRED_ID>>>': integrations.gmail?.credentialId || '',
+    '<<<CLIENT_OUTLOOK_CRED_ID>>>': integrations.outlook?.credentialId || '',
+    '<<<CLIENT_POSTGRES_CRED_ID>>>': integrations.postgres?.credentialId || 'supabase-metrics',
+    '<<<CLIENT_SUPABASE_CRED_ID>>>': integrations.postgres?.credentialId || 'supabase-metrics',
+    '<<<CLIENT_OPENAI_CRED_ID>>>': integrations.openai?.credentialId || 'openai-shared',
+    // Team data
+    '<<<MANAGERS_TEXT>>>': managersText,
+    '<<<SUPPLIERS>>>': JSON.stringify((clientData.suppliers || []).map((s)=>({
+        name: s.name,
+        email: s.email,
+        category: s.category
+      }))),
+    // Labels
+    '<<<LABEL_MAP>>>': JSON.stringify(clientData.email_labels || {}),
+    // Content
+    '<<<SIGNATURE_BLOCK>>>': signatureBlock,
+    '<<<SERVICE_CATALOG_TEXT>>>': serviceCatalogText,
+    // Legacy fields
+    '<<<ESCALATION_RULE>>>': rules?.escalationRules || '',
+    '<<<REPLY_TONE>>>': behaviorTone,
+    '<<<ALLOW_PRICING>>>': String(rules?.aiGuardrails?.allowPricing ?? false),
+    // AI Configuration (Layer 1)
+    '<<<AI_KEYWORDS>>>': JSON.stringify([
+      'urgent',
+      'emergency',
+      'ASAP',
+      'service',
+      'quote',
+      'leak',
+      'broken',
+      'not working'
+    ]),
+    '<<<AI_SYSTEM_MESSAGE>>>': aiSystemMessage,
+    '<<<AI_CLASSIFICATION_PROMPT>>>': aiSystemMessage,
+    '<<<AI_REPLY_BEHAVIOR_PROMPT>>>': behaviorReplyPrompt,
+    '<<<AI_CLASSIFIER_MODEL>>>': 'gpt-4o-mini',
+    '<<<AI_DRAFT_MODEL>>>': 'gpt-4o-mini',
+    '<<<AI_INTENT_MAPPING>>>': JSON.stringify({
+      'ai.emergency_request': 'URGENT',
+      'ai.service_request': 'SALES',
+      'ai.support_request': 'SUPPORT',
+      'ai.billing_inquiry': 'BILLING',
+      'ai.recruitment': 'RECRUITMENT'
+    }),
+    '<<<AI_CLASSIFICATION_RULES>>>': 'See system message for classification rules',
+    '<<<AI_ESCALATION_RULES>>>': rules?.escalationRules || 'Escalate all URGENT emails immediately',
+    '<<<AI_CATEGORIES>>>': 'URGENT, SALES, SUPPORT, MANAGER, RECRUITMENT, BILLING, MISC',
+    '<<<AI_BUSINESS_TYPES>>>': businessTypesText,
+    // Behavior Configuration (Layer 2)
+    '<<<BEHAVIOR_VOICE_TONE>>>': behaviorTone,
+    '<<<BEHAVIOR_FORMALITY>>>': 'professional',
+    '<<<BEHAVIOR_ALLOW_PRICING>>>': String(rules?.aiGuardrails?.allowPricing ?? false),
+    '<<<BEHAVIOR_UPSELL_TEXT>>>': rules?.upsellGuidelines || '',
+    '<<<BEHAVIOR_FOLLOWUP_TEXT>>>': rules?.followUpGuidelines || '',
+    '<<<BEHAVIOR_GOALS>>>': '1. Acknowledge request\n2. Provide helpful info\n3. Clear next steps',
+    '<<<BEHAVIOR_REPLY_PROMPT>>>': behaviorReplyPrompt,
+    '<<<BEHAVIOR_CATEGORY_OVERRIDES>>>': JSON.stringify({}),
+    '<<<BEHAVIOR_SIGNATURE_TEMPLATE>>>': signatureBlock,
+    // Supabase Configuration
+    '<<<SUPABASE_URL>>>': SUPABASE_URL || '',
+    '<<<SUPABASE_ANON_KEY>>>': Deno.env.get('SUPABASE_ANON_KEY') || ''
+  };
+  // DYNAMIC LABEL ID INJECTION (Layer 3)
+  // Add individual label IDs for routing nodes
+  if (clientData.email_labels) {
+    for (const [labelName, labelId] of Object.entries(clientData.email_labels)){
+      // Convert label name to placeholder format: "URGENT" → "<<<LABEL_URGENT_ID>>>"
+      const placeholderKey = `<<<LABEL_${String(labelName).toUpperCase().replace(/\s+/g, '_').replace(/\//g, '_')}_ID>>>`;
+      replacements[placeholderKey] = String(labelId);
+    }
+  }
+  // Apply all replacements
+  for (const [ph, val] of Object.entries(replacements)){
+    const safe = val == null ? '' : String(val);
+    // Escape special regex characters in placeholder
+    const escapedPh = ph.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    templateString = templateString.replace(new RegExp(escapedPh, 'g'), safe);
+  }
+  return JSON.parse(templateString);
+}
+async function handler(req) {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+      }
+    });
+  }
+  try {
+    if (req.method !== 'POST') return new Response('Method not allowed', {
+      status: 405,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json'
+      }
+    });
+    const requestBody = await req.json();
+    const { userId, checkOnly } = requestBody;
+    if (!userId) return new Response('Missing userId', {
+      status: 400,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json'
+      }
+    });
+    // If this is just a check for availability, test N8N connection
+    if (checkOnly) {
+      try {
+        await n8nRequest('/workflows', {
+          method: 'GET'
+        });
+        return new Response(JSON.stringify({
+          success: true,
+          available: true
+        }), {
+          status: 200,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Content-Type': 'application/json'
+          }
+        });
+      } catch (error) {
+        return new Response(JSON.stringify({
+          success: false,
+          available: false,
+          error: error.message
+        }), {
+          status: 200,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Content-Type': 'application/json'
+          }
+        });
+      }
+    }
+    // WorkflowData might be included in the main requestBody if sent from frontend
+    const { workflowData } = requestBody;
+    // Fetch client config and integrations
+    const { data: profile, error: profileError } = await supabaseAdmin.from('profiles').select('client_config, managers, suppliers, email_labels, business_types').eq('id', userId).single(); // Type assertion for profile
+    if (profileError || !profile?.client_config) throw new Error('Client configuration not found');
+    // Fetch learned voice profile (communication style)
+    const { data: voiceData } = await supabaseAdmin.from('communication_styles').select('style_profile, learning_count, last_updated').eq('user_id', userId).maybeSingle(); // Type assertion for voiceData
+    const voiceProfile = voiceData || null;
+    // 🔍 DETECT PROVIDER: Check which email provider the client is using (Gmail or Outlook)
+    const { data: activeIntegrations } = await supabaseAdmin.from('integrations').select('access_token, refresh_token, provider, status, n8n_credential_id').eq('user_id', userId).eq('status', 'active').in('provider', [
+      'google',
+      'gmail',
+      'outlook',
+      'microsoft'
+    ]);
+    console.log(`🔍 Found ${activeIntegrations?.length || 0} active integrations:`, activeIntegrations?.map((i)=>({
+        provider: i.provider,
+        hasRefreshToken: !!i.refresh_token,
+        hasCredentialId: !!i.n8n_credential_id,
+        refreshTokenPreview: i.refresh_token ? `${i.refresh_token.substring(0, 20)}...` : 'MISSING'
+      })));
+    // Determine which provider to use (prefer the one with n8n_credential_id)
+    let provider = 'gmail'; // default
+    let integration = null;
+    if (activeIntegrations && activeIntegrations.length > 0) {
+      // Prefer integration with n8n_credential_id
+      const integrationWithCred = activeIntegrations.find((i)=>i.n8n_credential_id);
+      integration = integrationWithCred || activeIntegrations[0];
+      provider = integration.provider === 'outlook' || integration.provider === 'microsoft' ? 'outlook' : 'gmail';
+    }
+    console.log(`📧 Detected email provider: ${provider}`);
+    console.log(`📧 Selected integration:`, {
+      provider: integration?.provider,
+      hasRefreshToken: !!integration?.refresh_token,
+      hasCredentialId: !!integration?.n8n_credential_id
+    });
+    const refreshToken = integration?.refresh_token || null;
+    const businessName = profile.client_config?.business?.name || 'Client';
+    const businessSlug = slugify(businessName, 'client');
+    const clientShort = String(userId).replace(/-/g, '').slice(0, 5);
+    // Ensure email credential in n8n (Gmail OR Outlook based on detected provider)
+    let gmailId = null;
+    let outlookId = null;
+    if (provider === 'gmail') {
+      // Gmail credential handling
+      const { data: existingMap } = await supabaseAdmin.from('n8n_credential_mappings').select('gmail_credential_id').eq('user_id', userId).maybeSingle();
+      // Check if integration has n8n_credential_id
+      gmailId = integration?.n8n_credential_id || existingMap?.gmail_credential_id || null;
+      if (!gmailId && refreshToken) {
+        const credBody = {
+          name: `gmail-${businessSlug}-${clientShort}`,
+          type: 'googleOAuth2Api',
+          data: {
+            clientId: GMAIL_CLIENT_ID,
+            clientSecret: GMAIL_CLIENT_SECRET,
+            sendAdditionalBodyProperties: false,
+            additionalBodyProperties: '',
+            oauthTokenData: {
+              refresh_token: refreshToken,
+              token_type: 'Bearer'
+            }
+          },
+          nodesAccess: [
+            {
+              nodeType: 'n8n-nodes-base.gmail'
+            },
+            {
+              nodeType: 'n8n-nodes-base.gmailTrigger'
+            }
+          ]
+        };
+        console.log(`🔧 Creating Gmail credential with body:`, {
+          name: credBody.name,
+          type: credBody.type,
+          clientId: GMAIL_CLIENT_ID ? `${GMAIL_CLIENT_ID.substring(0, 10)}...` : 'MISSING',
+          clientSecret: GMAIL_CLIENT_SECRET ? 'SET' : 'MISSING',
+          refreshToken: refreshToken ? `${refreshToken.substring(0, 20)}...` : 'MISSING'
+        });
+        const created = await n8nRequest('/credentials', {
+          method: 'POST',
+          body: JSON.stringify(credBody)
+        });
+        // Debug the response structure
+        console.log(`🔍 Gmail credential creation response:`, JSON.stringify(created, null, 2));
+        // Try different possible ID field names
+        gmailId = created.id || created.credentialId || created.data?.id || created.data?.credentialId;
+        if (!gmailId) {
+          console.error(`❌ Failed to extract Gmail credential ID from response:`, created);
+          throw new Error(`Failed to create Gmail credential: No ID returned from n8n API`);
+        }
+        await supabaseAdmin.from('n8n_credential_mappings').upsert({
+          user_id: userId,
+          gmail_credential_id: gmailId
+        }, {
+          onConflict: 'user_id'
+        });
+        console.log(`✅ Created Gmail credential: ${gmailId}`);
+      } else {
+        console.log(`✅ Using existing Gmail credential: ${gmailId}`);
+      }
+    } else if (provider === 'outlook') {
+      // Outlook credential handling
+      const { data: existingMap } = await supabaseAdmin.from('n8n_credential_mappings').select('outlook_credential_id').eq('user_id', userId).maybeSingle();
+      // Check if integration has n8n_credential_id
+      outlookId = integration?.n8n_credential_id || existingMap?.outlook_credential_id || null;
+      if (!outlookId && refreshToken) {
+        // Get Outlook OAuth credentials from environment
+        const OUTLOOK_CLIENT_ID = Deno.env.get('OUTLOOK_CLIENT_ID') || Deno.env.get('MICROSOFT_CLIENT_ID') || '';
+        const OUTLOOK_CLIENT_SECRET = Deno.env.get('OUTLOOK_CLIENT_SECRET') || Deno.env.get('MICROSOFT_CLIENT_SECRET') || '';
+        if (!OUTLOOK_CLIENT_ID || !OUTLOOK_CLIENT_SECRET) {
+          console.error(`❌ Missing Outlook OAuth credentials in environment variables`);
+          console.error(`   OUTLOOK_CLIENT_ID: ${OUTLOOK_CLIENT_ID ? 'Set' : 'Missing'}`);
+          console.error(`   OUTLOOK_CLIENT_SECRET: ${OUTLOOK_CLIENT_SECRET ? 'Set' : 'Missing'}`);
+          throw new Error('Outlook OAuth credentials not configured in Edge Function environment');
+        }
+        const credBody = {
+          name: `outlook-${businessSlug}-${clientShort}`,
+          type: 'microsoftOutlookOAuth2Api',
+          data: {
+            clientId: OUTLOOK_CLIENT_ID,
+            clientSecret: OUTLOOK_CLIENT_SECRET,
+            sendAdditionalBodyProperties: false,
+            additionalBodyProperties: '',
+            userPrincipalName: 'user@example.com',
+            oauthTokenData: {
+              refresh_token: refreshToken,
+              token_type: 'Bearer'
+            }
+          },
+          nodesAccess: [
+            {
+              nodeType: 'n8n-nodes-base.microsoftOutlook'
+            },
+            {
+              nodeType: 'n8n-nodes-base.microsoftOutlookTrigger'
+            }
+          ]
+        };
+        console.log(`🔧 Creating Outlook credential with body:`, {
+          name: credBody.name,
+          type: credBody.type,
+          clientId: OUTLOOK_CLIENT_ID ? `${OUTLOOK_CLIENT_ID.substring(0, 10)}...` : 'MISSING',
+          clientSecret: OUTLOOK_CLIENT_SECRET ? 'SET' : 'MISSING',
+          refreshToken: refreshToken ? `${refreshToken.substring(0, 20)}...` : 'MISSING'
+        });
+        const created = await n8nRequest('/credentials', {
+          method: 'POST',
+          body: JSON.stringify(credBody)
+        });
+        // Debug the response structure
+        console.log(`🔍 Credential creation response:`, JSON.stringify(created, null, 2));
+        // Try different possible ID field names
+        outlookId = created.id || created.credentialId || created.data?.id || created.data?.credentialId;
+        if (!outlookId) {
+          console.error(`❌ Failed to extract credential ID from response:`, created);
+          throw new Error(`Failed to create Outlook credential: No ID returned from n8n API`);
+        }
+        await supabaseAdmin.from('n8n_credential_mappings').upsert({
+          user_id: userId,
+          outlook_credential_id: outlookId
+        }, {
+          onConflict: 'user_id'
+        });
+        // Also update the integration record with the n8n_credential_id
+        if (integration) {
+          await supabaseAdmin.from('integrations').update({
+            n8n_credential_id: outlookId
+          }).eq('user_id', userId).eq('provider', integration.provider);
+        }
+        console.log(`✅ Created Outlook credential: ${outlookId}`);
+      } else {
+        console.log(`✅ Using existing Outlook credential: ${outlookId}`);
+      }
+    }
+    // Use existing shared OpenAI credential (hardcoded ID since API listing fails)
+    console.log(`🔍 Using hardcoded openai-shared credential ID...`);
+    let openaiId = 'NxYVsH1eQ1mfzoW6'; // openai-shared credential ID
+    console.log(`✅ Using openai-shared credential: ${openaiId}`);
+    // Use existing shared Supabase credential (hardcoded ID since API listing fails)
+    console.log(`🔍 Using hardcoded supabase-metrics credential ID...`);
+    let postgresId = 'vKqQGjAQQ0k38UdC'; // supabase-metrics credential ID
+    console.log(`✅ Using supabase-metrics credential: ${postgresId}`);
+    // Extract AI system messages from workflowData if available
+    let extractedAiSystemMessage = null;
+    let extractedBehaviorReplyPrompt = null;
+    
+    if (workflowData && workflowData.nodes) {
+      // Find the AI classifier node and extract the system message
+      const aiClassifierNode = workflowData.nodes.find(node => 
+        node.name === 'AI Master Classifier' || 
+        node.type === '@n8n/n8n-nodes-langchain.agent' ||
+        node.id === 'ai-classifier'
+      );
+      
+      if (aiClassifierNode && aiClassifierNode.parameters && aiClassifierNode.parameters.options) {
+        extractedAiSystemMessage = aiClassifierNode.parameters.options.systemMessage;
+        console.log('✅ Extracted AI system message from injected workflow');
+        console.log('📊 AI system message length:', extractedAiSystemMessage.length);
+        console.log('📊 AI system message preview:', extractedAiSystemMessage.substring(0, 200) + '...');
+      } else {
+        console.log('⚠️ Could not find AI system message in workflow, will use fallback');
+        console.log('🔍 Available nodes:', workflowData.nodes?.map(n => ({ name: n.name, type: n.type, id: n.id })));
+      }
+      
+      // Find the AI draft assistant node and extract the behavior reply prompt
+      const aiDraftNode = workflowData.nodes.find(node => 
+        node.name === 'AI Reply Agent' || 
+        node.name === 'AI Draft Assistant' ||
+        node.type === '@n8n/n8n-nodes-langchain.agent' ||
+        node.id === 'ai-draft-assistant'
+      );
+      
+      if (aiDraftNode && aiDraftNode.parameters && aiDraftNode.parameters.options) {
+        extractedBehaviorReplyPrompt = aiDraftNode.parameters.options.systemMessage;
+        console.log('✅ Extracted behavior reply prompt from injected workflow');
+        console.log('📊 Behavior reply prompt length:', extractedBehaviorReplyPrompt.length);
+        console.log('📊 Behavior reply prompt preview:', extractedBehaviorReplyPrompt.substring(0, 200) + '...');
+      } else {
+        console.log('⚠️ Could not find behavior reply prompt in workflow, will use fallback');
+      }
+    } else {
+      console.log('⚠️ No workflowData provided, will use fallback system messages');
+    }
+
+    // Build client data for template injection
+    const clientData = {
+      id: userId,
+      ...profile.client_config,
+      managers: profile.managers || [],
+      suppliers: profile.suppliers || [],
+      email_labels: profile.email_labels || {},
+      voiceProfile: voiceProfile,
+      provider: provider,
+      aiSystemMessage: extractedAiSystemMessage, // Add the extracted AI system message
+      behaviorReplyPrompt: extractedBehaviorReplyPrompt, // Add the extracted behavior reply prompt
+      integrations: {
+        gmail: {
+          credentialId: gmailId || ''
+        },
+        outlook: {
+          credentialId: outlookId || ''
+        },
+        openai: {
+          credentialId: openaiId
+        },
+        postgres: {
+          credentialId: postgresId
+        }
+      }
+    };
+    let workflowJson;
+    if (workflowData) {
+      // Use the pre-injected workflow from frontend (if provided)
+      workflowJson = workflowData;
+      console.log(`✅ Using frontend-injected workflow data for ${provider}`);
+    } else {
+      // Fallback: Load and inject template based on provider (Gmail or Outlook)
+      console.log(`⚠️ No workflowData provided, loading ${provider} template and injecting data`);
+      const workflowTemplate = await loadWorkflowTemplateByProvider(provider);
+      workflowJson = await injectOnboardingData(clientData, workflowTemplate);
+    }
+    // Ensure workflow has proper name and credentials
+    workflowJson.name = `${businessSlug}-${clientShort}-workflow`;
+    // DEBUG: Log credential IDs before injection
+    console.log(`🔑 Credential IDs ready for injection (Provider: ${provider}):`);
+    console.log(`   - OpenAI ID: ${openaiId || 'NOT SET'}`);
+    console.log(`   - Supabase ID: ${postgresId || 'NOT SET'}`);
+    console.log(`   - Gmail ID: ${gmailId || 'NOT SET'}`);
+    console.log(`   - Outlook ID: ${outlookId || 'NOT SET'}`);
+    // Update credential IDs in the workflow nodes (important for dynamic credentials)
+    if (workflowJson.nodes && Array.isArray(workflowJson.nodes)) {
+      let openaiNodesUpdated = 0;
+      let supabaseNodesUpdated = 0;
+      let emailNodesUpdated = 0;
+      workflowJson.nodes.forEach((node)=>{
+        // Ensure credentials object exists
+        if (!node.credentials) {
+          node.credentials = {};
+        }
+        // Update OpenAI credentials for LangChain ChatOpenAI nodes
+        if (node.type === '@n8n/n8n-nodes-langchain.lmChatOpenAi') {
+          console.log(`🔧 Injecting OpenAI credential into node: ${node.name} (${node.id})`);
+          node.credentials.openAiApi = {
+            id: openaiId,
+            name: 'openai-shared'
+          };
+          openaiNodesUpdated++;
+        }
+        // Update existing OpenAI credentials if they exist
+        if (node.credentials.openAiApi) {
+          node.credentials.openAiApi.id = openaiId;
+          node.credentials.openAiApi.name = 'openai-shared';
+        }
+        // Update Gmail credentials (only for Gmail provider)
+        if (provider === 'gmail') {
+          // Handle Gmail trigger nodes
+          if (node.type === 'n8n-nodes-base.gmailTrigger') {
+            console.log(`🔧 Injecting Gmail credential into trigger node: ${node.name} (${node.id})`);
+            node.credentials.gmailOAuth2 = {
+              id: gmailId || '',
+              name: `${clientData.business?.name || 'Client'} Gmail`
+            };
+            emailNodesUpdated++;
+          } else if (node.type === 'n8n-nodes-base.gmail') {
+            console.log(`🔧 Injecting Gmail credential into action node: ${node.name} (${node.id})`);
+            node.credentials.gmailOAuth2 = {
+              id: gmailId || '',
+              name: `${clientData.business?.name || 'Client'} Gmail`
+            };
+            emailNodesUpdated++;
+          } else if (node.credentials.gmailOAuth2) {
+            console.log(`🔧 Updating existing Gmail credential in node: ${node.name} (${node.id})`);
+            node.credentials.gmailOAuth2.id = gmailId || '';
+            node.credentials.gmailOAuth2.name = `${clientData.business?.name || 'Client'} Gmail`;
+            emailNodesUpdated++;
+          }
+        }
+        // Update Outlook credentials (only for Outlook provider)
+        if (provider === 'outlook') {
+          // Handle Outlook trigger nodes
+          if (node.type === 'n8n-nodes-base.microsoftOutlookTrigger') {
+            console.log(`🔧 Injecting Outlook credential into trigger node: ${node.name} (${node.id})`);
+            node.credentials.microsoftOutlookOAuth2Api = {
+              id: outlookId || '',
+              name: `${clientData.business?.name || 'Client'} Outlook`
+            };
+            emailNodesUpdated++;
+          } else if (node.type === 'n8n-nodes-base.microsoftOutlook') {
+            console.log(`🔧 Injecting Outlook credential into action node: ${node.name} (${node.id})`);
+            node.credentials.microsoftOutlookOAuth2Api = {
+              id: outlookId || '',
+              name: `${clientData.business?.name || 'Client'} Outlook`
+            };
+            emailNodesUpdated++;
+          } else if (node.credentials.microsoftOutlookOAuth2Api) {
+            console.log(`🔧 Updating existing Outlook credential in node: ${node.name} (${node.id})`);
+            node.credentials.microsoftOutlookOAuth2Api.id = outlookId || '';
+            node.credentials.microsoftOutlookOAuth2Api.name = `${clientData.business?.name || 'Client'} Outlook`;
+            emailNodesUpdated++;
+          }
+        }
+        // Update existing Supabase credentials if they exist
+        if (node.credentials.supabaseApi) {
+          console.log(`🔧 Updating existing Supabase credential in node: ${node.name} (${node.id})`);
+          node.credentials.supabaseApi.id = postgresId;
+          node.credentials.supabaseApi.name = 'supabase-metrics';
+          supabaseNodesUpdated++;
+        }
+        // Inject Supabase credentials for Supabase nodes that need them (even if credentials are empty)
+        if (node.type === 'n8n-nodes-base.supabase') {
+          console.log(`🔧 Injecting Supabase credential into node: ${node.name} (${node.id})`);
+          node.credentials.supabaseApi = {
+            id: postgresId,
+            name: 'supabase-metrics'
+          };
+          supabaseNodesUpdated++;
+        }
+      });
+      console.log(`✅ Credential injection complete for ${provider}:`);
+      console.log(`   - Email (${provider}) nodes updated: ${emailNodesUpdated}`);
+      console.log(`   - OpenAI nodes updated: ${openaiNodesUpdated}`);
+      console.log(`   - Supabase nodes updated: ${supabaseNodesUpdated}`);
+    }
+    // Check existing workflow record
+    const { data: existingWf } = await supabaseAdmin.from('workflows').select('id, version, n8n_workflow_id').eq('user_id', userId).eq('status', 'active').order('version', {
+      ascending: false
+    }).limit(1).maybeSingle();
+    let n8nWorkflowId;
+    let nextVersion = 1;
+    // Create clean payload exactly like Backend API does
+    // Backend API only includes: name, nodes, connections, settings
+    // NOTE: 'active' field is read-only and must NOT be included in request body
+    const cleanPayload = {
+      name: workflowJson.name || `FloWorx Automation - ${new Date().toISOString().split('T')[0]}`,
+      nodes: workflowJson.nodes || [],
+      connections: workflowJson.connections || {},
+      settings: workflowJson.settings || {
+        executionOrder: 'v1',
+        saveManualExecutions: true,
+        callersPolicy: 'workflowsFromSameOwner',
+        errorWorkflow: null
+      }
+    };
+    console.log(`🔍 Clean payload properties:`, Object.keys(cleanPayload));
+    console.log(`🔍 Original workflow JSON properties:`, Object.keys(workflowJson));
+    // Always create a new workflow (like Backend API does)
+    console.log('📝 Creating new workflow in n8n...');
+    console.log(`🔍 Payload being sent to N8N:`, JSON.stringify(cleanPayload, null, 2));
+    console.log(`🔍 Using POST method to create new workflow (not PUT)`);
+    const createdWf = await n8nRequest('/workflows', {
+      method: 'POST',
+      body: JSON.stringify(cleanPayload)
+    });
+    n8nWorkflowId = createdWf.id;
+    nextVersion = (existingWf?.version || 0) + 1;
+    console.log(`✅ Created new workflow with ID: ${n8nWorkflowId}`);
+    // Activate
+    await n8nRequest(`/workflows/${n8nWorkflowId}/activate`, {
+      method: 'POST'
+    });
+    // Archive previous active and save new record
+    if (existingWf?.id) {
+      await supabaseAdmin.from('workflows').update({
+        status: 'archived'
+      }).eq('id', existingWf.id);
+    }
+    // --- FIX FOR TICKET 1.3: Include new columns in insert payload ---
+    await supabaseAdmin.from('workflows').insert({
+      user_id: userId,
+      n8n_workflow_id: n8nWorkflowId,
+      version: nextVersion,
+      status: 'active',
+      workflow_json: workflowJson,
+      is_functional: false,
+      issues: [],
+      last_checked: new Date().toISOString() // Set current timestamp
+    });
+    // --- END FIX ---
+    return new Response(JSON.stringify({
+      success: true,
+      workflowId: n8nWorkflowId,
+      version: nextVersion
+    }), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
+  } catch (err) {
+    console.error('❌ Edge Function execution failed:', err); // Enhanced error logging
+    return new Response(JSON.stringify({
+      success: false,
+      error: err.message
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
+  }
+}
+// Serve the main handler (includes deployment + admin routes would need to be merged if needed)
+serve(handler);

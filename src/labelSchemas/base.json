@@ -1,0 +1,73 @@
+{
+  "name": "Base Schema",
+  "description": "Fallback schema for general business types",
+  "labels": [
+    {
+      "name": "BANKING",
+      "color": {
+        "backgroundColor": "#4285f4",
+        "textColor": "#ffffff"
+      },
+      "sub": [
+        "Invoices",
+        "Payments", 
+        "Receipts",
+        "Refunds"
+      ]
+    },
+    {
+      "name": "SALES",
+      "color": {
+        "backgroundColor": "#9c27b0",
+        "textColor": "#ffffff"
+      },
+      "sub": [
+        "Inquiries",
+        "Quotes",
+        "Follow-ups",
+        "New Customers"
+      ]
+    },
+    {
+      "name": "SUPPORT",
+      "color": {
+        "backgroundColor": "#00bcd4",
+        "textColor": "#ffffff"
+      },
+      "sub": [
+        "General",
+        "Technical",
+        "Billing",
+        "Account Issues"
+      ]
+    },
+    {
+      "name": "URGENT",
+      "color": {
+        "backgroundColor": "#f44336",
+        "textColor": "#ffffff"
+      },
+      "sub": [
+        "Emergency",
+        "Critical Issues",
+        "Escalations"
+      ]
+    },
+    {
+      "name": "MISC",
+      "color": {
+        "backgroundColor": "#607d8b",
+        "textColor": "#ffffff"
+      },
+      "sub": [
+        "General",
+        "Archive",
+        "Personal"
+      ]
+    }
+  ]
+}
+
+
+
+

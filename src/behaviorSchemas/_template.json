@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "schemaVersion": "v2.0",
+    "industry": "Example Industry",
+    "author": "AI System",
+    "lastUpdated": "2025-10-05T00:00:00Z",
+    "source": "auto-generated"
+  },
+
+  "voiceProfile": {
+    "tone": "Friendly, professional, and concise",
+    "formalityLevel": "medium",
+    "allowPricingInReplies": true,
+    "includeSignature": true
+  },
+
+  "signature": {
+    "closingText": "Thanks so much for supporting our small business!",
+    "signatureBlock": "Best regards,\n{{businessProfile.businessName}} Team\n{{contactInfo.afterHoursSupportLine}}"
+  },
+
+  "aiDraftRules": {
+    "behaviorGoals": [
+      "Reflect conversation context",
+      "Advance resolution clearly",
+      "Match customer tone and urgency",
+      "Maintain warm and human tone",
+      "Ensure contextual accuracy"
+    ],
+
+    "autoReplyPolicy": {
+      "enableForCategories": ["Support", "Sales", "Urgent"],
+      "minConfidence": 0.75,
+      "excludeInternalDomains": ["@businessdomain.com"]
+    },
+
+    "followUpGuidelines": {
+      "acknowledgeDelay": true,
+      "requireNextStep": true,
+      "preferredPhrasing": [
+        "You'll hear back from us by {{day}}.",
+        "We'll see you then!",
+        "Appreciate your patience — we've got you covered."
+      ]
+    },
+
+    "replyFormat": {
+      "structure": ["Greeting", "Acknowledgment", "Action/Info", "Next Steps", "Signature"],
+      "requireCTA": true,
+      "exampleCTAs": {
+        "ServiceJob": "Please fill out our short form here: {{businessProfile.website}}/repairs",
+        "Sales": "Check out our latest models here: {{businessProfile.website}}/hot-tub-spas"
+      }
+    },
+
+    "upsellGuidelines": {
+      "enabled": true,
+      "triggerCategories": ["ServiceJob", "Maintenance"],
+      "text": "If you need any filters, chemicals, or accessories, let us know — we can bring them along!"
+    },
+
+    "errorHandling": {
+      "missingDataPolicy": "Ask concise clarifying questions",
+      "fallbackAction": "Forward to human if uncertain"
+    }
+  },
+
+  "categoryOverrides": {
+    "Urgent": {
+      "priorityLevel": 1,
+      "customLanguage": [
+        "We'll prioritize this right away.",
+        "Our team will reach out as soon as possible."
+      ]
+    },
+    "Sales": {
+      "priorityLevel": 2,
+      "customLanguage": [
+        "We'd love to help you find the right option for your home.",
+        "Would you like to schedule a quick call to discuss details?"
+      ]
+    },
+    "Support": {
+      "priorityLevel": 3,
+      "customLanguage": [
+        "We know that's frustrating — let's get this resolved quickly.",
+        "Thanks for sending the details — we're on it!"
+      ]
+    }
+  },
+
+  "validation": {
+    "requiredFields": ["voiceProfile", "aiDraftRules", "signature"],
+    "optionalFields": ["categoryOverrides"],
+    "strictMode": true
+  }
+}

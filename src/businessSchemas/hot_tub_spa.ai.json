@@ -1,0 +1,355 @@
+{
+  "schemaVersion": "1.0.0",
+  "businessType": "Hot tub & Spa",
+  "displayName": "Hot Tub & Spa Business",
+  "description": "AI JSON schema for hot tub and spa businesses including sales, installation, repair, maintenance, and water care",
+  "updatedAt": "2025-10-08",
+  "author": "Floworx Automation Core",
+  
+  "metadata": {
+    "industry": "Hot Tub & Spa Services",
+    "primaryServices": ["Hot Tub Sales", "Spa Installation", "Repairs", "Maintenance", "Water Care", "Winterization"],
+    "targetCustomers": ["Residential", "Commercial"],
+    "seasonality": "Year-round with peak in spring/summer",
+    "emergencyServices": true,
+    "warrantyServices": true,
+    "supplierDependent": true
+  },
+
+  "aiConfiguration": {
+    "toneProfile": {
+      "primary": "Friendly and enthusiastic",
+      "secondary": "Warm and helpful",
+      "emergency": "Urgent and reassuring",
+      "sales": "Enthusiastic and consultative"
+    },
+    "responseStyle": {
+      "length": "concise",
+      "formality": "professional",
+      "urgency": "context-aware",
+      "personalization": "high"
+    },
+    "classificationModel": "gpt-4o-mini",
+    "confidenceThreshold": 0.8,
+    "fallbackLabel": "MISC"
+  },
+
+  "intentMapping": {
+    "ai.service_request": "SERVICE",
+    "ai.financial_transaction": "BANKING",
+    "ai.emergency_request": "URGENT",
+    "ai.warranty_claim": "WARRANTY",
+    "ai.support_request": "SUPPORT",
+    "ai.sales_inquiry": "SALES",
+    "ai.supplier_communication": "SUPPLIERS",
+    "ai.management_oversight": "MANAGER",
+    "ai.review_management": "GOOGLE_REVIEW",
+    "ai.form_submission": "FORMSUB",
+    "ai.phone_communication": "PHONE",
+    "ai.marketing_communication": "PROMO",
+    "ai.hr_communication": "RECRUITMENT",
+    "ai.social_media": "SOCIALMEDIA",
+    "ai.seasonal_service": "SEASONAL",
+    "ai.general_communication": "MISC"
+  },
+
+  "keywords": {
+    "primary": ["hot tub", "spa", "jacuzzi", "heater", "pump", "filter", "jets", "cover", "control panel"],
+    "secondary": ["water care", "chemicals", "maintenance", "repair", "installation", "warranty", "leak", "bromine", "chlorine"],
+    "emergency": ["urgent", "emergency", "leak", "not working", "broken", "won't start", "no power", "heater error", "asap", "immediately"],
+    "service": ["repair", "install", "maintenance", "service", "water care", "chemical balance", "troubleshooting", "winterization"],
+    "financial": ["invoice", "payment", "quote", "estimate", "e-transfer", "refund", "receipt"],
+    "warranty": ["warranty", "claim", "defect", "replacement", "manufacturer", "cover warranty"],
+    "negative": ["problem", "issue", "broken", "not working", "leaking", "error code", "won't heat"]
+  },
+
+  "labelSchema": {
+    "colors": {
+      "BANKING": { "backgroundColor": "#16a766", "textColor": "#ffffff" },
+      "FORMSUB": { "backgroundColor": "#0b804b", "textColor": "#ffffff" },
+      "GOOGLE_REVIEW": { "backgroundColor": "#fad165", "textColor": "#000000" },
+      "MANAGER": { "backgroundColor": "#ffad47", "textColor": "#000000" },
+      "SERVICE": { "backgroundColor": "#4a86e8", "textColor": "#ffffff" },
+      "WARRANTY": { "backgroundColor": "#a479e2", "textColor": "#ffffff" },
+      "SUPPORT": { "backgroundColor": "#4a86e8", "textColor": "#ffffff" },
+      "SALES": { "backgroundColor": "#149e60", "textColor": "#ffffff" },
+      "SUPPLIERS": { "backgroundColor": "#ffad47", "textColor": "#000000" },
+      "URGENT": { "backgroundColor": "#fb4c2f", "textColor": "#ffffff" },
+      "SEASONAL": { "backgroundColor": "#00bcd4", "textColor": "#ffffff" },
+      "MISC": { "backgroundColor": "#999999", "textColor": "#ffffff" },
+      "PROMO": { "backgroundColor": "#43d692", "textColor": "#000000" },
+      "RECRUITMENT": { "backgroundColor": "#e07798", "textColor": "#ffffff" },
+      "PHONE": { "backgroundColor": "#6d9eeb", "textColor": "#ffffff" },
+      "SOCIALMEDIA": { "backgroundColor": "#ffad47", "textColor": "#000000" }
+    },
+    
+    "labels": {
+      "BANKING": {
+        "color": "BANKING",
+        "sub": ["Invoice", "Receipts", "Refund", "Payment Confirmation", "Bank Alert", "e-Transfer"],
+        "nested": {
+          "Receipts": ["Payment Sent", "Payment Received"],
+          "e-Transfer": ["From Business", "To Business"]
+        },
+        "intent": "ai.financial_transaction",
+        "critical": true,
+        "description": "Financial transactions, invoices, payments, and banking alerts",
+        "n8nEnvVar": "LABEL_BANKING"
+      },
+      
+      "FORMSUB": {
+        "color": "FORMSUB",
+        "sub": ["New Submission", "Service Requests"],
+        "intent": "ai.form_submission",
+        "critical": false,
+        "description": "Customer form submissions and service request forms",
+        "n8nEnvVar": "LABEL_FORMSUB"
+      },
+      
+      "GOOGLE_REVIEW": {
+        "color": "GOOGLE_REVIEW",
+        "sub": ["New Review", "Response Needed", "Resolved"],
+        "intent": "ai.customer_feedback",
+        "critical": false,
+        "description": "Google reviews and customer feedback",
+        "n8nEnvVar": "LABEL_GOOGLE_REVIEW"
+      },
+      
+      "MANAGER": {
+        "color": "MANAGER",
+        "sub": ["Unassigned", "Escalations"],
+        "intent": "ai.internal_routing",
+        "critical": false,
+        "description": "Management oversight and escalations",
+        "n8nEnvVar": "LABEL_MANAGER"
+      },
+      
+      "SERVICE": {
+        "color": "SERVICE",
+        "sub": ["Hot Tub Repairs", "Installations", "Maintenance", "Water Care", "Emergency Service"],
+        "nested": {
+          "Hot Tub Repairs": ["Heater Repairs", "Pump Repairs", "Jet Repairs", "Control Panel Repairs"],
+          "Installations": ["New Hot Tub Delivery", "Electrical Setup", "Site Prep"],
+          "Water Care": ["Chemical Balance", "Filter Cleaning", "Water Testing"],
+          "Maintenance": ["Regular Service", "Annual Inspection", "Deep Cleaning"]
+        },
+        "intent": "ai.service_request",
+        "critical": true,
+        "description": "All hot tub services including sales, installation, and repairs",
+        "n8nEnvVar": "LABEL_SERVICE"
+      },
+      
+      "SUPPORT": {
+        "color": "SUPPORT",
+        "sub": ["Technical Support", "Water Chemistry", "Parts And Chemicals", "Appointment Scheduling"],
+        "nested": {
+          "Technical Support": ["Troubleshooting", "Error Codes", "Remote Support"],
+          "Water Chemistry": ["pH Balance", "Sanitizer Levels", "Clarity Issues"]
+        },
+        "intent": "ai.support_ticket",
+        "critical": false,
+        "description": "Customer support and technical assistance",
+        "n8nEnvVar": "LABEL_SUPPORT"
+      },
+      
+      "SALES": {
+        "color": "SALES",
+        "sub": ["New Hot Tubs", "Covers & Accessories", "Quotes", "Follow-ups", "Financing"],
+        "nested": {
+          "New Hot Tubs": ["Product Inquiries", "Site Consultations", "Delivery Scheduling"],
+          "Covers & Accessories": ["Cover Sales", "Steps & Rails", "Chemicals & Supplies"]
+        },
+        "intent": "ai.sales_inquiry",
+        "critical": false,
+        "description": "Sales inquiries and new business development",
+        "n8nEnvVar": "LABEL_SALES"
+      },
+      
+      "SUPPLIERS": {
+        "color": "SUPPLIERS",
+        "sub": ["Strong Spas", "Arctic Spas", "Aqua Spa Supply", "Paradise Patio"],
+        "nested": {
+          "Strong Spas": ["Orders", "Warranty", "Support"],
+          "Aqua Spa Supply": ["Chemical Orders", "Parts Orders", "Invoices"]
+        },
+        "intent": "ai.vendor_communication",
+        "critical": false,
+        "description": "Supplier communications and vendor management",
+        "n8nEnvVar": "LABEL_SUPPLIERS"
+      },
+      
+      "URGENT": {
+        "color": "URGENT",
+        "sub": ["Leaking", "Pump Not Working", "Heater Error", "No Power", "Control Panel Issue"],
+        "intent": "ai.emergency_request",
+        "critical": true,
+        "description": "Urgent hot tub emergencies requiring immediate attention",
+        "n8nEnvVar": "LABEL_URGENT"
+      },
+      
+      "SEASONAL": {
+        "color": "SEASONAL",
+        "sub": ["Winterization", "Spring Start-up", "Annual Service", "Deep Cleaning"],
+        "intent": "ai.seasonal_service",
+        "critical": false,
+        "description": "Seasonal services and maintenance",
+        "n8nEnvVar": "LABEL_SEASONAL"
+      },
+      
+      "PHONE": {
+        "color": "PHONE",
+        "sub": ["Missed Calls", "Call Backs", "Voicemails"],
+        "intent": "ai.call_log",
+        "critical": false,
+        "description": "Phone communications and call management",
+        "n8nEnvVar": "LABEL_PHONE"
+      },
+      
+      "PROMO": {
+        "color": "PROMO",
+        "sub": ["Email Campaigns", "Seasonal Offers", "Newsletters"],
+        "intent": "ai.marketing",
+        "critical": false,
+        "description": "Promotional materials and marketing campaigns",
+        "n8nEnvVar": "LABEL_PROMO"
+      },
+      
+      "RECRUITMENT": {
+        "color": "RECRUITMENT",
+        "sub": ["Applications", "Interviews", "New Hires"],
+        "intent": "ai.hr",
+        "critical": false,
+        "description": "Recruitment and human resources",
+        "n8nEnvVar": "LABEL_RECRUITMENT"
+      },
+      
+      "SOCIALMEDIA": {
+        "color": "SOCIALMEDIA",
+        "sub": ["Facebook", "Instagram", "LinkedIn"],
+        "intent": "ai.social_engagement",
+        "critical": false,
+        "description": "Social media communications",
+        "n8nEnvVar": "LABEL_SOCIALMEDIA"
+      },
+      
+      "MISC": {
+        "color": "MISC",
+        "sub": ["General", "Archive"],
+        "intent": "ai.general",
+        "critical": false,
+        "description": "Miscellaneous communications",
+        "n8nEnvVar": "LABEL_MISC"
+      }
+    },
+    
+    "provisioningOrder": [
+      "BANKING", "FORMSUB", "GOOGLE_REVIEW", "MANAGER", "SERVICE",
+      "WARRANTY", "SUPPORT", "SALES", "SUPPLIERS", "URGENT",
+      "SEASONAL", "PHONE", "PROMO", "RECRUITMENT", "SOCIALMEDIA", "MISC"
+    ],
+    
+    "categoryGroups": {
+      "Operations": ["SERVICE", "SUPPORT", "WARRANTY", "SEASONAL"],
+      "Sales": ["SALES", "PROMO"],
+      "Administration": ["BANKING", "MANAGER", "RECRUITMENT"],
+      "Communications": ["PHONE", "SOCIALMEDIA"],
+      "Suppliers": ["SUPPLIERS"],
+      "CustomerExperience": ["GOOGLE_REVIEW", "FORMSUB"],
+      "Critical": ["URGENT"],
+      "General": ["MISC"]
+    }
+  },
+
+  "dynamicVariables": {
+    "managers": [
+      { "name": "Service Manager", "email": "service@business.com", "role": "Service Manager" },
+      { "name": "Sales Manager", "email": "sales@business.com", "role": "Sales Manager" },
+      { "name": "Operations Manager", "email": "operations@business.com", "role": "Operations Manager" }
+    ],
+    "suppliers": [
+      { "name": "Strong Spas", "email": "contact@strong9.com", "category": "Hot Tub Manufacturer" },
+      { "name": "Aqua Spa Supply", "email": "quotes@asp-supply.com", "category": "Parts & Chemicals" },
+      { "name": "Paradise Patio", "email": "info@paradisepatio.com", "category": "Furniture & Accessories" }
+    ],
+    "technicians": [
+      { "name": "Lead Technician", "email": "lead.tech@business.com", "specialties": ["Repairs", "Installations"] },
+      { "name": "Service Technician", "email": "service.tech@business.com", "specialties": ["Maintenance", "Water Care"] },
+      { "name": "Emergency Technician", "email": "emergency@business.com", "specialties": ["Emergency Repairs", "After Hours"] }
+    ]
+  },
+
+  "escalationRules": {
+    "urgent": {
+      "threshold": "immediate",
+      "notify": ["managers", "on_call_technician"],
+      "sla": "30 minutes",
+      "autoReply": true
+    },
+    "warranty": {
+      "threshold": "24 hours",
+      "notify": ["service_manager"],
+      "sla": "4 hours",
+      "autoReply": false
+    },
+    "service": {
+      "threshold": "2 hours",
+      "notify": ["dispatcher"],
+      "sla": "2 hours",
+      "autoReply": true
+    },
+    "sales": {
+      "threshold": "1 hour",
+      "notify": ["sales_manager"],
+      "sla": "2 hours",
+      "autoReply": true
+    }
+  },
+
+  "aiPrompts": {
+    "systemMessage": "You are an expert email processing and routing system for {{BUSINESS_NAME}}, a hot tub and spa business. Classify emails by returning JSON with summary, reasoning, confidence, primary_category, secondary_category, tertiary_category, entities, and ai_can_reply. Use these categories: URGENT (leaking, heater error, pump failure), SERVICE (repairs, installations, maintenance), SALES (new hot tubs, quotes), SUPPORT (water chemistry, troubleshooting), BANKING, SEASONAL (winterization, spring start-up), SUPPLIERS, MANAGER, and others as needed.",
+    "replyPrompt": "Draft friendly, professional, and helpful replies for {{BUSINESS_NAME}} that reflect prior conversation context, clearly communicate next steps, match the customer's tone and urgency, and maintain a warm, human, on-brand voice. Always prioritize accuracy for dates and details. For service requests, include site inspection info ($105) and offer to bring chemicals/filters. For sales inquiries, schedule consultations. For water chemistry questions, provide clear, actionable advice. Sign off with: 'Thanks so much for supporting our small business! Best regards, The {{BUSINESS_NAME}} Team {{BUSINESS_PHONE}}'",
+    "classificationRules": [
+      "Identify urgent keywords (leaking, pump not working, heater error, no power) and route to URGENT label",
+      "Recognize service requests (repair, installation, maintenance) and route to SERVICE label",
+      "Detect financial transactions (invoice, payment, quote) and route to BANKING label",
+      "Identify seasonal services (winterization, spring start-up, closing) and route to SEASONAL label",
+      "Recognize water chemistry questions and route to SUPPORT > Water Chemistry",
+      "Detect sales inquiries (new hot tub, pricing, models) and route to SALES label",
+      "Identify supplier communications (Strong Spas, Aqua Spa Supply) and route to SUPPLIERS label"
+    ]
+  },
+
+  "environmentVariables": {
+    "required": [
+      "BUSINESS_NAME",
+      "BUSINESS_PHONE",
+      "BUSINESS_DOMAIN_PRIMARY",
+      "PAYMENT_EMAIL",
+      "WEBSITE_BASE_URL",
+      "WEBSITE_REPAIRS_FORM",
+      "WEBSITE_HOT_TUB_SPAS_PAGE",
+      "TIMEZONE"
+    ],
+    "optional": [
+      "BUSINESS_DOMAIN_SECONDARY",
+      "SERVICE_AREA_PRIMARY",
+      "WEBSITE_TREATMENT_PACKAGES",
+      "WEBSITE_PRODUCTS_PAGE"
+    ],
+    "pricing": [
+      "PRICE_SITE_INSPECTION",
+      "PRICE_LABOUR_HOURLY",
+      "PRICE_MILEAGE_RATE",
+      "PRICE_DELIVERY_FEE",
+      "PRICE_HARMONY_TREATMENT"
+    ]
+  },
+
+  "validation": {
+    "requiredFields": ["businessType", "intentMapping", "labelSchema", "keywords"],
+    "colorValidation": "Must use Gmail API allowed colors",
+    "intentValidation": "All intents must map to valid labels",
+    "envVarValidation": "All n8nEnvVar values must be unique"
+  }
+}
+

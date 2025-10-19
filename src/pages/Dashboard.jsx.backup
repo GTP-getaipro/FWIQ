@@ -1,0 +1,895 @@
+import React, { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { Helmet } from 'react-helmet';
+import { Navigate } from 'react-router-dom';
+import { 
+  LogOut, 
+  User, 
+  Settings, 
+  Bell, 
+  Mail, 
+  Activity, 
+  TrendingUp, 
+  Clock, 
+  CheckCircle, 
+  AlertTriangle,
+  Filter,
+  Calendar,
+  BarChart3,
+  Zap,
+  Users,
+  MessageSquare,
+  RefreshCw,
+  ExternalLink,
+  Info
+} from 'lucide-react';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/lib/customSupabaseClient';
+import Logo from '@/components/Logo';
+import MobileNavigation from '@/components/MobileNavigation';
+import { MetricsService } from '@/lib/metricsService';
+import { emailMonitoring } from '@/lib/emailMonitoring';
+import { apiClient } from '@/lib/apiClient';
+import { emailService } from '@/lib/emailService';
+import { aiService } from '@/lib/aiService';
+import { realtimeService } from '@/lib/realtimeService';
+import { logger } from '@/lib/logger';
+import { analytics } from '@/lib/analytics';
+import { securityManager } from '@/lib/security';
+import { cspManager } from '@/lib/csp';
+import BusinessIntelligence from '@/components/BusinessIntelligence';
+import CalendarIntegrationWidget from '@/components/CalendarIntegrationWidget';
+import FolderIdDisplay from '@/components/FolderIdDisplay';
+
+const Dashboard = () => {
+  const { user, signOut } = useAuth();
+  const { toast } = useToast();
+  const [profile, setProfile] = useState(null);
+  const [onboardingComplete, setOnboardingComplete] = useState(false);
+  const [checkingOnboarding, setCheckingOnboarding] = useState(true);
+  const [integrations, setIntegrations] = useState({
+    gmail: { connected: false, status: 'inactive', lastSync: null },
+    outlook: { connected: false, status: 'inactive', lastSync: null }
+  });
+  const [metrics, setMetrics] = useState({
+    emailsProcessed: 0,
+    avgResponseTime: 0,
+    automationStatus: 'inactive',
+    workflowVersion: 0,
+    integrations: 0,
+    lastActivity: null
+  });
+  const [recentEmails, setRecentEmails] = useState([]);
+  const [timeFilter, setTimeFilter] = useState('7d');
+  const [loading, setLoading] = useState(true);
+  const [showFolderIds, setShowFolderIds] = useState(false);
+
+  // Check onboarding status first
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      if (!user) return;
+      
+      console.log('🔍 Dashboard: Checking onboarding status for user:', user.id);
+      
+      try {
+        // Check profile and onboarding step
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('onboarding_step')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.error('❌ Dashboard: Error fetching profile:', profileError);
+          setCheckingOnboarding(false);
+          return;
+        }
+
+        if (!profileData || profileError?.code === 'PGRST116') {
+          console.log('❌ Dashboard: No profile found, user needs onboarding');
+          setOnboardingComplete(false);
+          setCheckingOnboarding(false);
+          return;
+        }
+
+        console.log('📋 Dashboard: Profile found, onboarding_step:', profileData.onboarding_step);
+        
+        if (profileData.onboarding_step === 'completed') {
+          // Check if N8N workflow is deployed
+          console.log('🔍 Dashboard: Checking N8N workflow deployment...');
+          
+          const { data: workflowData, error: workflowError } = await supabase
+            .from('workflows')
+            .select('id, status, version, n8n_workflow_id')
+            .eq('user_id', user.id)
+            .eq('status', 'active')
+            .order('version', { ascending: false })
+            .limit(1)
+            .single();
+
+          if (workflowError && workflowError.code !== 'PGRST116') {
+            console.error('❌ Dashboard: Error fetching workflow:', workflowError);
+            setCheckingOnboarding(false);
+            return;
+          }
+
+          if (!workflowData || workflowError?.code === 'PGRST116') {
+            console.log('❌ Dashboard: No active workflow found, user needs N8N deployment');
+            setOnboardingComplete(false);
+            setCheckingOnboarding(false);
+            return;
+          }
+
+          console.log('✅ Dashboard: N8N workflow deployed, version:', workflowData.version);
+          setOnboardingComplete(true);
+        } else {
+          console.log('🔄 Dashboard: Onboarding not completed, redirecting to onboarding');
+          setOnboardingComplete(false);
+        }
+        
+        setCheckingOnboarding(false);
+      } catch (error) {
+        console.error('❌ Dashboard: Error checking onboarding status:', error);
+        setCheckingOnboarding(false);
+      }
+    };
+
+    checkOnboardingStatus();
+  }, [user]);
+
+  // Main dashboard data fetching effect - only runs when onboarding is complete
+  useEffect(() => {
+    if (!onboardingComplete || !user) return;
+    
+    const fetchDashboardData = async () => {
+      setLoading(true);
+      try {
+        // Fetch profile data
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('client_config, business_type, onboarding_step')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.error('Error fetching profile:', profileError);
+        } else {
+          setProfile(profileData);
+        }
+
+        // Fetch integration status for both Gmail and Outlook
+        const { data: integrationData, error: integrationError } = await supabase
+          .from('integrations')
+          .select('provider, status, last_sync, created_at')
+          .eq('user_id', user.id)
+          .in('provider', ['gmail', 'outlook']);
+
+        if (integrationError) {
+          console.error('Error fetching integrations:', integrationError);
+        } else {
+          const newIntegrations = {
+            gmail: { connected: false, status: 'inactive', lastSync: null },
+            outlook: { connected: false, status: 'inactive', lastSync: null }
+          };
+
+          integrationData.forEach(integration => {
+            if (integration.provider === 'gmail' || integration.provider === 'outlook') {
+              newIntegrations[integration.provider] = {
+                connected: integration.status === 'active',
+                status: integration.status,
+                lastSync: integration.last_sync || integration.created_at
+              };
+            }
+          });
+
+          setIntegrations(newIntegrations);
+        }
+
+        // Fetch comprehensive metrics using MetricsService
+        const metricsService = new MetricsService(user.id);
+        const dashboardMetrics = await metricsService.getDashboardMetrics(timeFilter);
+
+        setMetrics({
+          emailsProcessed: dashboardMetrics.emailsProcessed,
+          avgResponseTime: dashboardMetrics.avgResponseTime,
+          automationStatus: dashboardMetrics.automationStatus,
+          workflowVersion: dashboardMetrics.workflowVersion,
+          integrations: dashboardMetrics.activeIntegrations,
+          lastActivity: dashboardMetrics.lastDeployment || user.last_sign_in_at,
+          responseRate: dashboardMetrics.responseRate,
+          categoryBreakdown: dashboardMetrics.categoryBreakdown,
+          urgencyBreakdown: dashboardMetrics.urgencyBreakdown
+        });
+
+        setRecentEmails(dashboardMetrics.recentEmails);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [user, timeFilter, onboardingComplete]);
+
+  // Service initialization effect - only runs when onboarding is complete
+  useEffect(() => {
+    if (!onboardingComplete || !user) return;
+
+    // Start email monitoring when user is available
+    emailMonitoring.startMonitoring(user.id).catch(error => {
+      console.error('Failed to start email monitoring:', error);
+    });
+
+    // Initialize realtime service
+    realtimeService.initialize(user.id).catch(error => {
+      console.error('Failed to initialize realtime service:', error);
+    });
+
+    // Initialize analytics and logging
+    analytics.setUserId(user.id);
+    logger.info('Dashboard initialized', { 
+      userId: user.id, 
+      timestamp: new Date().toISOString() 
+    });
+
+    // Initialize security monitoring
+    logger.info('Security audit report', securityManager.generateSecurityAudit());
+    logger.info('CSP report', cspManager.generateReport());
+
+    // Track dashboard page view
+    analytics.trackPageView('/dashboard', {
+      userAgent: navigator.userAgent,
+      referrer: document.referrer
+    });
+
+    // Test backend API connection
+    apiClient.testConnection().then(connected => {
+      if (connected) {
+        console.log('✅ Backend API connected');
+        logger.info('Backend API connection successful');
+      } else {
+        console.warn('⚠️ Backend API not available, using fallback services');
+        logger.warn('Backend API connection failed, using fallback services');
+      }
+    });
+
+    // Cleanup: stop services when component unmounts
+    return () => {
+      emailMonitoring.stopMonitoring();
+      realtimeService.shutdown();
+    };
+  }, [user, onboardingComplete]);
+
+  // Early return conditions moved after all hooks
+  if (checkingOnboarding) {
+    return (
+      <div className="min-h-screen bg-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking onboarding status...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!onboardingComplete) {
+    console.log('🔄 Dashboard: Redirecting to onboarding - user has not completed onboarding or N8N deployment');
+    return <Navigate to="/onboarding/email-integration" replace />;
+  }
+
+  const handleLogout = async () => {
+    await signOut();
+  };
+
+  const testBackendIntegration = async () => {
+    const startTime = Date.now();
+    
+    try {
+      console.log('🧪 Testing backend integration...');
+      logger.info('Starting backend integration test');
+      analytics.trackUserAction('test_backend_integration', { userId: user.id });
+      
+      // Test API client
+      const apiHealth = await apiClient.getHealthStatus();
+      console.log('API Health:', apiHealth);
+      logger.info('API health check completed', apiHealth);
+      
+      // Test email service
+      const emailTemplates = await emailService.getEmailTemplates(user.id);
+      console.log('Email Templates:', emailTemplates);
+      logger.info('Email service test completed', { templateCount: emailTemplates.length });
+      
+      // Test AI service
+      const aiHealth = await aiService.testConnection();
+      console.log('AI Service Health:', aiHealth);
+      logger.info('AI service test completed', { connected: aiHealth });
+      
+      // Test realtime service
+      const realtimeStatus = realtimeService.getConnectionStatus();
+      console.log('Realtime Status:', realtimeStatus);
+      logger.info('Realtime service test completed', realtimeStatus);
+      
+      const duration = Date.now() - startTime;
+      analytics.trackPerformance('backend_integration_test', duration, { success: true });
+      logger.performance('backend_integration_test', duration, { success: true });
+      
+      toast({
+        title: 'Backend Integration Test',
+        description: 'All services tested successfully!',
+      });
+      
+      analytics.trackBusinessEvent('backend_test_success', { duration });
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      console.error('❌ Backend integration test failed:', error);
+      
+      logger.error('Backend integration test failed', error, { 
+        duration,
+        userId: user.id 
+      });
+      
+      analytics.trackError(error, { 
+        operation: 'backend_integration_test',
+        duration,
+        userId: user.id 
+      });
+      
+      analytics.trackPerformance('backend_integration_test', duration, { success: false });
+      
+      toast({
+        variant: 'destructive',
+        title: 'Backend Integration Test Failed',
+        description: error.message,
+      });
+    }
+  };
+
+  const handleFeatureClick = (feature) => {
+    toast({
+      title: "🚧 Feature Coming Soon!",
+      description: `${feature} isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀`,
+    });
+  };
+
+  // Use utility functions from MetricsService
+  const getStatusColor = MetricsService.getStatusColor;
+  const getUrgencyColor = MetricsService.getUrgencyColor;
+  const formatTimeAgo = MetricsService.formatTimeAgo;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-blue-50">
+      <Helmet>
+        <title>Dashboard - FloWorx</title>
+        <meta name="description" content="FloWorx automation dashboard - monitor your email automation performance" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+      </Helmet>
+
+      {/* Mobile Navigation */}
+      <MobileNavigation 
+        user={user} 
+        onLogout={handleLogout} 
+        onFeatureClick={handleFeatureClick} 
+      />
+
+      {/* Desktop Header */}
+      <motion.header
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="hidden lg:block bg-white/80 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-10"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
+              <Logo />
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleFeatureClick('Notifications')}
+                className="text-gray-600 hover:bg-gray-100"
+              >
+                <Bell className="h-5 w-5" />
+              </Button>
+              
+              <Button
+                variant="ghost"
+                onClick={handleLogout}
+                className="text-gray-600 hover:bg-gray-100"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
+            </div>
+          </div>
+        </div>
+      </motion.header>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Welcome Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="bg-white rounded-2xl p-6 mb-8 border border-gray-200 shadow-lg"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-4">
+              <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+                <User className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h2 className="text-3xl font-bold text-gray-800">
+                  Welcome back, {profile?.client_config?.business?.name || user?.email}!
+                </h2>
+                <p className="text-gray-500">
+                  {profile?.client_config?.business?.name ? `${profile.client_config.business.name} • ` : ''}{user?.email}
+                </p>
+                <div className="flex items-center space-x-4 mt-2">
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(metrics.automationStatus)}`}>
+                    {metrics.automationStatus === 'active' ? '🟢 Active' : '🔴 Inactive'}
+                  </span>
+                  {profile?.business_type && (
+                    <span className="text-sm text-gray-500">
+                      {profile.business_type}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Time Filter and Testing Button */}
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <Filter className="h-4 w-4 text-gray-500" />
+                <select
+                  value={timeFilter}
+                  onChange={(e) => setTimeFilter(e.target.value)}
+                  className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="24h">Last 24 hours</option>
+                  <option value="7d">Last 7 days</option>
+                  <option value="30d">Last 30 days</option>
+                  <option value="90d">Last 90 days</option>
+                </select>
+              </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.location.href = '/testing'}
+                className="flex items-center space-x-2 bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+              >
+                <CheckCircle className="h-4 w-4" />
+                <span>Test Features</span>
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Folder ID Display Toggle */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="mb-8"
+        >
+          <Button
+            onClick={() => setShowFolderIds(!showFolderIds)}
+            variant="outline"
+            className="w-full"
+          >
+            {showFolderIds ? 'Hide' : 'Show'} Outlook Folder IDs
+          </Button>
+          
+          {showFolderIds && (
+            <div className="mt-4">
+              <FolderIdDisplay />
+            </div>
+          )}
+        </motion.div>
+
+        {/* Email Provider Integration Status */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="bg-white rounded-2xl p-6 mb-8 border border-gray-200 shadow-lg"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">Email Provider Status</h3>
+              <p className="text-gray-600">Manage your email integrations and monitor connection status</p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.location.href = '/settings'}
+              className="flex items-center space-x-2"
+            >
+              <Settings className="h-4 w-4" />
+              <span>Manage</span>
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Gmail Integration Status */}
+            <div className={`border rounded-lg p-4 ${integrations.gmail.connected ? 'border-green-200 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-3">
+                  <img
+                    src="https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg"
+                    alt="Gmail"
+                    className="w-8 h-8"
+                  />
+                  <div>
+                    <h4 className="font-semibold text-gray-800">Gmail</h4>
+                    <p className="text-sm text-gray-600">Google Workspace</p>
+                  </div>
+                </div>
+                <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  integrations.gmail.connected 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-gray-100 text-gray-600'
+                }`}>
+                  {integrations.gmail.connected ? (
+                    <div className="flex items-center space-x-1">
+                      <CheckCircle className="h-3 w-3" />
+                      <span>Connected</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-1">
+                      <AlertTriangle className="h-3 w-3" />
+                      <span>Not Connected</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {integrations.gmail.connected && integrations.gmail.lastSync && (
+                <div className="text-sm text-gray-600">
+                  <div className="flex items-center space-x-1">
+                    <Clock className="h-3 w-3" />
+                    <span>Last sync: {formatTimeAgo(integrations.gmail.lastSync)}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Outlook Integration Status */}
+            <div className={`border rounded-lg p-4 ${integrations.outlook.connected ? 'border-blue-200 bg-blue-50' : 'border-gray-200 bg-gray-50'}`}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-3">
+                  <img
+                    src="https://upload.wikimedia.org/wikipedia/commons/d/df/Microsoft_Office_Outlook_%282018%E2%80%93present%29.svg"
+                    alt="Outlook"
+                    className="w-8 h-8"
+                  />
+                  <div>
+                    <h4 className="font-semibold text-gray-800">Outlook</h4>
+                    <p className="text-sm text-gray-600">Microsoft 365</p>
+                  </div>
+                </div>
+                <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  integrations.outlook.connected 
+                    ? 'bg-blue-100 text-blue-800' 
+                    : 'bg-gray-100 text-gray-600'
+                }`}>
+                  {integrations.outlook.connected ? (
+                    <div className="flex items-center space-x-1">
+                      <CheckCircle className="h-3 w-3" />
+                      <span>Connected</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-1">
+                      <AlertTriangle className="h-3 w-3" />
+                      <span>Not Connected</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {integrations.outlook.connected && integrations.outlook.lastSync && (
+                <div className="text-sm text-gray-600">
+                  <div className="flex items-center space-x-1">
+                    <Clock className="h-3 w-3" />
+                    <span>Last sync: {formatTimeAgo(integrations.outlook.lastSync)}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Integration Help Text */}
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start space-x-3">
+              <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <h4 className="font-semibold text-blue-800 mb-1">Email Integration Benefits</h4>
+                <p className="text-sm text-blue-700">
+                  Connect your email provider to enable AI-powered email categorization, automated draft replies, 
+                  and intelligent workflow automation. You can connect both Gmail and Outlook simultaneously.
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+        >
+          <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Emails Processed</p>
+                <p className="text-3xl font-bold text-gray-900">{metrics.emailsProcessed}</p>
+                <p className="text-sm text-gray-500">This {timeFilter}</p>
+              </div>
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <Mail className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Response Rate</p>
+                <p className="text-3xl font-bold text-gray-900">{metrics.responseRate || 0}%</p>
+                <p className="text-sm text-blue-600 flex items-center">
+                  <CheckCircle className="w-3 h-3 mr-1" />
+                  {metrics.emailsProcessed || 0} processed
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Workflow Version</p>
+                <p className="text-3xl font-bold text-gray-900">v{metrics.workflowVersion}</p>
+                <p className="text-sm text-gray-500">Latest deployed</p>
+              </div>
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <Zap className="w-6 h-6 text-purple-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Active Integrations</p>
+                <p className="text-3xl font-bold text-gray-900">{metrics.integrations}</p>
+                <p className="text-sm text-blue-600 flex items-center">
+                  <CheckCircle className="w-3 h-3 mr-1" />
+                  Connected
+                </p>
+              </div>
+              <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                <Users className="w-6 h-6 text-indigo-600" />
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Calendar Integration Widget */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          className="mb-8"
+        >
+          <CalendarIntegrationWidget 
+            userId={user?.id}
+            accessToken={integrations.outlook?.connected ? 'outlook-token' : null}
+            onAppointmentCreated={(event) => {
+              toast({
+                title: 'Appointment Created',
+                description: `Appointment "${event.subject}" has been scheduled successfully`
+              });
+            }}
+          />
+        </motion.div>
+
+        {/* Recent Activity & Quick Actions */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Recent Emails */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+            className="lg:col-span-2 bg-white rounded-2xl p-6 border border-gray-200 shadow-lg"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-gray-800 flex items-center">
+                <MessageSquare className="w-5 h-5 mr-2 text-blue-600" />
+                Recent Email Activity
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleFeatureClick('View All Emails')}
+                className="text-blue-600 hover:text-blue-700"
+              >
+                View All
+              </Button>
+            </div>
+
+            {recentEmails.length > 0 ? (
+              <div className="space-y-4">
+                {recentEmails.slice(0, 5).map((email, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getUrgencyColor(email.urgency)}`}>
+                          {email.urgency || 'normal'}
+                        </span>
+                        <span className="text-sm text-gray-500">{email.category || 'General'}</span>
+                      </div>
+                      <p className="text-sm font-medium text-gray-800 mt-1">{email.email_from}</p>
+                      <p className="text-xs text-gray-500">{email.email_subject}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500">{formatTimeAgo(email.created_at)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Mail className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500">No email activity yet</p>
+                <p className="text-sm text-gray-400">Start your automation to see activity here</p>
+              </div>
+            )}
+          </motion.div>
+
+          {/* Quick Actions */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.8 }}
+            className="space-y-6"
+          >
+            {/* Automation Status */}
+            <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-lg">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <Activity className="w-5 h-5 mr-2 text-green-600" />
+                Automation Status
+              </h3>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Workflow Status</span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(metrics.automationStatus)}`}>
+                    {metrics.automationStatus}
+                  </span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Last Activity</span>
+                  <span className="text-sm text-gray-500">{formatTimeAgo(metrics.lastActivity)}</span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Integrations</span>
+                  <span className="text-sm font-medium text-gray-800">{metrics.integrations} active</span>
+                </div>
+              </div>
+
+              {metrics.automationStatus === 'inactive' && (
+                <Button 
+                  className="w-full mt-4"
+                  onClick={() => handleFeatureClick('Start Automation')}
+                >
+                  <Zap className="w-4 h-4 mr-2" />
+                  Start Automation
+                </Button>
+              )}
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-lg">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <BarChart3 className="w-5 h-5 mr-2 text-blue-600" />
+                Quick Actions
+              </h3>
+              
+              <div className="space-y-3">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => window.location.href = '/workflows'}
+                >
+                  <Zap className="w-4 h-4 mr-2" />
+                  Manage Workflows
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => handleFeatureClick('Email Analytics')}
+                >
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  View Analytics
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => handleFeatureClick('Settings')}
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Automation Settings
+                </Button>
+
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={testBackendIntegration}
+                >
+                  <Zap className="w-4 h-4 mr-2" />
+                  Test Backend Integration
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => handleFeatureClick('Test Email')}
+                >
+                  <Mail className="w-4 h-4 mr-2" />
+                  Test Email Flow
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Business Intelligence Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 1.0 }}
+          className="mt-8"
+        >
+          <BusinessIntelligence 
+            userId={user?.id}
+            timeRange="30d"
+            onExport={(format) => {
+              console.log(`Exporting BI data in ${format} format`);
+              toast({
+                title: 'Export Started',
+                description: `Business intelligence data is being exported in ${format} format.`,
+              });
+            }}
+          />
+        </motion.div>
+      </main>
+    </div>
+  );
+};
+
+export default Dashboard;

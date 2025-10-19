@@ -1,0 +1,374 @@
+{
+  "meta": {
+    "schemaVersion": "v2.0",
+    "industry": "Plumber",
+    "author": "AI Config Generator",
+    "lastUpdated": "2025-10-08T00:00:00Z"
+  },
+  "description": "Label schema for plumbing contractors — supports emergency repairs, water leaks, drain cleaning, fixture installation, and pipe inspection.",
+  "rootOrder": [
+    "BANKING",
+    "FORMSUB",
+    "GOOGLE REVIEW",
+    "MANAGER",
+    "SALES",
+    "SUPPLIERS",
+    "SUPPORT",
+    "URGENT",
+    "INSPECTIONS",
+    "MISC",
+    "PHONE",
+    "PROMO",
+    "RECRUITMENT",
+    "SOCIALMEDIA"
+  ],
+  "labels": [
+    {
+      "name": "BANKING",
+      "intent": "ai.financial_transaction",
+      "critical": true,
+      "color": { "backgroundColor": "#16a766", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "BankAlert" },
+        { "name": "e-Transfer", "sub": [{ "name": "From Business" }, { "name": "To Business" }] },
+        { "name": "Invoice" },
+        { "name": "Receipts", "sub": [{ "name": "Payment Received" }, { "name": "Payment Sent" }] },
+        { "name": "Refund" }
+      ]
+    },
+    {
+      "name": "FORMSUB",
+      "intent": "ai.form_submission",
+      "color": { "backgroundColor": "#0b804b", "textColor": "#ffffff" },
+      "sub": [{ "name": "New Submission" }, { "name": "Service Requests" }]
+    },
+    {
+      "name": "GOOGLE REVIEW",
+      "intent": "ai.customer_feedback",
+      "color": { "backgroundColor": "#4285f4", "textColor": "#ffffff" },
+      "sub": [{ "name": "New Review" }, { "name": "Response Needed" }, { "name": "Resolved" }]
+    },
+    {
+      "name": "MANAGER",
+      "intent": "ai.internal_routing",
+      "color": { "backgroundColor": "#ffad47", "textColor": "#000000" },
+      "sub": [
+        { "name": "Unassigned" },
+        { "name": "Escalations" },
+        { "name": "{{Manager1}}" },
+        { "name": "{{Manager2}}" },
+        { "name": "{{Manager3}}" },
+        { "name": "{{Manager4}}" },
+        { "name": "{{Manager5}}" }
+      ]
+    },
+    {
+      "name": "SALES",
+      "intent": "ai.sales_inquiry",
+      "color": { "backgroundColor": "#16a766", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "Water Heaters" },
+        { "name": "Fixture Installation" },
+        { "name": "Quotes" },
+        { "name": "Follow-ups" },
+        { "name": "Sump Pumps" }
+      ]
+    },
+    {
+      "name": "SUPPLIERS",
+      "intent": "ai.vendor_communication",
+      "color": { "backgroundColor": "#ffad47", "textColor": "#000000" },
+      "sub": [
+        { "name": "Kohler" },
+        { "name": "Moen" },
+        { "name": "Delta" },
+        { "name": "American Standard" },
+        { "name": "{{Supplier1}}" },
+        { "name": "{{Supplier2}}" },
+        { "name": "{{Supplier3}}" }
+      ]
+    },
+    {
+      "name": "SUPPORT",
+      "intent": "ai.support_ticket",
+      "color": { "backgroundColor": "#4a86e8", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "Technical Support" },
+        { "name": "Drain Cleaning" },
+        { "name": "Parts Requests" },
+        { "name": "Service Scheduling" }
+      ]
+    },
+    {
+      "name": "URGENT",
+      "intent": "ai.emergency_request",
+      "critical": true,
+      "color": { "backgroundColor": "#fb4c2f", "textColor": "#ffffff" },
+      "description": "Plumbing emergencies requiring immediate response",
+      
+      "classificationRules": {
+        "keywords": {
+          "primary": ["urgent", "emergency", "ASAP", "immediately", "help", "emergency plumber"],
+          "water": ["burst", "pipe burst", "leak", "leaking", "flooding", "water damage", "water everywhere"],
+          "plumbing": ["pipe", "drain", "toilet", "sink", "sewer", "backup", "overflow"],
+          "pressure": ["no water", "low pressure", "no pressure", "water stopped"],
+          "safety": ["flood", "flooding", "water damage", "sewage", "backup", "overflow"]
+        },
+        
+        "patterns": [
+          "(burst|broken) + pipe",
+          "(leak|leaking) + (pipe|toilet|sink|drain|water)",
+          "(flooding|flood|water everywhere)",
+          "(no water|no pressure) + (in|to) + (house|building|property)",
+          "(sewer|sewage) + (backup|backing up|overflow)"
+        ],
+        
+        "examples": [
+          "URGENT: Burst pipe flooding basement!",
+          "Toilet overflowing and flooding bathroom",
+          "Major water leak under kitchen sink",
+          "No water in entire house",
+          "Sewer backing up into basement"
+        ]
+      },
+      
+      "sub": [
+        {
+          "name": "Burst Pipe",
+          "description": "Ruptured pipes causing flooding",
+          "keywords": ["burst pipe", "pipe burst", "broken pipe", "ruptured pipe", "pipe broke"],
+          "patterns": [
+            "(burst|broken|ruptured) + pipe",
+            "pipe + (burst|broke|ruptured)"
+          ],
+          "examples": [
+            "Pipe burst in basement",
+            "Broken water pipe flooding garage",
+            "Main line ruptured - water everywhere"
+          ]
+        },
+        {
+          "name": "Water Leak",
+          "description": "Water leaks from pipes, fixtures, or appliances",
+          "keywords": ["leak", "leaking", "dripping", "water leak", "water leaking", "wet spot", "water damage"],
+          "patterns": [
+            "(leak|leaking|dripping) + (from|under|at) + (sink|toilet|pipe|faucet)",
+            "water + (leak|leaking) + (in|from|under)"
+          ],
+          "examples": [
+            "Water leaking under kitchen sink",
+            "Toilet leaking at base",
+            "Dripping pipe in crawl space"
+          ]
+        },
+        {
+          "name": "Flooding",
+          "description": "Active flooding from plumbing failures",
+          "keywords": ["flooding", "flood", "water everywhere", "inches of water", "standing water", "overflow"],
+          "patterns": [
+            "(flooding|flood|water everywhere)",
+            "(overflow|overflowing) + (toilet|sink|tub)",
+            "(inches|feet) + of + water"
+          ],
+          "examples": [
+            "Basement flooding from broken pipe",
+            "Toilet overflowing - water everywhere!",
+            "3 inches of water in bathroom"
+          ]
+        },
+        {
+          "name": "No Water",
+          "description": "Complete water loss or low pressure",
+          "keywords": ["no water", "no pressure", "low pressure", "water stopped", "no running water", "dry"],
+          "patterns": [
+            "(no|low) + (water|pressure) + (in|to) + (house|building|property)",
+            "water + (stopped|not working|won't run)"
+          ],
+          "examples": [
+            "No water in entire house",
+            "Low water pressure throughout building",
+            "Water stopped running completely"
+          ]
+        },
+        {
+          "name": "Sewer Backup",
+          "description": "Sewage backup and drainage emergencies",
+          "keywords": ["sewer", "sewage", "backup", "backing up", "drain backup", "clogged sewer", "sewage smell"],
+          "patterns": [
+            "(sewer|sewage) + (backup|backing up|overflow)",
+            "drain + (backup|backing up|clogged)"
+          ],
+          "examples": [
+            "Sewer backing up into basement",
+            "Sewage overflow in bathroom",
+            "Main drain completely backed up"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "INSPECTIONS",
+      "intent": "ai.inspection_request",
+      "color": { "backgroundColor": "#9c27b0", "textColor": "#ffffff" },
+      "description": "Plumbing inspections and diagnostic services",
+      
+      "classificationRules": {
+        "keywords": {
+          "primary": ["inspection", "inspect", "camera", "detection", "test", "diagnostic"],
+          "camera": ["camera inspection", "scope", "video inspection", "sewer camera"],
+          "leak": ["leak detection", "find leak", "locate leak", "leak test"],
+          "water": ["water quality", "water test", "pressure test", "flow test"]
+        },
+        
+        "patterns": [
+          "(camera|video) + inspection",
+          "(leak|find) + (detection|locate)",
+          "(water|pressure) + test"
+        ],
+        
+        "examples": [
+          "Need camera inspection of sewer line",
+          "Leak detection service for hidden leak",
+          "Water pressure test for whole house",
+          "Video inspection before buying home"
+        ]
+      },
+      
+      "sub": [
+        {
+          "name": "Camera Inspections",
+          "keywords": ["camera inspection", "video inspection", "sewer camera", "scope", "pipe camera"],
+          "examples": ["Camera inspection of main drain", "Video scope of sewer line"]
+        },
+        {
+          "name": "Leak Detection",
+          "keywords": ["leak detection", "find leak", "locate leak", "hidden leak", "leak test"],
+          "examples": ["Need to find hidden leak", "Leak detection service"]
+        },
+        {
+          "name": "Water Quality Tests",
+          "keywords": ["water quality", "water test", "water testing", "contamination", "safe water"],
+          "examples": ["Test water quality", "Water testing for lead"]
+        },
+        {
+          "name": "Pressure Tests",
+          "keywords": ["pressure test", "water pressure", "flow test", "pressure check"],
+          "examples": ["Water pressure test", "Check water pressure in house"]
+        }
+      ]
+    },
+    {
+      "name": "MISC",
+      "intent": "ai.general",
+      "color": { "backgroundColor": "#999999", "textColor": "#ffffff" },
+      "sub": [{ "name": "General" }, { "name": "Archive" }]
+    },
+    {
+      "name": "PHONE",
+      "intent": "ai.call_log",
+      "color": { "backgroundColor": "#795548", "textColor": "#ffffff" },
+      "sub": [{ "name": "Missed Calls" }, { "name": "Call Backs" }, { "name": "Voicemails" }]
+    },
+    {
+      "name": "PROMO",
+      "intent": "ai.marketing",
+      "color": { "backgroundColor": "#9c27b0", "textColor": "#ffffff" },
+      "sub": [{ "name": "Email Campaigns" }, { "name": "Seasonal Offers" }, { "name": "Newsletters" }]
+    },
+    {
+      "name": "RECRUITMENT",
+      "intent": "ai.hr",
+      "color": { "backgroundColor": "#607d8b", "textColor": "#ffffff" },
+      "sub": [{ "name": "Applications" }, { "name": "Interviews" }, { "name": "New Hires" }]
+    },
+    {
+      "name": "SOCIALMEDIA",
+      "intent": "ai.social_engagement",
+      "color": { "backgroundColor": "#e91e63", "textColor": "#ffffff" },
+      "sub": [{ "name": "Facebook" }, { "name": "Instagram" }, { "name": "LinkedIn" }]
+    }
+  ],
+  "specialRules": [
+    {
+      "name": "FormSub Urgent Override",
+      "description": "Form submissions with plumbing emergency keywords must be classified as URGENT",
+      "trigger": {
+        "primary_category": "FORMSUB",
+        "keywords_in_body": ["burst pipe", "flooding", "leak", "no water", "sewer backup", "broken", "not working", "emergency", "ASAP", "urgent"]
+      },
+      "action": {
+        "override_primary": "URGENT",
+        "reason": "Form contains plumbing emergency"
+      },
+      "priority": "critical"
+    },
+    {
+      "name": "Phone Provider Detection",
+      "description": "Only classify as PHONE if from known phone service provider",
+      "trigger": {
+        "sender_email_exact": ["service@ringcentral.com", "voicemail@"]
+      },
+      "action": {
+        "force_primary": "PHONE"
+      },
+      "priority": "high"
+    },
+    {
+      "name": "Internal Email Detection",
+      "description": "Never auto-reply to internal company emails",
+      "trigger": {
+        "sender_domain": "@{{businessInfo.emailDomain}}"
+      },
+      "action": {
+        "force_ai_can_reply": false,
+        "route_to": "MANAGER"
+      },
+      "priority": "critical"
+    }
+  ],
+  
+  "autoReplyRules": {
+    "enabled": true,
+    "minConfidence": 0.75,
+    "enabledCategories": ["Support", "Sales", "Urgent"],
+    "conditions": [
+      {
+        "rule": "primary_category in [Support, Sales, Urgent] AND confidence >= 0.75 AND NOT internal_email",
+        "result": "ai_can_reply: true"
+      },
+      {
+        "rule": "sender_domain matches @{{businessInfo.emailDomain}}",
+        "result": "ai_can_reply: false"
+      }
+    ]
+  },
+  
+  "domainDetection": {
+    "suppliers": [
+      {"name": "Kohler", "domains": ["@kohler.com"], "keywords": []},
+      {"name": "Moen", "domains": ["@moen.com"], "keywords": []},
+      {"name": "Delta", "domains": ["@deltafaucet.com"], "keywords": []},
+      {"name": "{{Supplier1}}", "domains": [], "keywords": []}
+    ],
+    "phoneProviders": [
+      {"provider": "RingCentral", "email": "service@ringcentral.com", "route_to": "PHONE"}
+    ],
+    "internalDomains": ["@{{businessInfo.emailDomain}}"]
+  },
+  
+  "dynamicVariables": {
+    "managers": [
+      "{{Manager1}}",
+      "{{Manager2}}",
+      "{{Manager3}}",
+      "{{Manager4}}",
+      "{{Manager5}}"
+    ],
+    "suppliers": [
+      "{{Supplier1}}",
+      "{{Supplier2}}",
+      "{{Supplier3}}"
+    ]
+  }
+}
+

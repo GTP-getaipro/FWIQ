@@ -1,0 +1,327 @@
+{
+  "meta": {
+    "schemaVersion": "v2.0",
+    "industry": "HVAC",
+    "author": "AI Config Generator",
+    "lastUpdated": "2025-10-05T00:00:00Z"
+  },
+  "description": "Label schema for HVAC businesses — supports maintenance, emergency repairs, installations, and equipment management.",
+  "rootOrder": [
+    "BANKING",
+    "FORMSUB",
+    "GOOGLE REVIEW",
+    "MANAGER",
+    "SALES",
+    "SUPPLIERS",
+    "SUPPORT",
+    "URGENT",
+    "MAINTENANCE",
+    "MISC",
+    "PHONE",
+    "PROMO",
+    "RECRUITMENT"
+  ],
+  "labels": [
+    {
+      "name": "BANKING",
+      "intent": "ai.financial_transaction",
+      "color": { "backgroundColor": "#16a766", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "Invoice" },
+        { "name": "Receipts" },
+        { "name": "Refund" },
+        { "name": "E-Transfer" }
+      ]
+    },
+    {
+      "name": "FORMSUB",
+      "intent": "ai.form_submission",
+      "color": { "backgroundColor": "#0b804b", "textColor": "#ffffff" },
+      "sub": [{ "name": "New Submission" }, { "name": "Service Requests" }]
+    },
+    {
+      "name": "GOOGLE REVIEW",
+      "intent": "ai.customer_feedback",
+      "color": { "backgroundColor": "#4285f4", "textColor": "#ffffff" },
+      "sub": [{ "name": "New Review" }, { "name": "Response Needed" }, { "name": "Resolved" }]
+    },
+    {
+      "name": "SALES",
+      "intent": "ai.sales_inquiry",
+      "color": { "backgroundColor": "#16a766", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "New Installations" },
+        { "name": "System Upgrades" },
+        { "name": "Quotes" },
+        { "name": "Follow-ups" }
+      ]
+    },
+    {
+      "name": "SUPPLIERS",
+      "intent": "ai.vendor_communication",
+      "color": { "backgroundColor": "#ffad47", "textColor": "#000000" },
+      "sub": [
+        { "name": "Carrier" },
+        { "name": "Trane" },
+        { "name": "Lennox" },
+        { "name": "{{Supplier1}}" },
+        { "name": "{{Supplier2}}" }
+      ]
+    },
+    {
+      "name": "SUPPORT",
+      "intent": "ai.support_ticket",
+      "color": { "backgroundColor": "#4a86e8", "textColor": "#ffffff" },
+      "sub": [
+        { "name": "Technical Support" },
+        { "name": "Warranty Claims" },
+        { "name": "Parts Requests" },
+        { "name": "Service Scheduling" }
+      ]
+    },
+    {
+      "name": "URGENT",
+      "intent": "ai.emergency_request",
+      "color": { "backgroundColor": "#fb4c2f", "textColor": "#ffffff" },
+      "critical": true,
+      "description": "HVAC emergencies requiring immediate response",
+      
+      "classificationRules": {
+        "keywords": {
+          "primary": ["urgent", "emergency", "ASAP", "immediately", "help", "broken"],
+          "heating": ["no heat", "not heating", "cold", "furnace out", "heater broken", "freezing"],
+          "cooling": ["no cooling", "no AC", "AC not working", "not cooling", "too hot", "AC broken"],
+          "hvac": ["furnace", "AC", "air conditioner", "heat pump", "HVAC", "thermostat"],
+          "safety": ["carbon monoxide", "CO detector", "gas smell", "safety issue", "dangerous"],
+          "power": ["no power", "won't turn on", "not starting", "dead"]
+        },
+        
+        "patterns": [
+          "(no|not) + (heat|heating) + (in|at) + (house|building|home)",
+          "(no|not) + (cooling|AC|air) + (in|at) + (house|building)",
+          "(furnace|AC|heat pump|HVAC) + (not working|broken|out|failed)",
+          "(carbon monoxide|CO|gas) + (detector|alarm|smell)",
+          "(freezing|too hot|unbearable) + (in|inside) + (house|building)"
+        ],
+        
+        "examples": [
+          "URGENT: No heat and it's freezing!",
+          "AC not working - house is 90 degrees",
+          "Furnace broken and temps dropping",
+          "Carbon monoxide detector going off",
+          "HVAC system completely dead"
+        ]
+      },
+      
+      "sub": [
+        {
+          "name": "No Heat",
+          "description": "Heating system failures in cold weather",
+          "keywords": ["no heat", "not heating", "cold", "furnace out", "heater broken", "freezing", "heat not working"],
+          "patterns": [
+            "(no|not) + (heat|heating)",
+            "furnace + (out|broken|not working|failed)",
+            "(freezing|cold) + (in|inside) + (house|home)"
+          ],
+          "examples": [
+            "No heat in house - it's freezing!",
+            "Furnace not working in winter",
+            "House is freezing, heater broken"
+          ]
+        },
+        {
+          "name": "No Cooling",
+          "description": "Air conditioning failures in hot weather",
+          "keywords": ["no cooling", "no AC", "AC not working", "not cooling", "too hot", "AC broken", "air conditioner broken"],
+          "patterns": [
+            "(no|not) + (cooling|AC|air conditioning)",
+            "AC + (not working|broken|out|failed)",
+            "(too hot|sweltering|unbearable) + (in|inside)"
+          ],
+          "examples": [
+            "No AC and it's 95 degrees outside",
+            "Air conditioner not working",
+            "House too hot - AC failed"
+          ]
+        },
+        {
+          "name": "Safety Issue",
+          "description": "Safety concerns like gas smell or CO detector",
+          "keywords": ["carbon monoxide", "CO detector", "gas smell", "smell gas", "safety issue", "dangerous", "alarm"],
+          "patterns": [
+            "(carbon monoxide|CO) + (detector|alarm|going off)",
+            "(gas|natural gas) + smell",
+            "safety + (issue|concern|problem)"
+          ],
+          "examples": [
+            "Carbon monoxide detector going off",
+            "Smell gas near furnace",
+            "CO alarm beeping continuously"
+          ]
+        },
+        {
+          "name": "Power Outage",
+          "description": "HVAC system electrical failures",
+          "keywords": ["no power", "won't turn on", "not starting", "dead", "power outage", "electrical"],
+          "patterns": [
+            "(no power|won't turn on) + (to|for) + (furnace|AC|HVAC)",
+            "(furnace|AC|system) + (dead|not starting|won't start)"
+          ],
+          "examples": [
+            "No power to furnace",
+            "AC won't turn on at all",
+            "HVAC system completely dead"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "MAINTENANCE",
+      "intent": "ai.maintenance_request",
+      "color": { "backgroundColor": "#9c27b0", "textColor": "#ffffff" },
+      "description": "Preventive maintenance and tune-up services",
+      
+      "classificationRules": {
+        "keywords": {
+          "primary": ["maintenance", "tune-up", "service", "inspection", "check", "preventive"],
+          "seasonal": ["seasonal", "fall tune-up", "spring tune-up", "annual service", "yearly"],
+          "filter": ["filter", "air filter", "filter change", "replace filter"],
+          "duct": ["duct", "duct cleaning", "air duct", "ductwork"],
+          "inspection": ["inspection", "inspect", "check system", "diagnostic"]
+        },
+        
+        "patterns": [
+          "(seasonal|annual|yearly) + (maintenance|tune-up|service)",
+          "(filter|air filter) + (change|replace|replacement)",
+          "(duct|air duct) + (cleaning|clean)",
+          "(system|furnace|AC) + (inspection|check|diagnostic)"
+        ],
+        
+        "examples": [
+          "Schedule fall furnace tune-up",
+          "Need filter change for AC system",
+          "Duct cleaning service appointment",
+          "Annual HVAC system inspection"
+        ]
+      },
+      
+      "sub": [
+        {
+          "name": "Seasonal Tune-ups",
+          "keywords": ["seasonal", "tune-up", "fall service", "spring service", "annual maintenance"],
+          "examples": ["Fall furnace tune-up", "Spring AC maintenance"]
+        },
+        {
+          "name": "Filter Changes",
+          "keywords": ["filter", "air filter", "filter change", "replace filter", "new filter"],
+          "examples": ["Need to change AC filter", "Replace furnace filter"]
+        },
+        {
+          "name": "Duct Cleaning",
+          "keywords": ["duct cleaning", "air duct", "ductwork", "clean ducts", "vent cleaning"],
+          "examples": ["Schedule duct cleaning", "Clean air ducts in house"]
+        },
+        {
+          "name": "System Inspections",
+          "keywords": ["inspection", "system check", "diagnostic", "inspect HVAC", "tune-up"],
+          "examples": ["HVAC system inspection", "Check entire system"]
+        }
+      ]
+    },
+    {
+      "name": "MANAGER",
+      "intent": "ai.internal_routing",
+      "color": { "backgroundColor": "#ffad47", "textColor": "#000000" },
+      "sub": [
+        { "name": "Unassigned" },
+        { "name": "Escalations" },
+        { "name": "{{Manager1}}" },
+        { "name": "{{Manager2}}" },
+        { "name": "{{Manager3}}" }
+      ]
+    },
+    {
+      "name": "MISC",
+      "intent": "ai.general",
+      "color": { "backgroundColor": "#999999", "textColor": "#ffffff" },
+      "sub": [{ "name": "General" }, { "name": "Archive" }]
+    },
+    {
+      "name": "PHONE",
+      "intent": "ai.call_log",
+      "color": { "backgroundColor": "#795548", "textColor": "#ffffff" },
+      "sub": [{ "name": "Missed Calls" }, { "name": "Call Backs" }, { "name": "Voicemails" }]
+    },
+    {
+      "name": "PROMO",
+      "intent": "ai.marketing",
+      "color": { "backgroundColor": "#9c27b0", "textColor": "#ffffff" },
+      "sub": [{ "name": "Email Campaigns" }, { "name": "Seasonal Offers" }, { "name": "Newsletters" }]
+    },
+    {
+      "name": "RECRUITMENT",
+      "intent": "ai.hr",
+      "color": { "backgroundColor": "#607d8b", "textColor": "#ffffff" },
+      "sub": [{ "name": "Applications" }, { "name": "Interviews" }, { "name": "New Hires" }]
+    }
+  ],
+  "specialRules": [
+    {
+      "name": "FormSub Urgent Override",
+      "description": "Form submissions with HVAC emergency keywords must be classified as URGENT",
+      "trigger": {
+        "primary_category": "FORMSUB",
+        "keywords_in_body": ["no heat", "no cooling", "furnace out", "AC broken", "carbon monoxide", "freezing", "broken", "emergency", "ASAP"]
+      },
+      "action": {
+        "override_primary": "URGENT",
+        "reason": "Form contains HVAC emergency"
+      },
+      "priority": "critical"
+    },
+    {
+      "name": "Phone Provider Detection",
+      "trigger": {
+        "sender_email_exact": ["service@ringcentral.com", "voicemail@"]
+      },
+      "action": {
+        "force_primary": "PHONE"
+      },
+      "priority": "high"
+    },
+    {
+      "name": "Internal Email Detection",
+      "trigger": {
+        "sender_domain": "@{{businessInfo.emailDomain}}"
+      },
+      "action": {
+        "force_ai_can_reply": false,
+        "route_to": "MANAGER"
+      },
+      "priority": "critical"
+    }
+  ],
+  
+  "autoReplyRules": {
+    "enabled": true,
+    "minConfidence": 0.75,
+    "enabledCategories": ["Support", "Sales", "Urgent"]
+  },
+  
+  "domainDetection": {
+    "suppliers": [
+      {"name": "Carrier", "domains": ["@carrier.com"], "keywords": []},
+      {"name": "Trane", "domains": ["@trane.com"], "keywords": []},
+      {"name": "Lennox", "domains": ["@lennox.com"], "keywords": []}
+    ],
+    "phoneProviders": [
+      {"provider": "RingCentral", "email": "service@ringcentral.com"}
+    ],
+    "internalDomains": ["@{{businessInfo.emailDomain}}"]
+  },
+  
+  "dynamicVariables": {
+    "managers": ["{{Manager1}}", "{{Manager2}}", "{{Manager3}}"],
+    "suppliers": ["{{Supplier1}}", "{{Supplier2}}"]
+  }
+}
