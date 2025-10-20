@@ -4,7 +4,7 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: Dockerfile.frontend.simple
+      dockerfile: Dockerfile.frontend
     ports:
       - "8080:80"
     restart: unless-stopped
