@@ -19,16 +19,29 @@ npm error peer react@"^16.6.0 || ^17.0.0 || ^18.0.0" from react-helmet-async@2.0
 - Frontend builds need devDependencies (Vite, build tools) but `--only=production` excludes them
 
 ### **Solution Applied**
+
+**1. Fixed React 19 Peer Dependency Conflict:**
 Updated `Dockerfile` to:
 ```dockerfile
 # Install all dependencies (including devDependencies needed for build)
 RUN npm ci --legacy-peer-deps
 ```
 
+**2. Fixed Build Script Test Dependencies:**
+Updated `package.json` build scripts:
+```json
+{
+  "build": "vite build",
+  "build:ci": "npm run test:all && npm run lint && vite build"
+}
+```
+
 **Changes made:**
 1. ✅ Removed `--only=production` flag (needed devDependencies for Vite build)
 2. ✅ Added `--legacy-peer-deps` flag (bypasses React 19 peer dependency conflicts)
-3. ✅ Allows build to proceed despite react-helmet-async compatibility issue
+3. ✅ Separated production build from test execution
+4. ✅ Fixed "vitest: not found" error during Docker build
+5. ✅ Optimized with multi-stage Docker build
 
 ---
 
