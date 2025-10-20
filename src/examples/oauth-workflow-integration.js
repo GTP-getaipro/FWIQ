@@ -5,7 +5,7 @@
  */
 
 import { deployWorkflowForUser } from '@/lib/n8nTemplateLoader';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/customSupabaseClient';
 
 /**
  * Example 1: Deploy after Gmail OAuth success

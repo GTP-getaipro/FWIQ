@@ -6,7 +6,7 @@
  * when enough corrections have been collected.
  */
 
-import { supabase } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/customSupabaseClient';
 
 export class VoiceRefinementService {
   constructor(userId) {
