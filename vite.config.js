@@ -275,12 +275,15 @@ export default defineConfig({
 	},
 	build: {
 		rollupOptions: {
-			external: [
-				'@babel/parser',
-				'@babel/traverse',
-				'@babel/generator',
-				'@babel/types'
-			]
+			// Exclude API route files and other problematic files from the build
+			external: (id) => {
+				return id.includes('src/pages/api/') || 
+				       id.includes('secureSystemMessageManager') ||
+				       id.includes('@babel/parser') ||
+				       id.includes('@babel/traverse') ||
+				       id.includes('@babel/generator') ||
+				       id.includes('@babel/types');
+			}
 		}
 	}
 });
