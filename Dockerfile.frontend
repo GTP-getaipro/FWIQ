@@ -16,7 +16,8 @@ COPY . .
 ENV NODE_ENV=production
 ENV VITE_NODE_ENV=production
 
-# Set required environment variables (values will be provided by Coolify)
+# Environment variables will be provided by Coolify at runtime
+# These are just defaults for build time
 ENV SUPABASE_URL=https://oinxzvqszingwstrbdro.supabase.co
 ENV SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pbnh6dnFzemluZ3dzdHJiZHJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNDEzODQsImV4cCI6MjA3MzkxNzM4NH0.72tZYFLVr2C3ij6dB8cEKP6L-o9qmaCtrR6KEi7OD6c
 ENV OPENAI_API_KEY=YOUR_OPENAI_API_KEY_HERE
@@ -28,6 +29,9 @@ RUN npm run build
 # Install serve to serve static files
 RUN npm install -g serve
 
+# Copy runtime configuration script
+COPY runtime-config.js ./
+
 # Expose port
 EXPOSE 80
 
@@ -35,5 +39,11 @@ EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1
 
-# Serve the built files
-CMD ["serve", "-s", "dist", "-l", "80"]
+# Create startup script that generates runtime config and serves files
+RUN echo '#!/bin/sh' > start.sh && \
+    echo 'node runtime-config.js' >> start.sh && \
+    echo 'serve -s dist -l 80' >> start.sh && \
+    chmod +x start.sh
+
+# Use the startup script
+CMD ["./start.sh"]
