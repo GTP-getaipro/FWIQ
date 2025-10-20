@@ -1,4 +1,4 @@
-# Frontend Dockerfile for Production
+# Full-Stack Dockerfile for Production
 FROM node:20-alpine AS builder
 
 WORKDIR /app
@@ -15,20 +15,56 @@ COPY . .
 # Build frontend (production build only, no tests)
 RUN npm run build
 
-# Production stage
-FROM nginx:alpine
+# Production stage - Full Stack
+FROM node:20-alpine
 
-# Copy built files from builder stage
-COPY --from=builder /app/dist /usr/share/nginx/html
+WORKDIR /app
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Install production dependencies for backend
+COPY backend/package*.json ./
+RUN npm ci --only=production
 
-# Expose port
-EXPOSE 80
+# Copy backend source
+COPY backend/ ./
 
-# Health check
+# Copy built frontend from builder stage
+COPY --from=builder /app/dist ./public
+
+# Create nginx config for serving frontend
+RUN echo 'server { \
+    listen 80; \
+    server_name localhost; \
+    root /app/public; \
+    index index.html; \
+    location / { \
+        try_files $uri $uri/ /index.html; \
+    } \
+    location /api/ { \
+        proxy_pass http://localhost:3001; \
+        proxy_http_version 1.1; \
+        proxy_set_header Upgrade $http_upgrade; \
+        proxy_set_header Connection "upgrade"; \
+        proxy_set_header Host $host; \
+        proxy_set_header X-Real-IP $remote_addr; \
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
+        proxy_set_header X-Forwarded-Proto $scheme; \
+    } \
+}' > /etc/nginx/conf.d/default.conf
+
+# Install nginx
+RUN apk add --no-cache nginx
+
+# Create startup script
+RUN echo '#!/bin/sh \
+nginx & \
+node -r dotenv/config src/server.js dotenv_config_path=../.env.production \
+' > /start.sh && chmod +x /start.sh
+
+# Expose both ports
+EXPOSE 80 3001
+
+# Health check for backend
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1
+  CMD wget --quiet --tries=1 --spider http://localhost:3001/health || exit 1
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["/start.sh"]
