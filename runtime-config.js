@@ -13,8 +13,19 @@ const config = {
   SUPABASE_URL: process.env.SUPABASE_URL || 'https://oinxzvqszingwstrbdro.supabase.co',
   SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pbnh6dnFzemluZ3dzdHJiZHJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNDEzODQsImV4cCI6MjA3MzkxNzM4NH0.72tZYFLVr2C3ij6dB8cEKP6L-o9qmaCtrR6KEi7OD6c',
   OPENAI_API_KEY: process.env.OPENAI_API_KEY || 'YOUR_OPENAI_API_KEY_HERE',
-  BACKEND_URL: process.env.BACKEND_URL || 'https://api.floworx-iq.com'
+  BACKEND_URL: process.env.BACKEND_URL || 'https://api.floworx-iq.com',
+  N8N_API_KEY: process.env.N8N_API_KEY || 'YOUR_N8N_API_KEY_HERE',
+  N8N_BASE_URL: process.env.N8N_BASE_URL || 'https://n8n.srv995290.hstgr.cloud'
 };
+
+// Debug: Log available environment variables
+console.log('🔍 Available environment variables:');
+console.log('SUPABASE_URL:', process.env.SUPABASE_URL ? 'SET' : 'NOT SET');
+console.log('SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY ? 'SET' : 'NOT SET');
+console.log('N8N_API_KEY:', process.env.N8N_API_KEY ? 'SET' : 'NOT SET');
+console.log('N8N_BASE_URL:', process.env.N8N_BASE_URL ? 'SET' : 'NOT SET');
+console.log('OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? 'SET' : 'NOT SET');
+console.log('BACKEND_URL:', process.env.BACKEND_URL ? 'SET' : 'NOT SET');
 
 // Create a config.js file that will be loaded by the frontend
 const configContent = `
@@ -23,7 +34,9 @@ window.__RUNTIME_CONFIG__ = {
   SUPABASE_URL: '${config.SUPABASE_URL}',
   SUPABASE_ANON_KEY: '${config.SUPABASE_ANON_KEY}',
   OPENAI_API_KEY: '${config.OPENAI_API_KEY}',
-  BACKEND_URL: '${config.BACKEND_URL}'
+  BACKEND_URL: '${config.BACKEND_URL}',
+  N8N_API_KEY: '${config.N8N_API_KEY}',
+  N8N_BASE_URL: '${config.N8N_BASE_URL}'
 };
 `;
 
