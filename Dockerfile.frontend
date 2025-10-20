@@ -40,9 +40,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1
 
 # Create startup script that generates runtime config and serves files
-RUN echo '#!/bin/sh' > start.sh && \
-    echo 'node runtime-config.js' >> start.sh && \
-    echo 'serve -s dist -l 80' >> start.sh && \
+RUN printf '#!/bin/ash\nnode runtime-config.js\nserve -s dist -l 80\n' > start.sh && \
     chmod +x start.sh
 
 # Use the startup script
