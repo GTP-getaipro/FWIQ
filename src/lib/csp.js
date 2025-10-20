@@ -223,6 +223,7 @@ export class CSPManager {
         "https://oauth2.googleapis.com",
         "https://n8n.floworx-iq.com",
         "https://floworx-iq.com",
+        "https://api.floworx-iq.com",
         "https://n8n.srv995290.hstgr.cloud",
         "https://*.hstgr.cloud",
         "wss://*.supabase.co",

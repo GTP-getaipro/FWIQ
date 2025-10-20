@@ -67,7 +67,14 @@ export const refreshOAuthToken = async (provider, refreshToken, userId, integrat
       throw new Error('No valid session found');
     }
 
-    const response = await fetch('http://localhost:3001/api/oauth/refresh-token', {
+    // Get backend URL from runtime config or environment
+    const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
+    const backendUrl = runtimeConfig?.BACKEND_URL || 
+                      import.meta.env.BACKEND_URL || 
+                      import.meta.env.VITE_BACKEND_URL || 
+                      'http://localhost:3001';
+
+    const response = await fetch(`${backendUrl}/api/oauth/refresh-token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -202,7 +209,14 @@ export const getValidAccessToken = async (userId, provider) => {
       throw new Error('No valid session found');
     }
 
-    const response = await fetch(`http://localhost:3001/api/oauth/get-token`, {
+    // Get backend URL from runtime config or environment
+    const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
+    const backendUrl = runtimeConfig?.BACKEND_URL || 
+                      import.meta.env.BACKEND_URL || 
+                      import.meta.env.VITE_BACKEND_URL || 
+                      'http://localhost:3001';
+
+    const response = await fetch(`${backendUrl}/api/oauth/get-token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

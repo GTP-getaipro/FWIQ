@@ -14,7 +14,12 @@ class CustomOAuthService {
     // Use HTTP for localhost development (Google OAuth allows HTTP for localhost)
     if (hostname === 'localhost') {
       this.redirectUri = `http://localhost:${port}/oauth-callback-n8n`;
-      this.backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+      // Get backend URL from runtime config or environment
+      const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
+      this.backendUrl = runtimeConfig?.BACKEND_URL || 
+                       import.meta.env.BACKEND_URL || 
+                       import.meta.env.VITE_BACKEND_URL || 
+                       'http://localhost:3001';
     } else {
       this.redirectUri = `https://${hostname}/oauth-callback-n8n`;
       this.backendUrl = import.meta.env.VITE_BACKEND_URL || `https://${hostname}`;
@@ -334,7 +339,12 @@ class CustomOAuthService {
     });
     
     // Use server-side endpoint for token exchange (required for Azure AD Web apps)
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+    // Get backend URL from runtime config or environment
+    const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
+    const backendUrl = runtimeConfig?.BACKEND_URL || 
+                      import.meta.env.BACKEND_URL || 
+                      import.meta.env.VITE_BACKEND_URL || 
+                      'http://localhost:3001';
     const requestUrl = `${backendUrl}/api/oauth/exchange-token`;
     console.log('🌐 Making request to backend server:', requestUrl);
     console.log('📦 Request body:', { provider: 'outlook', code: code, redirect_uri: this.redirectUri });
