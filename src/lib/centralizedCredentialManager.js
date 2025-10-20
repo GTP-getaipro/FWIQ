@@ -12,16 +12,22 @@
  * - Consistent credential types and naming
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from './customSupabaseClient.js';
 
 class CentralizedCredentialManager {
   constructor() {
-    this.supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-    this.supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    this.n8nApiUrl = process.env.N8N_API_URL || 'https://n8n.srv995290.hstgr.cloud';
-    this.n8nApiKey = process.env.N8N_API_KEY;
+    // Use the centralized Supabase client instead of creating a new one
+    this.supabaseAdmin = supabase;
     
-    this.supabaseAdmin = createClient(this.supabaseUrl, this.supabaseKey);
+    // Get configuration from runtime config or environment variables
+    const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
+    this.n8nApiUrl = runtimeConfig?.N8N_BASE_URL || 
+                     import.meta.env.N8N_BASE_URL || 
+                     import.meta.env.VITE_N8N_BASE_URL || 
+                     'https://n8n.srv995290.hstgr.cloud';
+    this.n8nApiKey = runtimeConfig?.N8N_API_KEY || 
+                     import.meta.env.N8N_API_KEY || 
+                     import.meta.env.VITE_N8N_API_KEY;
   }
 
   /**

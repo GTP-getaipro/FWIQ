@@ -5,12 +5,7 @@
  * after initial OAuth connection. This replaces the old "update" approach with a proper "create" approach.
  */
 
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+import { supabase } from './customSupabaseClient.js';
 
 /**
  * Create n8n credential with business name

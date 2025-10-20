@@ -4,12 +4,7 @@
  * Tracks key metrics for the auto-profile system to measure success criteria
  */
 
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+import { supabase } from './customSupabaseClient.js';
 
 export class AutoProfileMetrics {
   constructor() {
