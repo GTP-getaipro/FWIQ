@@ -382,3 +382,11 @@ export class AIService {
 
 // Export singleton instance
 export const aiService = new AIService();
+
+// Export OpenAI client for direct usage
+import OpenAI from 'openai';
+
+export const openai = new OpenAI({
+  apiKey: import.meta.env.VITE_OPENAI_API_KEY || import.meta.env.OPENAI_API_KEY,
+  dangerouslyAllowBrowser: true
+});
