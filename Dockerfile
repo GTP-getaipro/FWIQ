@@ -12,13 +12,13 @@ RUN npm ci --legacy-peer-deps
 # Copy source code
 COPY . .
 
-# Build frontend
+# Build frontend (production build only, no tests)
 RUN npm run build
 
 # Production stage
 FROM nginx:alpine
 
-# Copy built files
+# Copy built files from builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Copy nginx configuration
