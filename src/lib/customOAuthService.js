@@ -30,7 +30,8 @@ class CustomOAuthService {
    */
   async startOAuthFlow(provider, businessName, userId) {
     try {
-      // Get OAuth credentials from environment variables
+      // Get OAuth credentials from runtime config or environment
+      const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
       let clientId, clientSecret;
       
       if (provider === 'gmail') {
