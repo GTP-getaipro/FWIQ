@@ -1,12 +1,8 @@
 // Runtime configuration script for environment variables
 // This script will be executed at container startup to inject environment variables
 
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const fs = require('fs');
+const path = require('path');
 
 // Get environment variables from process.env
 const config = {
@@ -69,11 +65,29 @@ window.__RUNTIME_CONFIG__ = {
 const distPath = path.join(__dirname, 'dist');
 const configPath = path.join(distPath, 'config.js');
 
+console.log('🔍 Checking dist directory:', distPath);
+console.log('🔍 Dist directory exists:', fs.existsSync(distPath));
+
 if (fs.existsSync(distPath)) {
   fs.writeFileSync(configPath, configContent);
   console.log('✅ Runtime configuration generated successfully');
   console.log('📁 Config file written to:', configPath);
+  
+  // Verify the file was written correctly
+  if (fs.existsSync(configPath)) {
+    const fileContent = fs.readFileSync(configPath, 'utf8');
+    console.log('✅ Config file verification: File exists and contains', fileContent.length, 'characters');
+    console.log('🔧 Configuration values:');
+    console.log('  - BACKEND_URL:', config.BACKEND_URL);
+    console.log('  - N8N_BASE_URL:', config.N8N_BASE_URL);
+    console.log('  - GMAIL_CLIENT_ID:', config.GMAIL_CLIENT_ID ? 'SET' : 'NOT SET');
+    console.log('  - OUTLOOK_CLIENT_ID:', config.OUTLOOK_CLIENT_ID ? 'SET' : 'NOT SET');
+  } else {
+    console.error('❌ Config file verification failed: File does not exist');
+  }
 } else {
   console.error('❌ Dist directory not found:', distPath);
+  console.log('🔍 Current working directory:', process.cwd());
+  console.log('🔍 Directory contents:', fs.readdirSync(__dirname));
   process.exit(1);
 }
