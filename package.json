@@ -40,6 +40,7 @@
     "lint:fix": "eslint src/ tests/ scripts/ --fix",
     "build": "vite build",
     "build:ci": "npm run test:all && npm run lint && vite build",
+    "verify-build": "node scripts/verify-build.js",
     "deploy:staging": "npm run build:ci && npm run smoke:build-n8n",
     "deploy:production": "npm run build:ci && npm run smoke:build-n8n",
     "ops:dashboard": "node scripts/operations-dashboard.js",
