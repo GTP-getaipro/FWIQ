@@ -13,6 +13,9 @@ RUN npm ci --legacy-peer-deps
 COPY . .
 
 # Build frontend (production build only, no tests)
+# Set build-time environment variables to prevent warnings
+ENV NODE_ENV=production
+ENV VITE_NODE_ENV=production
 RUN npm run build
 
 # Production stage
@@ -21,8 +24,14 @@ FROM nginx:alpine
 # Copy built files from builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
 
+# Debug: List files to verify build output
+RUN ls -la /usr/share/nginx/html/
+
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Test nginx configuration
+RUN nginx -t
 
 # Expose port
 EXPOSE 80
