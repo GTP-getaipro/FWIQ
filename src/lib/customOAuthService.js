@@ -34,11 +34,11 @@ class CustomOAuthService {
       let clientId, clientSecret;
       
       if (provider === 'gmail') {
-        clientId = import.meta.env.VITE_GMAIL_CLIENT_ID;
-        clientSecret = import.meta.env.VITE_GMAIL_CLIENT_SECRET;
+        clientId = runtimeConfig?.GMAIL_CLIENT_ID || import.meta.env.GMAIL_CLIENT_ID || import.meta.env.GOOGLE_CLIENT_ID;
+        clientSecret = runtimeConfig?.GMAIL_CLIENT_SECRET || import.meta.env.GMAIL_CLIENT_SECRET || import.meta.env.GOOGLE_CLIENT_SECRET;
       } else if (provider === 'outlook') {
-        clientId = import.meta.env.VITE_OUTLOOK_CLIENT_ID;
-        clientSecret = import.meta.env.VITE_OUTLOOK_CLIENT_SECRET;
+        clientId = runtimeConfig?.OUTLOOK_CLIENT_ID || import.meta.env.OUTLOOK_CLIENT_ID || import.meta.env.MICROSOFT_CLIENT_ID;
+        clientSecret = runtimeConfig?.OUTLOOK_CLIENT_SECRET || import.meta.env.OUTLOOK_CLIENT_SECRET || import.meta.env.MICROSOFT_CLIENT_SECRET;
       } else {
         throw new Error(`Unsupported provider: ${provider}`);
       }
@@ -216,15 +216,16 @@ class CustomOAuthService {
    */
   async exchangeCodeForTokens(provider, code) {
     try {
-      // Get OAuth credentials from environment variables
+      // Get OAuth credentials from runtime config or environment
+      const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
       let clientId, clientSecret;
       
       if (provider === 'gmail') {
-        clientId = import.meta.env.VITE_GMAIL_CLIENT_ID;
-        clientSecret = import.meta.env.VITE_GMAIL_CLIENT_SECRET;
+        clientId = runtimeConfig?.GMAIL_CLIENT_ID || import.meta.env.GMAIL_CLIENT_ID || import.meta.env.GOOGLE_CLIENT_ID;
+        clientSecret = runtimeConfig?.GMAIL_CLIENT_SECRET || import.meta.env.GMAIL_CLIENT_SECRET || import.meta.env.GOOGLE_CLIENT_SECRET;
       } else if (provider === 'outlook') {
-        clientId = import.meta.env.VITE_OUTLOOK_CLIENT_ID;
-        clientSecret = import.meta.env.VITE_OUTLOOK_CLIENT_SECRET;
+        clientId = runtimeConfig?.OUTLOOK_CLIENT_ID || import.meta.env.OUTLOOK_CLIENT_ID || import.meta.env.MICROSOFT_CLIENT_ID;
+        clientSecret = runtimeConfig?.OUTLOOK_CLIENT_SECRET || import.meta.env.OUTLOOK_CLIENT_SECRET || import.meta.env.MICROSOFT_CLIENT_SECRET;
       } else {
         throw new Error(`Unsupported provider: ${provider}`);
       }

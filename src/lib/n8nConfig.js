@@ -24,17 +24,21 @@ export function getN8nConfig() {
 
     // OAuth client credentials
     gmail: {
-      clientId: import.meta.env.VITE_GMAIL_CLIENT_ID ||
-                import.meta.env.VITE_GOOGLE_CLIENT_ID,
-      clientSecret: import.meta.env.VITE_GMAIL_CLIENT_SECRET ||
-                    import.meta.env.VITE_GOOGLE_CLIENT_SECRET
+      clientId: runtimeConfig?.GMAIL_CLIENT_ID ||
+                import.meta.env.GMAIL_CLIENT_ID ||
+                import.meta.env.GOOGLE_CLIENT_ID,
+      clientSecret: runtimeConfig?.GMAIL_CLIENT_SECRET ||
+                    import.meta.env.GMAIL_CLIENT_SECRET ||
+                    import.meta.env.GOOGLE_CLIENT_SECRET
     },
 
     outlook: {
-      clientId: import.meta.env.VITE_OUTLOOK_CLIENT_ID ||
-                import.meta.env.VITE_MICROSOFT_CLIENT_ID,
-      clientSecret: import.meta.env.VITE_OUTLOOK_CLIENT_SECRET ||
-                    import.meta.env.VITE_MICROSOFT_CLIENT_SECRET
+      clientId: runtimeConfig?.OUTLOOK_CLIENT_ID ||
+                import.meta.env.OUTLOOK_CLIENT_ID ||
+                import.meta.env.MICROSOFT_CLIENT_ID,
+      clientSecret: runtimeConfig?.OUTLOOK_CLIENT_SECRET ||
+                    import.meta.env.OUTLOOK_CLIENT_SECRET ||
+                    import.meta.env.MICROSOFT_CLIENT_SECRET
     }
   };
 
