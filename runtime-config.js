@@ -4,11 +4,12 @@
 console.log('🚀 Runtime config script starting...');
 console.log('🔍 Node.js version:', process.version);
 console.log('🔍 Current working directory:', process.cwd());
-console.log('🔍 Script directory:', __dirname);
 
 try {
   const fs = require('fs');
   const path = require('path');
+  
+  console.log('🔍 Script directory:', __dirname);
 
 // Get environment variables from process.env
 const config = {

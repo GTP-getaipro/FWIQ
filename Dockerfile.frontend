@@ -24,7 +24,7 @@ ENV OPENAI_API_KEY=YOUR_OPENAI_API_KEY_HERE
 ENV BACKEND_URL=https://api.floworx-iq.com
 
 # Copy runtime configuration script before build
-COPY runtime-config.js ./
+COPY runtime-config.js ./runtime-config.cjs
 
 # Build frontend
 RUN npm run build
@@ -40,7 +40,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1
 
 # Create startup script that generates runtime config and serves files
-RUN printf '#!/bin/ash\nset -e\necho "🚀 Starting container..."\necho "📁 Current directory: $(pwd)"\necho "📁 Contents: $(ls -la)"\necho "🔧 Running runtime config script..."\nnode runtime-config.js\necho "✅ Runtime config completed, starting server..."\nserve -s dist -l 80\n' > start.sh && \
+RUN printf '#!/bin/ash\nset -e\necho "🚀 Starting container..."\necho "📁 Current directory: $(pwd)"\necho "📁 Contents: $(ls -la)"\necho "🔧 Running runtime config script..."\nnode runtime-config.cjs\necho "✅ Runtime config completed, starting server..."\nserve -s dist -l 80\n' > start.sh && \
     chmod +x start.sh
 
 # Use the startup script
