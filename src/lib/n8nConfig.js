@@ -6,16 +6,21 @@
  */
 
 /**
- * Get N8N configuration from environment variables
+ * Get N8N configuration from runtime config or environment variables
  * @returns {Object} N8N configuration
  */
 export function getN8nConfig() {
+  // Check for runtime configuration first (for production deployment)
+  const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
+  
   const config = {
-    baseUrl: import.meta.env.N8N_BASE_URL ||
+    baseUrl: runtimeConfig?.N8N_BASE_URL ||
+             import.meta.env.N8N_BASE_URL ||
              import.meta.env.VITE_N8N_BASE_URL ||
              import.meta.env.VITE_N8N_API_URL,
 
-    apiKey: import.meta.env.N8N_API_KEY ||
+    apiKey: runtimeConfig?.N8N_API_KEY ||
+            import.meta.env.N8N_API_KEY ||
             import.meta.env.VITE_N8N_API_KEY,
 
     apiVersion: '/api/v1', // Official N8N Public API version

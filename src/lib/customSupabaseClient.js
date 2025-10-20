@@ -26,7 +26,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
 console.log('🔗 Supabase Configuration:', {
   url: supabaseUrl,
   keySet: !!supabaseAnonKey,
-  usingEnv: true
+  usingRuntimeConfig: !!(typeof window !== 'undefined' && window.__RUNTIME_CONFIG__),
+  runtimeConfigAvailable: !!(typeof window !== 'undefined' && window.__RUNTIME_CONFIG__)
 });
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
