@@ -5,7 +5,7 @@ services:
   floworx-frontend:
     build:
       context: .
-      dockerfile: Dockerfile.frontend.simple
+      dockerfile: Dockerfile
     ports:
       - "80:80"
     environment:

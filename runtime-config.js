@@ -41,6 +41,11 @@ console.log('OUTLOOK_CLIENT_SECRET:', process.env.OUTLOOK_CLIENT_SECRET ? 'SET' 
 console.log('GMAIL_REDIRECT_URI:', process.env.GMAIL_REDIRECT_URI ? 'SET' : 'NOT SET');
 console.log('OUTLOOK_REDIRECT_URI:', process.env.OUTLOOK_REDIRECT_URI ? 'SET' : 'NOT SET');
 
+// Debug: Log actual values (redacted for security)
+console.log('🔍 Environment variable values (redacted):');
+console.log('OUTLOOK_CLIENT_ID value:', process.env.OUTLOOK_CLIENT_ID ? process.env.OUTLOOK_CLIENT_ID.substring(0, 8) + '...' : 'NOT SET');
+console.log('GMAIL_CLIENT_ID value:', process.env.GMAIL_CLIENT_ID ? process.env.GMAIL_CLIENT_ID.substring(0, 8) + '...' : 'NOT SET');
+
 // Create a config.js file that will be loaded by the frontend
 const configContent = `
 // Runtime configuration - generated at container startup
