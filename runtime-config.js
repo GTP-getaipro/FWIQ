@@ -1,8 +1,14 @@
 // Runtime configuration script for environment variables
 // This script will be executed at container startup to inject environment variables
 
-const fs = require('fs');
-const path = require('path');
+console.log('🚀 Runtime config script starting...');
+console.log('🔍 Node.js version:', process.version);
+console.log('🔍 Current working directory:', process.cwd());
+console.log('🔍 Script directory:', __dirname);
+
+try {
+  const fs = require('fs');
+  const path = require('path');
 
 // Get environment variables from process.env
 const config = {
@@ -89,5 +95,11 @@ if (fs.existsSync(distPath)) {
   console.error('❌ Dist directory not found:', distPath);
   console.log('🔍 Current working directory:', process.cwd());
   console.log('🔍 Directory contents:', fs.readdirSync(__dirname));
+  process.exit(1);
+}
+
+} catch (error) {
+  console.error('❌ Runtime config script failed:', error);
+  console.error('❌ Error stack:', error.stack);
   process.exit(1);
 }
