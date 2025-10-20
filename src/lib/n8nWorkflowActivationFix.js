@@ -10,8 +10,8 @@ import { getValidAccessToken } from './oauthTokenManager.js';
 export class N8nWorkflowActivationFix {
   constructor() {
     this.n8nBaseUrl = 'https://n8n.srv995290.hstgr.cloud';
-    this.n8nApiKey = import.meta.env.VITE_N8N_API_KEY || import.meta.env.N8N_API_KEY;
-    this.backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+    this.n8nApiKey = import.meta.env.N8N_API_KEY || import.meta.env.VITE_N8N_API_KEY;
+    this.backendUrl = import.meta.env.BACKEND_URL || import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
   }
 
   /**
