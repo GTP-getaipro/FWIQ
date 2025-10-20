@@ -11,17 +11,23 @@ class CustomOAuthService {
     const hostname = window.location.hostname;
     const port = window.location.port;
     
+    // Get runtime config for environment variables
+    const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
+    
     // Use HTTP for localhost development (Google OAuth allows HTTP for localhost)
     if (hostname === 'localhost') {
       this.redirectUri = `http://localhost:${port}/oauth-callback-n8n`;
-      // Get backend URL from runtime config or environment
-      const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
       this.backendUrl = runtimeConfig?.BACKEND_URL || 
                        import.meta.env.BACKEND_URL || 
                        'http://localhost:3001';
     } else {
-      this.redirectUri = `https://${hostname}/oauth-callback-n8n`;
-      this.backendUrl =  `https://${hostname}`;
+      // For production, use environment variables for redirect URI
+      this.redirectUri = runtimeConfig?.OUTLOOK_REDIRECT_URI || 
+                        import.meta.env.OUTLOOK_REDIRECT_URI || 
+                        `https://${hostname}/oauth-callback-n8n`;
+      this.backendUrl = runtimeConfig?.BACKEND_URL || 
+                       import.meta.env.BACKEND_URL || 
+                       `https://${hostname}`;
     }
   }
 

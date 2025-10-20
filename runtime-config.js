@@ -20,7 +20,10 @@ const config = {
   GMAIL_CLIENT_ID: process.env.GMAIL_CLIENT_ID || 'YOUR_GMAIL_CLIENT_ID_HERE',
   GMAIL_CLIENT_SECRET: process.env.GMAIL_CLIENT_SECRET || 'YOUR_GMAIL_CLIENT_SECRET_HERE',
   OUTLOOK_CLIENT_ID: process.env.OUTLOOK_CLIENT_ID || 'YOUR_OUTLOOK_CLIENT_ID_HERE',
-  OUTLOOK_CLIENT_SECRET: process.env.OUTLOOK_CLIENT_SECRET || 'YOUR_OUTLOOK_CLIENT_SECRET_HERE'
+  OUTLOOK_CLIENT_SECRET: process.env.OUTLOOK_CLIENT_SECRET || 'YOUR_OUTLOOK_CLIENT_SECRET_HERE',
+  // OAuth redirect URIs
+  GMAIL_REDIRECT_URI: process.env.GMAIL_REDIRECT_URI || 'https://app.floworx-iq.com/oauth-callback-n8n',
+  OUTLOOK_REDIRECT_URI: process.env.OUTLOOK_REDIRECT_URI || 'https://app.floworx-iq.com/oauth-callback-n8n'
 };
 
 // Debug: Log available environment variables
@@ -35,6 +38,8 @@ console.log('GMAIL_CLIENT_ID:', process.env.GMAIL_CLIENT_ID ? 'SET' : 'NOT SET')
 console.log('GMAIL_CLIENT_SECRET:', process.env.GMAIL_CLIENT_SECRET ? 'SET' : 'NOT SET');
 console.log('OUTLOOK_CLIENT_ID:', process.env.OUTLOOK_CLIENT_ID ? 'SET' : 'NOT SET');
 console.log('OUTLOOK_CLIENT_SECRET:', process.env.OUTLOOK_CLIENT_SECRET ? 'SET' : 'NOT SET');
+console.log('GMAIL_REDIRECT_URI:', process.env.GMAIL_REDIRECT_URI ? 'SET' : 'NOT SET');
+console.log('OUTLOOK_REDIRECT_URI:', process.env.OUTLOOK_REDIRECT_URI ? 'SET' : 'NOT SET');
 
 // Create a config.js file that will be loaded by the frontend
 const configContent = `
@@ -49,7 +54,9 @@ window.__RUNTIME_CONFIG__ = {
   GMAIL_CLIENT_ID: '${config.GMAIL_CLIENT_ID}',
   GMAIL_CLIENT_SECRET: '${config.GMAIL_CLIENT_SECRET}',
   OUTLOOK_CLIENT_ID: '${config.OUTLOOK_CLIENT_ID}',
-  OUTLOOK_CLIENT_SECRET: '${config.OUTLOOK_CLIENT_SECRET}'
+  OUTLOOK_CLIENT_SECRET: '${config.OUTLOOK_CLIENT_SECRET}',
+  GMAIL_REDIRECT_URI: '${config.GMAIL_REDIRECT_URI}',
+  OUTLOOK_REDIRECT_URI: '${config.OUTLOOK_REDIRECT_URI}'
 };
 `;
 
