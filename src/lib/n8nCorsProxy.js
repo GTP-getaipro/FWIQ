@@ -71,7 +71,7 @@ class N8nCorsProxy {
       
       // In development, use backend n8n proxy to bypass CORS and handle authentication
       const isDevelopment = import.meta.env.DEV;
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+      const backendUrl =  'http://localhost:3001';
       const url = isDevelopment 
         ? `${backendUrl}/api/n8n-proxy${endpoint}`  // Use backend n8n proxy
         : `${this.n8nBaseUrl}${endpoint}`;  // Direct call in production

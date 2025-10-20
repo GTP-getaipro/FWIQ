@@ -156,7 +156,7 @@ export class WorkflowDeployer {
       console.log('🔍 Testing N8N availability via backend API...');
       
       // Test backend API availability
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+      const backendUrl =  'http://localhost:3001';
       const response = await fetch(`${backendUrl}/api/workflows/deploy`, {
         method: 'POST',
         headers: {
@@ -567,7 +567,7 @@ export class WorkflowDeployer {
         // Method 2: Fallback to backend API
         try {
           console.log('🔹 Attempting deployment via Backend API...');
-          const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+          const backendUrl =  'http://localhost:3001';
           const backendResponse = await fetch(`${backendUrl}/api/workflows/deploy`, {
             method: 'POST',
             headers: {

@@ -15,13 +15,10 @@ export function getN8nConfig() {
   
   const config = {
     baseUrl: runtimeConfig?.N8N_BASE_URL ||
-             import.meta.env.N8N_BASE_URL ||
-             import.meta.env.VITE_N8N_BASE_URL ||
-             import.meta.env.VITE_N8N_API_URL,
+             import.meta.env.N8N_BASE_URL,
 
     apiKey: runtimeConfig?.N8N_API_KEY ||
-            import.meta.env.N8N_API_KEY ||
-            import.meta.env.VITE_N8N_API_KEY,
+            import.meta.env.N8N_API_KEY,
 
     apiVersion: '/api/v1', // Official N8N Public API version
 

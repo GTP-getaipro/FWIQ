@@ -43,7 +43,7 @@ export class N8nApiClient {
   async makeRequest(endpoint, options = {}) {
     try {
       // Use backend proxy to avoid CORS issues
-             const backendUrl = import.meta.env.BACKEND_URL || import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+             const backendUrl = import.meta.env.BACKEND_URL || 'http://localhost:3001';
       const proxyUrl = `${backendUrl}/api/n8n-proxy/api/v1${endpoint}`;
       
       const config = {

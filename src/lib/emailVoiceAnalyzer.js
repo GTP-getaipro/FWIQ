@@ -630,7 +630,6 @@ class EmailVoiceAnalyzer {
       const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
       const backendUrl = runtimeConfig?.BACKEND_URL || 
                         import.meta.env.BACKEND_URL || 
-                        import.meta.env.VITE_BACKEND_URL || 
                         'http://localhost:3001';
 
       const response = await fetch(`${backendUrl}/api/ai/analyze-email-voice`, {
@@ -1235,7 +1234,6 @@ Body: ${email.body.substring(0, 500)}...
       const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
       const backendUrl = runtimeConfig?.BACKEND_URL || 
                         import.meta.env.BACKEND_URL || 
-                        import.meta.env.VITE_BACKEND_URL || 
                         'http://localhost:3001';
 
       const response = await fetch(`${backendUrl}/api/auth/refresh-token`, {

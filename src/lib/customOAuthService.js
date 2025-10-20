@@ -18,11 +18,10 @@ class CustomOAuthService {
       const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
       this.backendUrl = runtimeConfig?.BACKEND_URL || 
                        import.meta.env.BACKEND_URL || 
-                       import.meta.env.VITE_BACKEND_URL || 
                        'http://localhost:3001';
     } else {
       this.redirectUri = `https://${hostname}/oauth-callback-n8n`;
-      this.backendUrl = import.meta.env.VITE_BACKEND_URL || `https://${hostname}`;
+      this.backendUrl =  `https://${hostname}`;
     }
   }
 
@@ -343,7 +342,6 @@ class CustomOAuthService {
     const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
     const backendUrl = runtimeConfig?.BACKEND_URL || 
                       import.meta.env.BACKEND_URL || 
-                      import.meta.env.VITE_BACKEND_URL || 
                       'http://localhost:3001';
     const requestUrl = `${backendUrl}/api/oauth/exchange-token`;
     console.log('🌐 Making request to backend server:', requestUrl);
