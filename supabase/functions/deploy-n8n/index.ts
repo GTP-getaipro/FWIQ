@@ -3,7 +3,6 @@
 // - Resolves shared credential IDs (openai-shared, supabase-metrics)
 // - Injects client data into workflow template and creates/updates + activates in n8n
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { generateDynamicClassifierSystemMessage } from '../src/lib/dynamicClassifierSystemMessage.js';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 // Inline OpenAI key rotation (avoids shared dependency issues)
 let cachedKeys = null;
@@ -149,16 +148,29 @@ function slugify(input, fallback) {
   };
 
   // Fetch historical email data for voice enhancement
-  const historicalData = await fetchHistoricalEmailData(userId);
+  // Note: fetchHistoricalEmailData function not available in Edge Function
+  const historicalData = null;
   
   // Generate dynamic classifier system message
-  const dynamicSystemMessage = await generateDynamicClassifierSystemMessage(
-    businessInfo,
-    profile.managers || [],
-    profile.suppliers || [],
-    historicalData,
-    { labels: profile.email_labels || [] }
-  );
+  // Note: generateDynamicClassifierSystemMessage function not available in Edge Function
+  // Using fallback implementation
+  const dynamicSystemMessage = `You are an email classifier for ${businessInfo.name || 'the business'}. 
+Categorize emails accurately and return JSON with summary, primary_category, confidence, and ai_can_reply fields.
+
+Business Context:
+- Business Name: ${businessInfo.name || 'Not specified'}
+- Business Type: ${businessInfo.businessCategory || 'Not specified'}
+- Email Domain: ${businessInfo.emailDomain || 'Not specified'}
+
+Categories: URGENT, SALES, SUPPORT, MANAGER, RECRUITMENT, BILLING, MISC
+
+Return JSON format:
+{
+  "summary": "Brief summary of the email",
+  "primary_category": "One of the categories above",
+  "confidence": 0.9,
+  "ai_can_reply": true
+}`;
   
   return dynamicSystemMessage;
 }
