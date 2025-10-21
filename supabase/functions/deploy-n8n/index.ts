@@ -947,7 +947,107 @@ async function handler(req) {
     let gmailId = null;
     let outlookId = null;
     if (provider === 'gmail') {
-      // Gmail credential handling
+      // CREDENTIAL DEDUPLICATION: Clean up old credentials for this user
+    console.log(`🧹 Starting credential cleanup for user: ${userId}`);
+    
+    // Get all existing credentials for this user from N8N
+    try {
+      const allCredentials = await n8nRequest('/credentials');
+      const userCredentials = allCredentials.data?.filter((cred: any) => 
+        cred.name?.includes(businessSlug) || 
+        cred.name?.includes(clientShort) ||
+        cred.name?.includes(clientData.business?.name?.toLowerCase().replace(/\s+/g, '-') || '')
+      ) || [];
+      
+      console.log(`🔍 Found ${userCredentials.length} potential user credentials in N8N`);
+      
+      // Keep only the most recent credential of each type
+      const gmailCreds = userCredentials.filter((cred: any) => cred.type === 'googleOAuth2Api');
+      const outlookCreds = userCredentials.filter((cred: any) => cred.type === 'microsoftOutlookOAuth2Api');
+      
+      // Delete old Gmail credentials (keep only the newest)
+      if (gmailCreds.length > 1) {
+        const sortedGmailCreds = gmailCreds.sort((a: any, b: any) => 
+          new Date(b.createdAt || b.updatedAt || 0).getTime() - new Date(a.createdAt || a.updatedAt || 0).getTime()
+        );
+        const oldGmailCreds = sortedGmailCreds.slice(1); // Keep the first (newest), delete the rest
+        
+        for (const oldCred of oldGmailCreds) {
+          try {
+            await n8nRequest(`/credentials/${oldCred.id}`, { method: 'DELETE' });
+            console.log(`🗑️ Deleted old Gmail credential: ${oldCred.name} (${oldCred.id})`);
+          } catch (deleteError) {
+            console.warn(`⚠️ Failed to delete old Gmail credential ${oldCred.id}:`, deleteError.message);
+          }
+        }
+      }
+      
+      // Delete old Outlook credentials (keep only the newest)
+      if (outlookCreds.length > 1) {
+        const sortedOutlookCreds = outlookCreds.sort((a: any, b: any) => 
+          new Date(b.createdAt || b.updatedAt || 0).getTime() - new Date(a.createdAt || a.updatedAt || 0).getTime()
+        );
+        const oldOutlookCreds = sortedOutlookCreds.slice(1); // Keep the first (newest), delete the rest
+        
+        for (const oldCred of oldOutlookCreds) {
+          try {
+            await n8nRequest(`/credentials/${oldCred.id}`, { method: 'DELETE' });
+            console.log(`🗑️ Deleted old Outlook credential: ${oldCred.name} (${oldCred.id})`);
+          } catch (deleteError) {
+            console.warn(`⚠️ Failed to delete old Outlook credential ${oldCred.id}:`, deleteError.message);
+          }
+        }
+      }
+      
+      console.log(`✅ Credential cleanup completed`);
+      
+    } catch (cleanupError) {
+      console.warn(`⚠️ Credential cleanup failed (non-critical):`, cleanupError.message);
+    }
+
+    // WORKFLOW DEDUPLICATION: Clean up old workflows for this user
+    console.log(`🧹 Starting workflow cleanup for user: ${userId}`);
+    
+    try {
+      // Get all workflows for this user from N8N
+      const allWorkflows = await n8nRequest('/workflows');
+      const userWorkflows = allWorkflows.data?.filter((wf: any) => 
+        wf.name?.includes(clientData.business?.name || 'Client') ||
+        wf.name?.includes(businessSlug) ||
+        wf.name?.includes('FloWorx Automation')
+      ) || [];
+      
+      console.log(`🔍 Found ${userWorkflows.length} potential user workflows in N8N`);
+      
+      if (userWorkflows.length > 1) {
+        // Sort by creation date (newest first)
+        const sortedWorkflows = userWorkflows.sort((a: any, b: any) => 
+          new Date(b.createdAt || b.updatedAt || 0).getTime() - new Date(a.createdAt || a.updatedAt || 0).getTime()
+        );
+        
+        // Keep only the newest workflow, delete the rest
+        const oldWorkflows = sortedWorkflows.slice(1);
+        
+        for (const oldWf of oldWorkflows) {
+          try {
+            // Deactivate first
+            await n8nRequest(`/workflows/${oldWf.id}/deactivate`, { method: 'POST' });
+            // Then delete
+            await n8nRequest(`/workflows/${oldWf.id}`, { method: 'DELETE' });
+            console.log(`🗑️ Deleted old workflow: ${oldWf.name} (${oldWf.id})`);
+          } catch (deleteError) {
+            console.warn(`⚠️ Failed to delete old workflow ${oldWf.id}:`, deleteError.message);
+          }
+        }
+      }
+      
+      console.log(`✅ Workflow cleanup completed`);
+      
+    } catch (cleanupError) {
+      console.warn(`⚠️ Workflow cleanup failed (non-critical):`, cleanupError.message);
+    }
+
+    // Gmail credential handling
       const { data: existingMap } = await supabaseAdmin.from('n8n_credential_mappings').select('gmail_credential_id').eq('user_id', userId).maybeSingle();
       // Check if integration has n8n_credential_id
       gmailId = integration?.n8n_credential_id || existingMap?.gmail_credential_id || null;
@@ -1266,58 +1366,131 @@ async function handler(req) {
       console.log(`   - OpenAI nodes updated: ${openaiNodesUpdated}`);
       console.log(`   - Supabase nodes updated: ${supabaseNodesUpdated}`);
     }
-    // Check existing workflow record
+    // Check existing workflow record for this user
     const { data: existingWf } = await supabaseAdmin.from('workflows').select('id, version, n8n_workflow_id').eq('user_id', userId).eq('status', 'active').order('version', {
       ascending: false
     }).limit(1).maybeSingle();
+    
     let n8nWorkflowId;
     let nextVersion = 1;
+    let isNewWorkflow = false;
+    
     // Create clean payload exactly like Backend API does
-    // Backend API only includes: name, nodes, connections, settings
-    // NOTE: 'active' field is read-only and must NOT be included in request body
     const cleanPayload = {
-      name: workflowJson.name || `FloWorx Automation - ${new Date().toISOString().split('T')[0]}`,
+      name: workflowJson.name || `FloWorx Automation - ${clientData.business?.name || 'Client'} - ${new Date().toISOString().split('T')[0]}`,
       nodes: workflowJson.nodes || [],
       connections: workflowJson.connections || {},
       settings: {
         executionOrder: 'v1'
       }
     };
+    
     console.log(`🔍 Clean payload properties:`, Object.keys(cleanPayload));
     console.log(`🔍 Original workflow JSON properties:`, Object.keys(workflowJson));
-    // Always create a new workflow (like Backend API does)
-    console.log('📝 Creating new workflow in n8n...');
-    console.log(`🔍 Payload being sent to N8N:`, JSON.stringify(cleanPayload, null, 2));
-    console.log(`🔍 Using POST method to create new workflow (not PUT)`);
-    const createdWf = await n8nRequest('/workflows', {
-      method: 'POST',
-      body: JSON.stringify(cleanPayload)
-    });
-    n8nWorkflowId = createdWf.id;
-    nextVersion = (existingWf?.version || 0) + 1;
-    console.log(`✅ Created new workflow with ID: ${n8nWorkflowId}`);
-    // Activate
-    await n8nRequest(`/workflows/${n8nWorkflowId}/activate`, {
-      method: 'POST'
-    });
-    // Archive previous active and save new record
-    if (existingWf?.id) {
+    
+    // DEDUPLICATION STRATEGY: Update existing workflow instead of creating new ones
+    if (existingWf?.n8n_workflow_id) {
+      console.log(`🔄 Found existing workflow (ID: ${existingWf.n8n_workflow_id}), updating instead of creating new...`);
+      
+      try {
+        // Update existing workflow in N8N
+        const updatedWf = await n8nRequest(`/workflows/${existingWf.n8n_workflow_id}`, {
+          method: 'PUT',
+          body: JSON.stringify(cleanPayload)
+        });
+        
+        n8nWorkflowId = existingWf.n8n_workflow_id;
+        nextVersion = existingWf.version; // Keep same version for updates
+        isNewWorkflow = false;
+        
+        console.log(`✅ Updated existing workflow with ID: ${n8nWorkflowId}`);
+        
+        // Ensure workflow is active
+        await n8nRequest(`/workflows/${n8nWorkflowId}/activate`, {
+          method: 'POST'
+        });
+        
+        console.log(`✅ Reactivated existing workflow: ${n8nWorkflowId}`);
+        
+      } catch (updateError) {
+        console.warn(`⚠️ Failed to update existing workflow (${existingWf.n8n_workflow_id}), creating new one:`, updateError.message);
+        
+        // Fallback: Create new workflow if update fails
+        console.log('📝 Creating new workflow in n8n (fallback)...');
+        const createdWf = await n8nRequest('/workflows', {
+          method: 'POST',
+          body: JSON.stringify(cleanPayload)
+        });
+        
+        n8nWorkflowId = createdWf.id;
+        nextVersion = (existingWf?.version || 0) + 1;
+        isNewWorkflow = true;
+        
+        console.log(`✅ Created new workflow with ID: ${n8nWorkflowId}`);
+        
+        // Archive the old workflow in N8N (cleanup)
+        try {
+          await n8nRequest(`/workflows/${existingWf.n8n_workflow_id}`, {
+            method: 'DELETE'
+          });
+          console.log(`🗑️ Cleaned up old workflow in N8N: ${existingWf.n8n_workflow_id}`);
+        } catch (deleteError) {
+          console.warn(`⚠️ Failed to delete old workflow from N8N:`, deleteError.message);
+        }
+        
+        // Archive the old workflow record in database
+        await supabaseAdmin.from('workflows').update({
+          status: 'archived'
+        }).eq('id', existingWf.id);
+        
+        // Activate new workflow
+        await n8nRequest(`/workflows/${n8nWorkflowId}/activate`, {
+          method: 'POST'
+        });
+      }
+      
+    } else {
+      // No existing workflow, create new one
+      console.log('📝 No existing workflow found, creating new workflow in n8n...');
+      const createdWf = await n8nRequest('/workflows', {
+        method: 'POST',
+        body: JSON.stringify(cleanPayload)
+      });
+      
+      n8nWorkflowId = createdWf.id;
+      nextVersion = 1;
+      isNewWorkflow = true;
+      
+      console.log(`✅ Created new workflow with ID: ${n8nWorkflowId}`);
+      
+      // Activate new workflow
+      await n8nRequest(`/workflows/${n8nWorkflowId}/activate`, {
+        method: 'POST'
+      });
+    }
+    // Update or insert database record based on whether it's a new workflow
+    if (isNewWorkflow) {
+      console.log(`📝 Inserting new workflow record in database...`);
+      await supabaseAdmin.from('workflows').insert({
+        user_id: userId,
+        n8n_workflow_id: n8nWorkflowId,
+        version: nextVersion,
+        status: 'active',
+        workflow_json: workflowJson,
+        is_functional: false,
+        issues: [],
+        last_checked: new Date().toISOString()
+      });
+    } else {
+      console.log(`🔄 Updating existing workflow record in database...`);
       await supabaseAdmin.from('workflows').update({
-        status: 'archived'
+        workflow_json: workflowJson,
+        is_functional: false,
+        issues: [],
+        last_checked: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }).eq('id', existingWf.id);
     }
-    // --- FIX FOR TICKET 1.3: Include new columns in insert payload ---
-    await supabaseAdmin.from('workflows').insert({
-      user_id: userId,
-      n8n_workflow_id: n8nWorkflowId,
-      version: nextVersion,
-      status: 'active',
-      workflow_json: workflowJson,
-      is_functional: false,
-      issues: [],
-      last_checked: new Date().toISOString() // Set current timestamp
-    });
-    // --- END FIX ---
     return new Response(JSON.stringify({
       success: true,
       workflowId: n8nWorkflowId,
