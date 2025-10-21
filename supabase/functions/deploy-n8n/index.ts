@@ -1405,7 +1405,17 @@ async function handler(req) {
         
         console.log(`✅ Updated existing workflow with ID: ${n8nWorkflowId}`);
         
-        // Ensure workflow is active
+        // CRITICAL: Deactivate and reactivate to ensure N8N picks up new credential IDs
+        console.log(`🔄 Deactivating workflow to refresh credential references...`);
+        await n8nRequest(`/workflows/${n8nWorkflowId}/deactivate`, {
+          method: 'POST'
+        });
+        
+        // Small delay to ensure deactivation completes
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Now reactivate with fresh credential references
+        console.log(`🔄 Reactivating workflow with updated credentials...`);
         await n8nRequest(`/workflows/${n8nWorkflowId}/activate`, {
           method: 'POST'
         });
