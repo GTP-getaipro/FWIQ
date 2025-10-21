@@ -1,0 +1,704 @@
+{
+  "name": "<<<BUSINESS_NAME>>> Gmail AI Email Processing Workflow v<<<CONFIG_VERSION>>>",
+  "meta": {
+    "templateVersion": "2.0",
+    "provider": "gmail",
+    "description": "Production-ready Gmail email processing with AI classification and reply generation",
+    "requiredCredentials": {
+      "gmail": "<<<CLIENT_GMAIL_CRED_ID>>>",
+      "openai": "<<<CLIENT_OPENAI_CRED_ID>>>",
+      "supabase": "mQziputTJekSuLa6"
+    }
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "custom",
+              "cronExpression": "0 */2 * * * *"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "q": "in:inbox -(from:(*@<<<EMAIL_DOMAIN>>>))"
+        },
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.2,
+      "position": [-1264, 272],
+      "id": "3fad5e67-ab99-44b4-8d97-98d56ef49ccb",
+      "name": "Email Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "<<<CLIENT_GMAIL_CRED_ID>>>",
+          "name": "<<<BUSINESS_NAME>>> Gmail"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Universal email data normalizer - works with Gmail, Outlook, Yahoo, etc.\nconst item = $json;\n\nfunction htmlToText(html) {\n  if (!html) return '';\n  return html\n    .replace(/<script[^>]*>([\\S\\s]*?)<\\/script>/gmi, '')\n    .replace(/<style[^>]*>([\\S\\s]*?)<\\/style>/gmi, '')\n    .replace(/<!--[\\s\\S]*?-->/g, '')\n    .replace(/<br\\s*\\/?>/gi, '\\n')\n    .replace(/<\\/(div|p|h[1-6]|li|tr)>/gi, '\\n')\n    .replace(/<[^>]+>/g, '')\n    .replace(/&nbsp;/g, ' ')\n    .replace(/&amp;/g, '&')\n    .replace(/&lt;/g, '<')\n    .replace(/&gt;/g, '>')\n    .replace(/&quot;/g, '\"')\n    .replace(/&#39;/g, \"'\")\n    .replace(/(\\n\\s*){3,}/g, '\\n\\n')\n    .trim();\n}\n\nconst messageBody = htmlToText(item.html || item.body?.content);\nconst messageId = item.headers?.['message-id'] || item.internetMessageId || item.id;\n\nreturn {\n  json: {\n    id: item.id,\n    threadId: item.threadId || item.conversationId,\n    subject: item.subject,\n    from: item.from?.value?.[0]?.address || item.from?.emailAddress?.address || null,\n    fromName: item.from?.value?.[0]?.name || item.from?.emailAddress?.name || null,\n    to: item.to?.value?.[0]?.address || item.toRecipients?.[0]?.emailAddress?.address || null,\n    toName: item.to?.value?.[0]?.name || item.toRecipients?.[0]?.emailAddress?.name || null,\n    date: item.date || item.receivedDateTime,\n    body: messageBody,\n    bodyHtml: item.html || item.body?.content,\n    labels: item.labelIds || [],\n    categories: item.categories || [],\n    provider: item.labelIds ? 'gmail' : (item.categories !== undefined ? 'outlook' : 'unknown'),\n    hasAttachments: !!(item.hasAttachments || (item.attachments?.length > 0)),\n    sizeEstimate: item.sizeEstimate || 0,\n    messageId: messageId\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1040, 272],
+      "id": "bf04f81a-6df2-4018-b2e6-794694ac7406",
+      "name": "Prepare Email Data"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Subject: {{ $json.subject }}\nFrom: {{ $json.from }}\nTo: {{ $json.to }}\nDate: {{ $now }}\nThread ID: {{ $json.threadId }}\nMessage ID: {{ $json.id }}\nProvider: {{ $json.provider }}\nHas Attachments: {{ $json.hasAttachments }}\n\nEmail Body:\n{{ $json.body }}",
+        "options": {
+          "systemMessage": "<<<AI_SYSTEM_MESSAGE>>>"
+        }
+      },
+      "id": "d55584be-25fd-4a20-a489-e6021eab4f4d",
+      "name": "AI Master Classifier",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [-816, 272],
+      "typeVersion": 1.8,
+      "credentials": {
+        "OpenAi": {
+          "id": "NxYVsH1eQ1mfzoW6",
+          "name": "openai-shared"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [-752, 496],
+      "id": "c4b62c04-17c0-4d6f-bd07-a1a2259950d1",
+      "name": "OpenAI Classifier Model",
+      "credentials": {
+        "openAi": {
+          "id": "<<<CLIENT_OPENAI_CRED_ID>>>",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const outputs = [];\n\nconst aiItems = $input.all();\nconst emailItems = $('Prepare Email Data').all();\n\nfor (let i = 0; i < aiItems.length; i++) {\n  const aiOutput = aiItems[i].json.output;\n\n  try {\n    // Normalize to JSON string\n    let clean = typeof aiOutput === 'string' ? aiOutput.trim() : JSON.stringify(aiOutput);\n\n    // Remove markdown fences\n    clean = clean.replace(/^```(?:json)?\\s*/i, '').replace(/\\s*```$/, '');\n\n    // Trim after last closing brace (common LLM quirk)\n    const lastBrace = clean.lastIndexOf('}');\n    if (lastBrace !== -1) clean = clean.slice(0, lastBrace + 1);\n\n    const parsedOutput = JSON.parse(clean);\n\n    // Attach email metadata\n    const email = emailItems[Math.min(i, emailItems.length - 1)]?.json || {};\n    if (email.id) parsedOutput.id = email.id;\n    if (email.threadId) parsedOutput.threadId = email.threadId;\n    if (email.provider) parsedOutput.provider = email.provider;\n\n    outputs.push({ json: { parsed_output: parsedOutput, error: false } });\n\n  } catch (e) {\n    // ERROR HANDLING: Critical for production\n    const email = emailItems[Math.min(i, emailItems.length - 1)]?.json || {};\n    outputs.push({\n      json: {\n        error: true,\n        id: email.id,\n        threadId: email.threadId,\n        provider: email.provider,\n        errorMessage: e.message,\n        originalOutput: aiOutput\n      }\n    });\n  }\n}\n\nreturn outputs;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-464, 272],
+      "id": "9927447a-3a68-4de8-804d-ef5e5cc71d11",
+      "name": "Parse AI Classification"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "error-check-condition",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "\"true\"",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-240, 272],
+      "id": "1e21720a-b3e8-4101-a5a0-936410b03bda",
+      "name": "Check for Classification Errors"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://oinxzvqszingwstrbdro.supabase.co/rest/v1/workflow_errors",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pbnh6dnFzemluZ3dzdHJiZHJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNDEzODQsImV4cCI6MjA3MzkxNzM4NH0.72tZYFLVr2C3ij6dB8cEKP6L-o9qmaCtrR6KEi7OD6c"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pbnh6dnFzemluZ3dzdHJiZHJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNDEzODQsImV4cCI6MjA3MzkxNzM4NH0.72tZYFLVr2C3ij6dB8cEKP6L-o9qmaCtrR6KEi7OD6c"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"user_id\": \"<<<USER_ID>>>\",\n  \"business_name\": \"<<<BUSINESS_NAME>>>\",\n  \"error_type\": \"email_classification_error\",\n  \"email_from\": \"{{ $json.from }}\",\n  \"email_subject\": \"{{ $json.subject }}\",\n  \"email_date\": \"{{ $json.date }}\",\n  \"thread_id\": \"{{ $json.threadId }}\",\n  \"message_id\": \"{{ $json.id }}\",\n  \"error_message\": \"{{ $json.error || 'Unknown classification error' }}\",\n  \"created_at\": \"{{ $now.toISO() }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-112, -64],
+      "id": "038dcb3b-38b7-477c-b837-319bea10dec6",
+      "name": "Log Error to Supabase",
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const parsed = $json.parsed_output;\nconst provider = parsed.provider || 'gmail';\n\n// Dynamic label mapping from FloworxV2 database\nconst labelMap = <<<LABEL_MAPPINGS>>>;\n\n// Helper function to normalize category names\nfunction normalizeCategory(category) {\n  if (!category) return null;\n  return category.toString().toUpperCase().trim();\n}\n\n// Helper function to extract label ID from either string or object format\n// Handles both: \"Label_123\" and {\"id\": \"Label_123\", \"name\": \"MISC\"}\nfunction extractLabelId(value) {\n  if (!value) return null;\n  if (typeof value === 'string') return value;\n  if (typeof value === 'object' && value.id) return value.id;\n  return null;\n}\n\n// Helper function to find label ID with fuzzy matching\nfunction findLabelId(category, labelMap) {\n  if (!category) return null;\n  \n  const normalized = normalizeCategory(category);\n  \n  // Try exact match first\n  if (labelMap[normalized]) {\n    return extractLabelId(labelMap[normalized]);\n  }\n  \n  // Try case-insensitive match\n  const exactMatch = Object.keys(labelMap).find(key => \n    key.toUpperCase() === normalized\n  );\n  if (exactMatch) {\n    return extractLabelId(labelMap[exactMatch]);\n  }\n  \n  // Try partial match (for categories with spaces)\n  const partialMatch = Object.keys(labelMap).find(key => \n    key.toUpperCase().includes(normalized) || \n    normalized.includes(key.toUpperCase())\n  );\n  if (partialMatch) {\n    return extractLabelId(labelMap[partialMatch]);\n  }\n  \n  return null;\n}\n\nconst labelIds = [];\n\n// Add primary category label with improved matching\nconst primaryLabelId = findLabelId(parsed.primary_category, labelMap);\nif (primaryLabelId) {\n  labelIds.push(primaryLabelId);\n}\n\n// Add secondary category label\nif (parsed.secondary_category) {\n  const key = `${parsed.primary_category}/${parsed.secondary_category}`;\n  const secondaryLabelId = findLabelId(key, labelMap);\n  if (secondaryLabelId) {\n    labelIds.push(secondaryLabelId);\n  }\n}\n\n// Add tertiary category label\nif (parsed.tertiary_category) {\n  const key = `${parsed.primary_category}/${parsed.secondary_category}/${parsed.tertiary_category}`;\n  const tertiaryLabelId = findLabelId(key, labelMap);\n  if (tertiaryLabelId) {\n    labelIds.push(tertiaryLabelId);\n  }\n}\n\n// Remove duplicates and ensure we have valid label IDs (strings starting with Label_)\nconst uniqueLabelIds = [...new Set(labelIds)].filter(id => id && typeof id === 'string' && id.startsWith('Label_'));\n\n// Fallback to MISC label if no labels found\n// Try to find MISC label dynamically first, then use placeholder, then hardcoded ID\nlet fallbackLabelId = findLabelId('MISC', labelMap) || '<<<LABEL_MISC_ID>>>';\nif (fallbackLabelId === '<<<LABEL_MISC_ID>>>') {\n  // If placeholder wasn't replaced, try common MISC label patterns\n  const miscLabel = labelMap['MISC'] || labelMap['Misc'] || labelMap['misc'];\n  fallbackLabelId = extractLabelId(miscLabel) || 'Label_1216';\n}\n\nconst finalLabels = uniqueLabelIds.length > 0 ? uniqueLabelIds : [fallbackLabelId];\n\nreturn {\n  json: {\n    ...parsed,\n    labelsToApply: finalLabels,\n    categoriesToApply: finalLabels.map(labelId => {\n      // Find category name from label ID\n      const entry = Object.entries(labelMap).find(([k, v]) => {\n        const extractedId = extractLabelId(v);\n        return extractedId === labelId;\n      });\n      return entry ? entry[0] : labelId;\n    }),\n    provider: provider,\n    debugInfo: {\n      primaryCategory: parsed.primary_category,\n      primaryCategoryNormalized: normalizeCategory(parsed.primary_category),\n      secondaryCategory: parsed.secondary_category,\n      tertiaryCategory: parsed.tertiary_category,\n      foundLabelIds: labelIds,\n      finalLabels: finalLabels,\n      labelMapKeys: Object.keys(labelMap),\n      matchingAttempts: {\n        primaryLabelFound: primaryLabelId\n      }\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-16, 272],
+      "id": "6ca61cf8-722a-47c9-b5c1-9baf91ec655e",
+      "name": "Generate Label Mappings"
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $json.id }}",
+        "labelIds": "={{ $json.labelsToApply }}"
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [208, 272],
+      "id": "bc0bec10-9042-4569-ad2c-854307187db1",
+      "name": "Apply Gmail Labels",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "<<<CLIENT_GMAIL_CRED_ID>>>",
+          "name": "<<<BUSINESS_NAME>>> Gmail"
+        }
+      },
+      "webhookId": "apply-labels-webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "can-reply-condition",
+              "leftValue": "={{ $json.parsed_output.ai_can_reply }}",
+              "rightValue": "\"true\"",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [432, 272],
+      "id": "cd166f13-986c-486e-9afa-278e29e4071f",
+      "name": "Can AI Reply?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://oinxzvqszingwstrbdro.supabase.co/functions/v1/style-memory",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pbnh6dnFzemluZ3dzdHJiZHJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNDEzODQsImV4cCI6MjA3MzkxNzM4NH0.72tZYFLVr2C3ij6dB8cEKP6L-o9qmaCtrR6KEi7OD6c"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  userId: \"<<<USER_ID>>>\",\n  category: $json.parsed_output.primary_category,\n  limit: 5\n}) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [656, 144],
+      "id": "1b333a5a-e5ed-44e6-9433-da2e4391c9bf",
+      "name": "Fetch Voice Context (Optional)",
+      "credentials": {
+        "supabaseApi": {
+          "id": "mQziputTJekSuLa6",
+          "name": "supabase-metrics"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [880, 272],
+      "id": "65ee915f-830a-46ed-bd87-6cc61ad8d24f",
+      "name": "Merge Email + Voice Context"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Prepare context for AI reply agent\nconst emailData = $('Prepare Email Data').first()?.json || {};\nconst classification = $json.parsed_output || {};\nconst voiceContext = $('Fetch Voice Context (Optional)').first()?.json || {};\n\n// Handle optional voice training data\nlet voiceExamples = '';\nlet voiceMetrics = '';\n\nif (voiceContext && voiceContext.examples && voiceContext.examples.length > 0) {\n  voiceExamples = `RECENT STYLE EXAMPLES (How you typically write):\n${'─'.repeat(60)}\n${voiceContext.examples.map((ex, i) => `Example ${i+1}:\\n${ex}`).join('\\n\\n')}`;\n  \n  if (voiceContext.metrics) {\n    voiceMetrics = `\\nVOICE METRICS:\nFormality: ${voiceContext.metrics.formality || 'N/A'}\nEmpathy: ${voiceContext.metrics.empathy || 'N/A'}\nDirectness: ${voiceContext.metrics.directness || 'N/A'}`;\n  }\n} else {\n  voiceExamples = `VOICE TRAINING: Not yet available (will learn from your sent emails)`;\n}\n\nreturn {\n  json: {\n    emailSubject: emailData.subject,\n    emailFrom: emailData.from,\n    emailBody: emailData.body,\n    threadId: emailData.threadId,\n    classification: classification,\n    voiceExamples: voiceExamples,\n    voiceMetrics: voiceMetrics,\n    hasVoiceTraining: !!(voiceContext && voiceContext.examples && voiceContext.examples.length > 0)\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1104, 272],
+      "id": "d86a9341-cbf2-46f3-96d3-8b3adcd39615",
+      "name": "Prepare Draft Context"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=EMAIL TO REPLY TO:\n─────────────────────────────────────────────────────────────\nSubject: {{ $json.emailSubject }}\nFrom: {{ $json.emailFrom }}\nBody: {{ $json.emailBody }}\n\nCLASSIFICATION:\n─────────────────────────────────────────────────────────────\nCategory: {{ $json.classification.primary_category }}\nSubcategory: {{ $json.classification.secondary_category }}\nSummary: {{ $json.classification.summary }}\nConfidence: {{ $json.classification.confidence }}\n\n{{ $json.voiceExamples }}\n{{ $json.voiceMetrics }}\n\nTHREAD CONTEXT:\n─────────────────────────────────────────────────────────────\nThread ID: {{ $json.threadId }}",
+        "options": {
+          "systemMessage": "<<<BEHAVIOR_REPLY_PROMPT>>>"
+        }
+      },
+      "id": "6b5f2100-327e-410c-8409-3e8a3fabccd9",
+      "name": "AI Draft Reply Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [1328, 272],
+      "typeVersion": 1.8,
+      "credentials": {
+        "OpenAi": {
+          "id": "NxYVsH1eQ1mfzoW6",
+          "name": "openai-shared"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [1392, 496],
+      "id": "b18f88f4-f836-47b0-a562-1d54d7b2ddc3",
+      "name": "OpenAI Draft Model",
+      "credentials": {
+        "openAi": {
+          "id": "<<<CLIENT_OPENAI_CRED_ID>>>",
+          "name": "OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Prepare Email Data').item.json.threadId }}",
+        "contextWindowLength": 10
+      },
+      "id": "c8699602-d045-465a-85f0-126cd2d2af38",
+      "name": "Conversation Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "position": [1488, 496],
+      "typeVersion": 1.3
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Format reply as HTML for email\nreturn {\n  json: {\n    output: $json.output.replace(/\\n/g, '<br>')\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1552, 272],
+      "id": "0d19a0c9-8c94-4a98-b442-673562269f47",
+      "name": "Format Reply as HTML"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $('Prepare Email Data').first().json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.output }}",
+        "options": {
+          "replyTo": "={{ /@(<<<EMAIL_DOMAIN>>>)$/i.test($('Prepare Email Data').first().json.from) ? $('Prepare Email Data').first().json.to : $('Prepare Email Data').first().json.from }}",
+          "threadId": "={{ $('Prepare Email Data').first().json.threadId }}",
+          "sendTo": "={{ /@(<<<EMAIL_DOMAIN>>>)$/i.test($('Prepare Email Data').first().json.from) ? $('Prepare Email Data').first().json.to : $('Prepare Email Data').first().json.from }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [1776, 272],
+      "id": "68351eb3-fa25-4e3e-a320-f3731fa33b2c",
+      "name": "Create Gmail Draft",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "<<<CLIENT_GMAIL_CRED_ID>>>",
+          "name": "<<<BUSINESS_NAME>>> Gmail"
+        }
+      },
+      "webhookId": "create-draft-webhook"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Calculate performance metrics\nconst avgMinutesPerEmail = 4.5;\nconst receptionistHourlyRate = 25;\n\nconst emailsProcessed = 1;\nconst timeSavedHours = +(emailsProcessed * avgMinutesPerEmail / 60).toFixed(2);\nconst moneySaved = +(timeSavedHours * receptionistHourlyRate).toFixed(2);\n\nreturn {\n  json: {\n    date: new Date().toISOString().slice(0, 10),\n    type: $json.parsed_output?.ai_can_reply ? 'Drafting' : 'Labeling',\n    emailsProcessed,\n    avgMinutesPerEmail,\n    timeSavedHours,\n    receptionistHourlyRate,\n    moneySaved,\n    userId: '<<<USER_ID>>>'\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [656, 400],
+      "id": "0a568921-96f8-4523-874a-29838d9dbc02",
+      "name": "Calculate Performance Metrics"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://oinxzvqszingwstrbdro.supabase.co/rest/v1/performance_metrics",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pbnh6dnFzemluZ3dzdHJiZHJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNDEzODQsImV4cCI6MjA3MzkxNzM4NH0.72tZYFLVr2C3ij6dB8cEKP6L-o9qmaCtrR6KEi7OD6c"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pbnh6dnFzemluZ3dzdHJiZHJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNDEzODQsImV4cCI6MjA3MzkxNzM4NH0.72tZYFLVr2C3ij6dB8cEKP6L-o9qmaCtrR6KEi7OD6c"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  client_id: \"<<<USER_ID>>>\",\n  metric_date: $json.date,\n  metric_name: \"email_processing\",\n  metric_value: $json.emailsProcessed,\n  dimensions: { type: $json.type, timeSavedHours: $json.timeSavedHours, moneySaved: $json.moneySaved, avgMinutesPerEmail: $json.avgMinutesPerEmail, receptionistHourlyRate: $json.receptionistHourlyRate, workflow: 'email-automation' }\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [880, 400],
+      "id": "42339f56-9821-4775-9330-6188fda4576c",
+      "name": "Save Performance Metrics",
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://oinxzvqszingwstrbdro.supabase.co/rest/v1/ai_draft_learning",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pbnh6dnFzemluZ3dzdHJiZHJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNDEzODQsImV4cCI6MjA3MzkxNzM4NH0.72tZYFLVr2C3ij6dB8cEKP6L-o9qmaCtrR6KEi7OD6c"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pbnh6dnFzemluZ3dzdHJiZHJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgzNDEzODQsImV4cCI6MjA3MzkxNzM4NH0.72tZYFLVr2C3ij6dB8cEKP6L-o9qmaCtrR6KEi7OD6c"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  user_id: \"<<<USER_ID>>>\",\n  thread_id: $('Prepare Email Data').first().json.threadId,\n  email_id: $('Prepare Email Data').first().json.id,\n  original_email: $('Prepare Email Data').first().json.body,\n  ai_draft: $('Format Reply as HTML').first().json.output,\n  classification: $('Parse AI Classification').first().json.parsed_output,\n  confidence_score: $('Parse AI Classification').first().json.parsed_output.confidence,\n  model_used: \"gpt-4o-mini\"\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2000, 272],
+      "id": "2faebfc7-c240-4e99-8d15-9397045c847a",
+      "name": "Save AI Draft for Learning",
+      "continueOnFail": true
+    }
+  ],
+  "connections": {
+    "Email Trigger": {
+      "main": [
+        [
+          {
+            "node": "Prepare Email Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Email Data": {
+      "main": [
+        [
+          {
+            "node": "AI Master Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Master Classifier": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Classification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Classifier Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Master Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Classification": {
+      "main": [
+        [
+          {
+            "node": "Check for Classification Errors",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check for Classification Errors": {
+      "main": [
+        [
+          {
+            "node": "Log Error to Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Generate Label Mappings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Label Mappings": {
+      "main": [
+        [
+          {
+            "node": "Apply Gmail Labels",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Calculate Performance Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apply Gmail Labels": {
+      "main": [
+        [
+          {
+            "node": "Can AI Reply?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Can AI Reply?": {
+      "main": [
+        [
+          {
+            "node": "Fetch Voice Context (Optional)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Email + Voice Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Voice Context (Optional)": {
+      "main": [
+        [
+          {
+            "node": "Merge Email + Voice Context",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Email + Voice Context": {
+      "main": [
+        [
+          {
+            "node": "Prepare Draft Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Draft Context": {
+      "main": [
+        [
+          {
+            "node": "AI Draft Reply Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Draft Reply Agent": {
+      "main": [
+        [
+          {
+            "node": "Format Reply as HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Draft Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Draft Reply Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Conversation Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Draft Reply Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Reply as HTML": {
+      "main": [
+        [
+          {
+            "node": "Create Gmail Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Gmail Draft": {
+      "main": [
+        [
+          {
+            "node": "Save AI Draft for Learning",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Performance Metrics": {
+      "main": [
+        [
+          {
+            "node": "Save Performance Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "<<<CURRENT_TIMESTAMP>>>",
+  "versionId": "<<<CONFIG_VERSION>>>"
+}
+
