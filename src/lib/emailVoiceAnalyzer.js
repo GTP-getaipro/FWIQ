@@ -630,10 +630,6 @@ class EmailVoiceAnalyzer {
       const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
       const backendUrl = runtimeConfig?.BACKEND_URL || 
                         import.meta.env.BACKEND_URL || 
-                        // Get backend URL from runtime config or environment
-                        const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
-                        runtimeConfig?.BACKEND_URL || 
-                        import.meta.env.BACKEND_URL || 
                         'http://localhost:3001';
 
       const response = await fetch(`${backendUrl}/api/ai/analyze-email-voice`, {
@@ -1237,10 +1233,6 @@ Body: ${email.body.substring(0, 500)}...
       // Get backend URL from runtime config or environment
       const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
       const backendUrl = runtimeConfig?.BACKEND_URL || 
-                        import.meta.env.BACKEND_URL || 
-                        // Get backend URL from runtime config or environment
-                        const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
-                        runtimeConfig?.BACKEND_URL || 
                         import.meta.env.BACKEND_URL || 
                         'http://localhost:3001';
 
