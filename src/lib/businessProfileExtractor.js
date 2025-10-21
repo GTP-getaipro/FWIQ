@@ -597,11 +597,15 @@ Return only valid JSON in this format:
       const backendUrl = runtimeConfig?.BACKEND_URL || 
                         import.meta.env.BACKEND_URL || 
                         'http://localhost:3001';
+      // Get the current session access token
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      
       const response = await fetch(`${backendUrl}/api/ai/analyze-business-profile`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.userId}`
+          'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify({ 
           emails: this.lastEmails || [], // Pass the raw emails
