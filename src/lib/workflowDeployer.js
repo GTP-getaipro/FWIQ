@@ -547,8 +547,22 @@ export class WorkflowDeployer {
       // Method 1: Try Supabase Edge Function first (recommended)
       try {
         console.log('🔹 Attempting deployment via Supabase Edge Function...');
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+        
+        // Get Supabase URL from runtime config or environment
+        const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
+        const supabaseUrl = runtimeConfig?.SUPABASE_URL || 
+                           import.meta.env.VITE_SUPABASE_URL || 
+                           import.meta.env.SUPABASE_URL || 
+                           '';
+        
+        if (!supabaseUrl) {
+          throw new Error('Supabase URL not configured - cannot call Edge Function');
+        }
+        
         const edgeFunctionUrl = `${supabaseUrl}/functions/v1/deploy-n8n`;
+        
+        console.log(`📍 Edge Function URL: ${edgeFunctionUrl}`);
+        console.log(`🔑 Auth token available: ${!!authToken}`);
         
         const edgeResponse = await fetch(edgeFunctionUrl, {
           method: 'POST',
@@ -559,6 +573,17 @@ export class WorkflowDeployer {
           body: JSON.stringify(deploymentPayload)
         });
         
+        console.log(`📊 Edge Function response status: ${edgeResponse.status} ${edgeResponse.statusText}`);
+        console.log(`📊 Edge Function response headers:`, Object.fromEntries(edgeResponse.headers.entries()));
+        
+        // Check if response is actually JSON before parsing
+        const contentType = edgeResponse.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const responseText = await edgeResponse.text();
+          console.error(`❌ Edge Function returned non-JSON response (${contentType}):`, responseText.substring(0, 500));
+          throw new Error(`Edge Function returned non-JSON response: ${responseText.substring(0, 100)}`);
+        }
+        
         if (edgeResponse.ok) {
           result = await edgeResponse.json();
           if (result.success) {
@@ -568,7 +593,9 @@ export class WorkflowDeployer {
             throw new Error(result.error || 'Edge Function returned unsuccessful result');
           }
         } else {
-          throw new Error(`Edge Function returned ${edgeResponse.status}: ${edgeResponse.statusText}`);
+          const errorBody = await edgeResponse.text();
+          console.error(`❌ Edge Function error response:`, errorBody.substring(0, 500));
+          throw new Error(`Edge Function returned ${edgeResponse.status}: ${errorBody.substring(0, 200)}`);
         }
       } catch (edgeError) {
         console.warn('⚠️ Edge Function deployment failed, falling back to backend API:', edgeError.message);
