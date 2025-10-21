@@ -852,7 +852,6 @@ async function handler(req) {
       console.log('✅ Successfully parsed JSON request body');
     } catch (parseError) {
       console.error('❌ Failed to parse request body:', parseError.message);
-      console.error('❌ Raw body preview:', await req.text().then(t => t.substring(0, 100)));
       return new Response(JSON.stringify({
         success: false,
         error: 'Invalid JSON in request body',
