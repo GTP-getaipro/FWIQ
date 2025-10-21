@@ -592,7 +592,12 @@ Return only valid JSON in this format:
   async callOpenAI(prompt, websiteUrl = null) {
     try {
       // Call the server-side API endpoint instead of direct OpenAI
-      const response = await fetch('/api/ai/analyze-business-profile', {
+      // Get backend URL from runtime config or environment
+      const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
+      const backendUrl = runtimeConfig?.BACKEND_URL || 
+                        import.meta.env.BACKEND_URL || 
+                        'http://localhost:3001';
+      const response = await fetch(`${backendUrl}/api/ai/analyze-business-profile`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

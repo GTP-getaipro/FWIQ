@@ -127,7 +127,12 @@ export const deployAutomation = async (userId, setDeploymentStatus) => {
       
       if (integration) {
         // Call the credential creation endpoint
-        const credentialResponse = await fetch('/api/oauth/create-credential', {
+        // Get backend URL from runtime config or environment
+        const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
+        const backendUrl = runtimeConfig?.BACKEND_URL || 
+                          import.meta.env.BACKEND_URL || 
+                          'http://localhost:3001';
+        const credentialResponse = await fetch(`${backendUrl}/api/oauth/create-credential`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
