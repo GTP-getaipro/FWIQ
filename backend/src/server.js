@@ -24,7 +24,7 @@ import aiRoutes from './routes/ai.js';
 import healthRoutes from './routes/health.js';
 import analyticsRoutes from './routes/analytics.js';
 import securityRoutes from './routes/security.js';
-import voiceLearningRoutes from './routes/voice-learning.js';
+import templatesRoutes from './routes/templates.js';
 
 // Import VPS N8N deployment service
 import { handleVpsN8nDeployment } from './services/vpsN8nDeployment.js';
@@ -927,7 +927,7 @@ app.use('/api/emails', authMiddleware, emailRoutes);
 app.use('/api/workflows', authMiddleware, workflowRoutes);
 app.use('/api/ai', authMiddleware, aiRoutes);
 app.use('/api/analytics', authMiddleware, analyticsRoutes);
-app.use('/api/voice-learning', voiceLearningRoutes); // Voice learning endpoint
+app.use('/api/templates', templatesRoutes);
 app.use('/api', securityRoutes); // CSP reports don't require auth
 
 // Response time logging middleware
