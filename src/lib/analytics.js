@@ -444,9 +444,9 @@ export class Analytics {
         setTimeout(() => reject(new Error('Request timeout')), 5000)
       );
       
-      const getUserPromise = supabase.auth.getUser();
-      const { data: { user } } = await Promise.race([getUserPromise, timeoutPromise]);
-      const accessToken = user?.access_token;
+      const getSessionPromise = supabase.auth.getSession();
+      const { data: { session } } = await Promise.race([getSessionPromise, timeoutPromise]);
+      const accessToken = session?.access_token;
       
       const response = await analyticsApi.storeSession(summary, accessToken);
       
@@ -472,8 +472,8 @@ export class Analytics {
   async getDashboardData(userId, timeRange = '24h') {
     try {
       // Try backend API first
-      const { data: { user } } = await supabase.auth.getUser();
-      const accessToken = user?.access_token;
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
       
       const response = await analyticsApi.getDashboard(userId, timeRange, accessToken);
       if (response.success) {
