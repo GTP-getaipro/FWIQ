@@ -221,6 +221,7 @@ export class CSPManager {
         "https://graph.microsoft.com",
         "https://www.googleapis.com",
         "https://oauth2.googleapis.com",
+        "https://gmail.googleapis.com",
         "https://n8n.floworx-iq.com",
         "https://floworx-iq.com",
         "https://api.floworx-iq.com",
