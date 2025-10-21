@@ -36,7 +36,7 @@ function getNextKey() {
 const N8N_BASE_URL = Deno.env.get('N8N_BASE_URL') || Deno.env.get('NBN_BASE_URL') || '';
 const N8N_API_KEY = Deno.env.get('N8N_API_KEY') || Deno.env.get('NBN_API_KEY') || '';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SERVICE_ROLE_KEY');
 const GMAIL_CLIENT_ID = Deno.env.get('GMAIL_CLIENT_ID') || Deno.env.get('GOOGLE_CLIENT_ID') || '';
 const GMAIL_CLIENT_SECRET = Deno.env.get('GMAIL_CLIENT_SECRET') || Deno.env.get('GOOGLE_CLIENT_SECRET') || '';
 const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -762,7 +762,7 @@ SIGNATURE: ${signatureBlock}
     '<<<BEHAVIOR_SIGNATURE_TEMPLATE>>>': signatureBlock,
     // Supabase Configuration
     '<<<SUPABASE_URL>>>': SUPABASE_URL || '',
-    '<<<SUPABASE_ANON_KEY>>>': Deno.env.get('SUPABASE_ANON_KEY') || ''
+    '<<<SUPABASE_ANON_KEY>>>': Deno.env.get('ANON_KEY') || ''
   };
   // DYNAMIC LABEL ID INJECTION (Layer 3)
   // Add individual label IDs for routing nodes
