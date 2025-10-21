@@ -197,8 +197,13 @@ export class WorkflowDeployer {
     try {
       console.log('🔍 Testing direct n8n connectivity...');
       
-      const n8nBaseUrl = import.meta.env.VITE_N8N_BASE_URL || 'https://n8n.srv995290.hstgr.cloud';
-      const n8nApiKey = import.meta.env.VITE_N8N_API_KEY || '';
+      // Get configuration from runtime config first, then fallback to environment variables
+      const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
+      const n8nBaseUrl = runtimeConfig?.N8N_BASE_URL || 
+                        import.meta.env.VITE_N8N_BASE_URL || 
+                        'https://n8n.srv995290.hstgr.cloud';
+      const n8nApiKey = runtimeConfig?.N8N_API_KEY || 
+                       import.meta.env.VITE_N8N_API_KEY || '';
       
       if (!n8nApiKey) {
         console.log('⚠️ N8N API key not configured - skipping direct connectivity test');

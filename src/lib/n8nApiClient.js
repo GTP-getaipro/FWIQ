@@ -5,9 +5,17 @@
 
 export class N8nApiClient {
   constructor() {
+    // Get configuration from runtime config first, then fallback to environment variables
+    const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
+    
     // Remove /settings/api from the base URL - that's the UI path, not the API path
-    this.baseUrl = (import.meta.env.VITE_N8N_BASE_URL || import.meta.env.N8N_BASE_URL || '').replace('/settings/api', '');
-    this.apiKey = import.meta.env.VITE_N8N_API_KEY || import.meta.env.N8N_API_KEY;
+    this.baseUrl = (runtimeConfig?.N8N_BASE_URL || 
+                   import.meta.env.VITE_N8N_BASE_URL || 
+                   import.meta.env.N8N_BASE_URL || '').replace('/settings/api', '');
+    
+    this.apiKey = runtimeConfig?.N8N_API_KEY || 
+                  import.meta.env.VITE_N8N_API_KEY || 
+                  import.meta.env.N8N_API_KEY;
 
     // Warn if credentials are missing
     if (!this.baseUrl) {
