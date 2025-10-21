@@ -1279,11 +1279,8 @@ async function handler(req) {
       name: workflowJson.name || `FloWorx Automation - ${new Date().toISOString().split('T')[0]}`,
       nodes: workflowJson.nodes || [],
       connections: workflowJson.connections || {},
-      settings: workflowJson.settings || {
-        executionOrder: 'v1',
-        saveManualExecutions: true,
-        callersPolicy: 'workflowsFromSameOwner',
-        errorWorkflow: null
+      settings: {
+        executionOrder: 'v1'
       }
     };
     console.log(`🔍 Clean payload properties:`, Object.keys(cleanPayload));
