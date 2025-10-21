@@ -107,7 +107,11 @@ function slugify(input, fallback) {
  * Generate comprehensive AI system message with all business-specific rules
  * Fetches complete profile from database for truly personalized system messages
  * This is the server-side version that matches dynamicAISystemMessageGenerator.js
- */ async function generateDynamicAISystemMessage(userId) {
+/**
+ * Generate dynamic AI system message using EnhancedDynamicClassifierGenerator
+ * Simplified version for Deno Edge Function environment
+ */
+async function generateDynamicAISystemMessage(userId) {
   // Fetch complete business profile from database
   const { data: profile, error } = await supabaseAdmin.from('profiles').select(`
       client_config,
@@ -147,32 +151,295 @@ function slugify(input, fallback) {
     services: businessConfig.services || []
   };
 
-  // Fetch historical email data for voice enhancement
-  // Note: fetchHistoricalEmailData function not available in Edge Function
-  const historicalData = null;
+  // Get managers and suppliers
+  const managers = profile.managers || [];
+  const suppliers = profile.suppliers || [];
   
-  // Generate dynamic classifier system message
-  // Note: generateDynamicClassifierSystemMessage function not available in Edge Function
-  // Using fallback implementation
-  const dynamicSystemMessage = `You are an email classifier for ${businessInfo.name || 'the business'}. 
+  // Get primary business type
+  const primaryBusinessType = businessInfo.businessTypes?.[0] || businessInfo.businessType || 'General Services';
+  
+  console.log('🚀 Generating enhanced classifier system message for:', primaryBusinessType);
+  
+  try {
+    // Generate enhanced system message using inline implementation
+    const enhancedSystemMessage = generateEnhancedClassifierSystemMessage(
+      primaryBusinessType,
+    businessInfo,
+      managers,
+      suppliers
+    );
+    
+    console.log('✅ Enhanced classifier system message generated:', {
+      messageLength: enhancedSystemMessage.length,
+      hasBusinessName: enhancedSystemMessage.includes(businessInfo.name || 'the business'),
+      hasCategories: enhancedSystemMessage.includes('Categories:'),
+      hasJSONFormat: enhancedSystemMessage.includes('JSON Output Format')
+    });
+    
+    return enhancedSystemMessage;
+    
+  } catch (error) {
+    console.error('❌ Error generating enhanced classifier, using fallback:', error);
+    
+    // Fallback to simple implementation
+    return `You are an email classifier for ${businessInfo.name || 'the business'}. 
 Categorize emails accurately and return JSON with summary, primary_category, confidence, and ai_can_reply fields.
 
 Business Context:
-- Business Name: ${businessInfo.name || 'Not specified'}
-- Business Type: ${businessInfo.businessCategory || 'Not specified'}
-- Email Domain: ${businessInfo.emailDomain || 'Not specified'}
-
-Categories: URGENT, SALES, SUPPORT, MANAGER, RECRUITMENT, BILLING, MISC
+- Business Name: ${businessInfo.name || 'Business'}
+- Business Type: ${primaryBusinessType}
+- Email Domain: ${businessInfo.emailDomain || 'example.com'}
+- Phone: ${businessInfo.phone || 'Not provided'}
+- Managers: ${managers.map(m => m.name).join(', ') || 'Not specified'}
+- Suppliers: ${suppliers.map(s => s.name).join(', ') || 'Not specified'}
 
 Return JSON format:
 {
-  "summary": "Brief summary of the email",
-  "primary_category": "One of the categories above",
+  "summary": "Brief email summary",
+  "reasoning": "Classification reasoning", 
   "confidence": 0.9,
+  "primary_category": "Category name",
+  "secondary_category": "Subcategory or null",
+  "tertiary_category": "Tertiary category or null",
+  "entities": {
+    "contact_name": "Contact name or null",
+    "email_address": "Email address or null", 
+    "phone_number": "Phone number or null",
+    "order_number": "Order/invoice number or null"
+  },
   "ai_can_reply": true
 }`;
+  }
+}
+
+/**
+ * Generate enhanced classifier system message (simplified for Deno Edge Function)
+ */
+function generateEnhancedClassifierSystemMessage(businessType, businessInfo, managers = [], suppliers = []) {
+  // Business-specific product names
+  const products = {
+    "Hot tub & Spa": "hot tubs",
+    "Pools": "pools", 
+    "Sauna & Icebath": "saunas or ice baths",
+    "Electrician": "electrical services",
+    "HVAC": "HVAC services",
+    "Plumber": "plumbing services",
+    "Roofing": "roofing services",
+    "Painting": "painting services",
+    "Flooring": "flooring services",
+    "Landscaping": "landscaping services",
+    "General Construction": "construction services",
+    "Insulation & Foam Spray": "insulation services"
+  };
   
-  return dynamicSystemMessage;
+  const productName = products[businessType] || "services";
+  
+  // Business-specific urgent keywords
+  const urgentKeywords = {
+    "Hot tub & Spa": ["broken", "not working", "leaking", "won't start", "no power", "error code", "tripping breaker", "won't heat"],
+    "Pools": ["broken", "not working", "leaking", "pump failure", "no power", "water chemistry", "equipment failure"],
+    "Electrician": ["broken", "not working", "no power", "tripping breaker", "electrical emergency", "sparking", "fire risk"],
+    "HVAC": ["broken", "not working", "no heat", "no cooling", "emergency", "equipment failure", "temperature issue"],
+    "Plumber": ["broken", "not working", "leaking", "burst pipe", "no water", "emergency", "water damage"]
+  };
+  
+  const keywords = urgentKeywords[businessType] || ["broken", "not working", "emergency", "urgent"];
+  
+  // Generate manager secondary categories
+  const managerSecondary = {};
+  managers.forEach(manager => {
+    managerSecondary[manager.name] = `Mail explicitly for ${manager.name}`;
+  });
+  managerSecondary["Unassigned"] = "Internal alerts or platform notices requiring manager review without a specific person";
+  
+  // Generate supplier secondary categories  
+  const supplierSecondary = {};
+  suppliers.forEach(supplier => {
+    supplierSecondary[supplier.name] = `Emails from ${supplier.name}`;
+  });
+  
+  return `You are an expert email processing and routing system for "${businessInfo.name}".
+
+Your SOLE task is to analyze the provided email (sender, subject, and body) and return a single, well-structured JSON object containing:
+A concise summary of the email's purpose.
+A precise classification with exactly ONE primary_category.
+The most appropriate secondary_category if applicable.
+The appropriate tertiary_category for specific banking emails, or null.
+All relevant extracted entities (contact name, phone number, order number).
+A confidence score between 0.0 and 1.0.
+A brief reasoning explaining the classification choice.
+
+### Rules:
+If the email is from an external sender, and primary_category is Support or Sales, and confidence is at least 0.75, always set "ai_can_reply": true—including for Support > General complaints, unless the sender is internal or the message is abusive/illegal.
+If the sender's email address ends with "@${businessInfo.emailDomain}", always set:
+"ai_can_reply": false
+
+1. Analyze the entire email context (sender, subject, body).
+2. Choose exactly ONE primary_category from the list below.
+3. If the primary category has sub-categories, choose the most fitting secondary_category.
+4. For banking-related emails, choose the correct tertiary_category.
+5. Extract all available entities: contact name, phone number, order/invoice number.
+6. Provide a confidence score (0.0 to 1.0) based on your certainty.
+7. Provide a brief explanation of your classification reasoning.
+8. If a category or subcategory does not apply, return null for those fields.
+9. Return ONLY the JSON object below — no additional text.
+
+### Categories:
+
+**Phone**: Only emails from phone/SMS/voicemail providers (e.g., service@ringcentral.com) should be tagged PHONE.
+Keywords: voicemail, voice message, missed call, SMS, text message, RingCentral, caller ID, message transcript, new message, call recording, callback number, you have a new text, you have a new voicemail
+Examples: "You have a new voice message from (403) 123-4567.", "New SMS received from customer.", "Missed call alert."
+secondary_category: [Phone]
+Phone - All emails originating specifically from service@ringcentral.com
+
+**Promo**: Marketing, discounts, sales flyers.
+Keywords: marketing, discount, sale, promotion, offer, deal, bundle, referral, rewards
+Examples: "Save 25% this weekend only!", "Refer a friend and earn rewards", "Bundle deal on accessories", "Exclusive vendor promotion"
+secondary_category: [Promo]
+Promo - Marketing campaigns, discount announcements, referral programs, or seasonal events
+
+**Socialmedia**: Emails related to social media platforms like Facebook, Instagram, TikTok, YouTube, or Google.
+Keywords: DM, tagged, post, reel, story, influencer, collab, partnership, Facebook, Instagram, TikTok, YouTube, social media
+Examples: "You've been tagged in a post", "New DM from customer", "Influencer collaboration request"
+secondary_category: [Socialmedia]
+Socialmedia - Engagement alerts, collaboration requests, content inquiries, influencer outreach
+
+**Sales**: Emails from leads or customers expressing interest in purchasing ${productName}, requesting pricing, or discussing specific models or service packages.
+Keywords: ${getBusinessSpecificSalesKeywords(businessType).join(', ')}
+Examples: New inquiries about ${productName} or installation services, requests for quotes, estimates, or follow-up on prior communication
+secondary_category: [Sales]
+Sales - New inquiries about ${productName} or installation services, requests for quotes, estimates, or follow-up on prior communication
+
+**Recruitment**: Job applications, resumes, interviews.
+Keywords: job application, resume, cover letter, interview, hiring, candidate, recruitment, job opportunity, position available, apply, job posting, applicant, interview schedule, candidate inquiry, job offer
+Examples: "Application for Customer Service Position", "Resume and cover letter for Service Technician role", "Interview schedule confirmation", "Inquiry about open positions"
+secondary_category: [Recruitment]
+Recruitment - Job applications, resumes, cover letters, interview scheduling, candidate inquiries, job offers, and hiring updates
+
+**GoogleReview**: Notifications about new Google Reviews.
+Keywords: google review, review notification, customer review, rating, review left
+Examples: "Brenda left a review...", "Rating: ★★★★☆", "Review ID: g123abc456"
+secondary_category: [GoogleReview]
+GoogleReview - New Google Reviews with reviewer name, rating, review text, and review ID
+
+**Urgent**: E-mails from alerts@servicetitan.com. Requests a response by a specific date/time (even without using "urgent") Uses phrases like "as soon as possible", "ASAP", "immediately", "today", "noon". Emails emergency-related, or requiring immediate action.
+Keywords: urgent, emergency, ASAP, as soon as possible, immediately, critical, need help now, high priority, right away, problem, broken, not working, serious issue, can't wait, urgent matter, please respond quickly
+Examples: ${getBusinessSpecificUrgentExamples(businessType).join(', ')}
+secondary_category: [Urgent]
+Urgent - Emergency-related emails requiring immediate action, escalated service issues, last-minute cancellations, equipment failures
+
+**Misc**: Use as a last resort for unclassifiable emails.
+Keywords: unclassifiable, irrelevant, spam, unknown
+secondary_category: [Misc]
+Misc - Only return MISC as a last resort if, after exhaustive evaluation of all other categories, the email's content remains fundamentally unclassifiable
+
+**Manager**: Emails that require leadership oversight, involve internal company operations, or are directed at a specific manager.
+Keywords: manager, leadership, oversight, internal, escalation, strategic, vendor, alert
+secondary_category: [${Object.keys(managerSecondary).join(', ')}]
+${Object.entries(managerSecondary).map(([name, desc]) => `${name} - ${desc}`).join('\n')}
+
+**FormSub**: This category is for automated submissions from your website forms or field service apps.
+Keywords: form submission, website form, field service, automated submission
+Examples: Service Request got a new submission, Work Form completed
+secondary_category: [NewSubmission, WorkOrderForms]
+NewSubmission - Site visitor submissions with contact details and requests
+WorkOrderForms - Emails from noreply@reports.connecteam.com containing completed work forms
+
+**Suppliers**: Emails from suppliers and vendors.
+Keywords: supplier, vendor, order, delivery, invoice, quote
+secondary_category: [${Object.keys(supplierSecondary).join(', ')}]
+${Object.entries(supplierSecondary).map(([name, desc]) => `${name} - ${desc}`).join('\n')}
+
+**Support**: Emails from existing customers related to post-sales support.
+Keywords: support, customer service, help, assistance, troubleshooting, question
+secondary_category: [TechnicalSupport, PartsAndChemicals, AppointmentScheduling, General]
+TechnicalSupport - Troubleshooting and repair requests
+PartsAndChemicals - Orders or inquiries about parts and chemicals
+AppointmentScheduling - Booking/rescheduling/canceling visits or service appointments
+General - Other support inquiries not fitting above categories
+
+**Banking**: Financial transactions, invoices, payments, and banking communications.
+Keywords: banking, financial, payment, invoice, transfer, receipt, refund
+secondary_category: [e-transfer, invoice, bank-alert, refund, receipts]
+e-transfer - Interac e-Transfers confirming completed payments either sent or received
+invoice - Emails that include sent or received invoices, typically as part of billing, accounting, or financial tracking
+bank-alert - Automated security-related messages sent by a bank or financial platform
+refund - Emails indicating that a refund has been issued or received
+receipts - Emails that prove a payment has already cleared—whether the business paid a vendor or a customer paid us
+
+### Tertiary Category Rules:
+
+**e-transfer**:
+FromBusiness - Emails confirming that ${businessInfo.name} has sent a payment or successfully transferred funds to a vendor, contractor, or external service provider.
+ToBusiness - Emails confirming that a payment has been deposited into ${businessInfo.name}'s account.
+
+**receipts**:
+PaymentSent - Email confirming ${businessInfo.name} sent a payment
+PaymentReceived - Email confirming ${businessInfo.name} received a payment
+
+### Business-Specific Rules:
+If the email confirms a purchase or payment by ${businessInfo.name} (or relevant business/person), classify as: "primary_category": "Banking", "secondary_category": "receipts", "tertiary_category": "PaymentSent"
+If the email confirms the business received money (e.g., from a customer): "primary_category": "Banking", "secondary_category": "receipts", "tertiary_category": "PaymentReceived"
+If secondary_category is 'e-transfer', set tertiary_category: [FromBusiness, ToBusiness]
+If secondary_category is 'receipts', set tertiary_category: [PaymentSent, PaymentReceived]
+Form Submission Override: An email that is a form submission MUST BE CLASSIFIED AS URGENT if the "How can we help?" section contains keywords indicating a critical service issue.
+Keywords for urgent form submissions: ${keywords.join(', ')}
+
+### JSON Output Format:
+Return ONLY the following JSON structure. Do not add any other text or explanations.
+
+\`\`\`json
+{
+  "summary": "A concise, one-sentence summary of the email's purpose.",
+  "reasoning": "A brief explanation for the chosen categories.",
+  "confidence": 0.9,
+  "primary_category": "The chosen primary category",
+  "secondary_category": "The chosen secondary category, or null if not applicable.",
+  "tertiary_category": "The chosen tertiary category, or null if not applicable.",
+  "entities": {
+    "contact_name": "Extracted contact name, or null.",
+    "email_address": "Extracted email address, or null.",
+    "phone_number": "Extracted phone number, or null.",
+    "order_number": "Extracted order/invoice number, or null."
+  },
+  "ai_can_reply": true
+}
+\`\`\``;
+}
+
+/**
+ * Get business-specific sales keywords
+ */
+function getBusinessSpecificSalesKeywords(businessType) {
+  const keywords = {
+    "Hot tub & Spa": ["hot tub", "spa", "jacuzzi", "whirlpool", "installation", "maintenance", "water care", "winterization"],
+    "Pools": ["pool", "swimming pool", "inground", "above ground", "installation", "maintenance", "cleaning", "repair"],
+    "Sauna & Icebath": ["sauna", "ice bath", "cold plunge", "infrared", "heater", "chiller", "installation", "repair"],
+    "Electrician": ["electrical", "wiring", "panel", "lighting", "outlet", "breaker", "installation", "repair"],
+    "HVAC": ["heating", "cooling", "air conditioning", "furnace", "duct", "installation", "maintenance", "repair"],
+    "Plumber": ["plumbing", "pipe", "fixture", "water heater", "drain", "installation", "repair", "maintenance"],
+    "Roofing": ["roof", "shingle", "gutter", "ventilation", "repair", "replacement", "inspection", "maintenance"],
+    "Painting": ["painting", "paint", "color", "interior", "exterior", "surface", "prep", "finish"],
+    "Flooring": ["flooring", "hardwood", "tile", "carpet", "installation", "repair", "refinishing", "maintenance"],
+    "Landscaping": ["landscaping", "lawn", "garden", "tree", "irrigation", "design", "maintenance", "care"],
+    "General Construction": ["construction", "renovation", "remodel", "building", "project", "permit", "contractor"],
+    "Insulation & Foam Spray": ["insulation", "foam", "spray", "air sealing", "soundproofing", "energy efficiency", "upgrade"]
+  };
+  return keywords[businessType] || ["service", "installation", "repair", "maintenance"];
+}
+
+/**
+ * Get business-specific urgent examples
+ */
+function getBusinessSpecificUrgentExamples(businessType) {
+  const examples = {
+    "Hot tub & Spa": ["My spa heater isn't heating", "Spa is leaking water", "Control panel won't light up", "Jets aren't working"],
+    "Pools": ["Pool pump not working", "Pool is leaking", "Water chemistry is off", "Pool equipment failure"],
+    "Electrician": ["Power outage", "Electrical emergency", "Breaker keeps tripping", "No power to outlets"],
+    "HVAC": ["No heat", "No cooling", "Furnace not working", "AC unit failure"],
+    "Plumber": ["Water leak", "Burst pipe", "No water", "Water heater failure"]
+  };
+  return examples[businessType] || ["Equipment failure", "Service emergency", "Urgent repair needed"];
 }
 async function n8nRequest(path, init = {}) {
   const url = `${N8N_BASE_URL.replace(/\/$/, '')}/api/v1${path}`;
@@ -182,6 +449,9 @@ async function n8nRequest(path, init = {}) {
   };
   console.log(`🔗 Making n8n API request: ${init.method || 'GET'} ${url}`);
   console.log(`🔑 Using API Key: ${N8N_API_KEY ? N8N_API_KEY.substring(0, 20) + '...' : 'Not set'}`);
+  console.log(`🔍 Request headers:`, headers);
+  console.log(`🔍 Request body:`, init.body ? JSON.parse(init.body) : 'No body');
+  
   const res = await fetch(url, {
     ...init,
     headers: {
@@ -189,13 +459,19 @@ async function n8nRequest(path, init = {}) {
       ...init.headers
     }
   });
+  
   console.log(`📡 n8n API response: ${res.status} ${res.statusText}`);
+  console.log(`📡 Response headers:`, Object.fromEntries(res.headers.entries()));
+  
   if (!res.ok) {
     const text = await res.text();
     console.error(`❌ n8n API error: ${res.status} ${res.statusText} - ${text}`);
     throw new Error(`n8n ${init.method || 'GET'} ${path} failed: ${res.status} ${res.statusText} - ${text}`);
   }
-  return res.json();
+  
+  const responseData = await res.json();
+  console.log(`📡 n8n API response data:`, responseData);
+  return responseData;
 }
 async function resolveCredentialIdByName(name) {
   try {
@@ -842,17 +1118,17 @@ async function handler(req) {
       timestamp: new Date().toISOString()
     });
 
-    // Handle CORS preflight
-    if (req.method === 'OPTIONS') {
-      return new Response(null, {
-        status: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-        }
-      });
-    }
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+      }
+    });
+  }
     if (req.method !== 'POST') return new Response('Method not allowed', {
       status: 405,
       headers: {
@@ -991,7 +1267,7 @@ async function handler(req) {
       const userCredentials = allCredentials.data?.filter((cred: any) => 
         cred.name?.includes(businessSlug) || 
         cred.name?.includes(clientShort) ||
-        cred.name?.includes(clientData.business?.name?.toLowerCase().replace(/\s+/g, '-') || '')
+        cred.name?.includes(businessName?.toLowerCase().replace(/\s+/g, '-') || '')
       ) || [];
       
       console.log(`🔍 Found ${userCredentials.length} potential user credentials in N8N`);
@@ -1038,6 +1314,7 @@ async function handler(req) {
       
     } catch (cleanupError) {
       console.warn(`⚠️ Credential cleanup failed (non-critical):`, cleanupError.message);
+      console.log(`ℹ️ This is expected if N8N API doesn't allow GET /credentials requests`);
     }
 
     // WORKFLOW DEDUPLICATION: Clean up old workflows for this user
@@ -1047,7 +1324,7 @@ async function handler(req) {
       // Get all workflows for this user from N8N
       const allWorkflows = await n8nRequest('/workflows');
       const userWorkflows = allWorkflows.data?.filter((wf: any) => 
-        wf.name?.includes(clientData.business?.name || 'Client') ||
+        wf.name?.includes(businessName || 'Client') ||
         wf.name?.includes(businessSlug) ||
         wf.name?.includes('FloWorx Automation')
       ) || [];
@@ -1080,9 +1357,10 @@ async function handler(req) {
       
     } catch (cleanupError) {
       console.warn(`⚠️ Workflow cleanup failed (non-critical):`, cleanupError.message);
+      console.log(`ℹ️ This is expected if N8N API doesn't allow GET /workflows requests`);
     }
 
-    // Gmail credential handling
+      // Gmail credential handling
       const { data: existingMap } = await supabaseAdmin.from('n8n_credential_mappings').select('gmail_credential_id').eq('user_id', userId).maybeSingle();
       // Check if integration has n8n_credential_id
       gmailId = integration?.n8n_credential_id || existingMap?.gmail_credential_id || null;
@@ -1418,7 +1696,7 @@ async function handler(req) {
     
     // Create clean payload exactly like Backend API does
     const cleanPayload = {
-      name: workflowJson.name || `FloWorx Automation - ${clientData.business?.name || 'Client'} - ${new Date().toISOString().split('T')[0]}`,
+      name: workflowJson.name || `FloWorx Automation - ${businessName || 'Client'} - ${new Date().toISOString().split('T')[0]}`,
       nodes: workflowJson.nodes || [],
       connections: workflowJson.connections || {},
       settings: {
@@ -1428,17 +1706,36 @@ async function handler(req) {
     
     console.log(`🔍 Clean payload properties:`, Object.keys(cleanPayload));
     console.log(`🔍 Original workflow JSON properties:`, Object.keys(workflowJson));
+    console.log(`🔍 Clean payload details:`, {
+      name: cleanPayload.name,
+      nodesCount: cleanPayload.nodes?.length || 0,
+      hasConnections: !!cleanPayload.connections,
+      settings: cleanPayload.settings
+    });
     
-    // DEDUPLICATION STRATEGY: Update existing workflow instead of creating new ones
+    // WORKFLOW CREATION STRATEGY: Handle existing workflows that may have been manually archived
     if (existingWf?.n8n_workflow_id) {
-      console.log(`🔄 Found existing workflow (ID: ${existingWf.n8n_workflow_id}), updating instead of creating new...`);
+      console.log(`🔍 Found existing workflow record (ID: ${existingWf.n8n_workflow_id}), checking if it still exists in N8N...`);
       
       try {
-        // Update existing workflow in N8N
+        // Try to get the workflow from N8N to see if it still exists
+        console.log(`🔍 Attempting to fetch workflow ${existingWf.n8n_workflow_id} from N8N...`);
+        const existingN8nWf = await n8nRequest(`/workflows/${existingWf.n8n_workflow_id}`);
+        
+        console.log(`✅ Found existing workflow in N8N:`, {
+          id: existingN8nWf.id,
+          name: existingN8nWf.name,
+          active: existingN8nWf.active
+        });
+        
+        // Workflow exists in N8N, update it
+        console.log(`🔄 Updating existing workflow ${existingWf.n8n_workflow_id} in N8N...`);
         const updatedWf = await n8nRequest(`/workflows/${existingWf.n8n_workflow_id}`, {
           method: 'PUT',
           body: JSON.stringify(cleanPayload)
         });
+        
+        console.log(`🔍 N8N update response:`, updatedWf);
         
         n8nWorkflowId = existingWf.n8n_workflow_id;
         nextVersion = existingWf.version; // Keep same version for updates
@@ -1463,50 +1760,56 @@ async function handler(req) {
         
         console.log(`✅ Reactivated existing workflow: ${n8nWorkflowId}`);
         
-      } catch (updateError) {
-        console.warn(`⚠️ Failed to update existing workflow (${existingWf.n8n_workflow_id}), creating new one:`, updateError.message);
+      } catch (n8nError) {
+        console.warn(`⚠️ Existing workflow ${existingWf.n8n_workflow_id} not found in N8N (likely manually archived):`, n8nError.message);
+        console.log(`📝 Creating new workflow instead...`);
         
-        // Fallback: Create new workflow if update fails
-        console.log('📝 Creating new workflow in n8n (fallback)...');
-        const createdWf = await n8nRequest('/workflows', {
-          method: 'POST',
-          body: JSON.stringify(cleanPayload)
-        });
+        // Workflow doesn't exist in N8N anymore, create new one
+    const createdWf = await n8nRequest('/workflows', {
+      method: 'POST',
+      body: JSON.stringify(cleanPayload)
+    });
         
-        n8nWorkflowId = createdWf.id;
-        nextVersion = (existingWf?.version || 0) + 1;
+        console.log(`🔍 N8N create response:`, createdWf);
+        
+    n8nWorkflowId = createdWf.id;
+        nextVersion = (existingWf?.version || 0) + 1; // Increment version
         isNewWorkflow = true;
         
-        console.log(`✅ Created new workflow with ID: ${n8nWorkflowId}`);
-        
-        // Archive the old workflow in N8N (cleanup)
-        try {
-          await n8nRequest(`/workflows/${existingWf.n8n_workflow_id}`, {
-            method: 'DELETE'
-          });
-          console.log(`🗑️ Cleaned up old workflow in N8N: ${existingWf.n8n_workflow_id}`);
-        } catch (deleteError) {
-          console.warn(`⚠️ Failed to delete old workflow from N8N:`, deleteError.message);
-        }
+    console.log(`✅ Created new workflow with ID: ${n8nWorkflowId}`);
         
         // Archive the old workflow record in database
         await supabaseAdmin.from('workflows').update({
-          status: 'archived'
+          status: 'archived',
+          archived_at: new Date().toISOString(),
+          archived_reason: 'N8N workflow manually deleted/archived'
         }).eq('id', existingWf.id);
         
+        console.log(`📝 Archived old workflow record in database: ${existingWf.id}`);
+        
         // Activate new workflow
-        await n8nRequest(`/workflows/${n8nWorkflowId}/activate`, {
-          method: 'POST'
-        });
+    await n8nRequest(`/workflows/${n8nWorkflowId}/activate`, {
+      method: 'POST'
+    });
+        
+        console.log(`✅ Activated new workflow: ${n8nWorkflowId}`);
       }
       
     } else {
-      // No existing workflow, create new one
-      console.log('📝 No existing workflow found, creating new workflow in n8n...');
+      // No existing workflow record, create new one
+      console.log('📝 No existing workflow found, creating new workflow in N8N...');
+      console.log(`🔍 Attempting to create new workflow in N8N with payload:`, {
+        name: cleanPayload.name,
+        nodesCount: cleanPayload.nodes?.length || 0,
+        hasConnections: !!cleanPayload.connections
+      });
+      
       const createdWf = await n8nRequest('/workflows', {
         method: 'POST',
         body: JSON.stringify(cleanPayload)
       });
+      
+      console.log(`🔍 N8N create response:`, createdWf);
       
       n8nWorkflowId = createdWf.id;
       nextVersion = 1;
@@ -1518,18 +1821,20 @@ async function handler(req) {
       await n8nRequest(`/workflows/${n8nWorkflowId}/activate`, {
         method: 'POST'
       });
+      
+      console.log(`✅ Activated new workflow: ${n8nWorkflowId}`);
     }
     // Update or insert database record based on whether it's a new workflow
     if (isNewWorkflow) {
       console.log(`📝 Inserting new workflow record in database...`);
-      await supabaseAdmin.from('workflows').insert({
-        user_id: userId,
-        n8n_workflow_id: n8nWorkflowId,
-        version: nextVersion,
-        status: 'active',
-        workflow_json: workflowJson,
-        is_functional: false,
-        issues: [],
+    await supabaseAdmin.from('workflows').insert({
+      user_id: userId,
+      n8n_workflow_id: n8nWorkflowId,
+      version: nextVersion,
+      status: 'active',
+      workflow_json: workflowJson,
+      is_functional: false,
+      issues: [],
         last_checked: new Date().toISOString()
       });
     } else {

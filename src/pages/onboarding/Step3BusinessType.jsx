@@ -294,6 +294,7 @@ const Step3BusinessType = () => {
       });
 
       // 🎤 NEW: Trigger voice training (non-blocking)
+      console.log('🚀 TRIGGERING VOICE ANALYSIS:', { userId: user.id, businessType: selectedTypes[0] });
       triggerVoiceAnalysis(user.id, selectedTypes[0]);
 
       navigate('/onboarding/team-setup');
@@ -311,26 +312,124 @@ const Step3BusinessType = () => {
 
   /**
    * Trigger voice analysis in background (non-blocking)
-   * This learns the user's communication style from their sent emails
+   * ENHANCED: Learns user's communication style from sent emails with detailed tracking
    */
   const triggerVoiceAnalysis = async (userId, businessType) => {
     try {
       setIsAnalyzingVoice(true);
       
-      // Run analysis in background (silently)
-      const analysis = await emailVoiceAnalyzer.analyzeEmailVoice(userId, businessType);
+      console.log('🎤 Starting voice learning analysis...', {
+        userId,
+        businessType,
+        timestamp: new Date().toISOString()
+      });
       
-      // Voice analysis completed silently - no user notification
+      // Store analysis start status
+      await supabase
+        .from('communication_styles')
+        .upsert({
+          user_id: userId,
+          analysis_status: 'in_progress',
+          analysis_started_at: new Date().toISOString(),
+          last_updated: new Date().toISOString()
+        }, { onConflict: 'user_id' });
+      
+      // Run analysis in background with timeout protection
+      const analysisPromise = emailVoiceAnalyzer.analyzeEmailVoice(userId, businessType);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Voice analysis timeout after 30s')), 30000)
+      );
+      
+      const analysis = await Promise.race([analysisPromise, timeoutPromise]);
+      
+      // Enhanced logging based on results
       if (analysis.skipped) {
-        console.log('⚠️ Voice analysis skipped:', analysis.reason);
+        console.log('⚠️ Voice analysis skipped:', {
+          reason: analysis.reason,
+          sampleSize: analysis.sampleSize || 0
+        });
+        
+        // Update status to show it was skipped
+        await supabase
+          .from('communication_styles')
+          .upsert({
+            user_id: userId,
+            analysis_status: 'skipped',
+            analysis_completed_at: new Date().toISOString(),
+            skip_reason: analysis.reason,
+            style_profile: {
+              voice: {
+                empathyLevel: 0.7,
+                formalityLevel: 0.8,
+                directnessLevel: 0.8
+              },
+              tone: 'professional',
+              formality: 'balanced',
+              source: 'default_fallback'
+            },
+            learning_count: 0,
+            last_updated: new Date().toISOString()
+          }, { onConflict: 'user_id' });
+          
       } else {
-        console.log('✅ Voice analysis completed successfully');
+      console.log('✅ Voice analysis completed successfully:', {
+        tone: analysis.tone,
+        formality: analysis.formality,
+        sampleSize: analysis.sampleSize || 0,
+        confidence: analysis.confidence || 0,
+        hasExamples: analysis.examples?.length > 0,
+        skipped: analysis.skipped || false,
+        skipReason: analysis.reason || 'none'
+      });
+        
+        // Update status to show successful completion
+        await supabase
+          .from('communication_styles')
+          .update({
+            analysis_status: 'completed',
+            analysis_completed_at: new Date().toISOString(),
+            last_updated: new Date().toISOString()
+          })
+          .eq('user_id', userId);
+        
+        // Voice learning completed silently in background - no user notification needed
       }
       
     } catch (error) {
-      console.warn('⚠️ Voice analysis failed (non-critical):', error.message);
+      console.error('❌ Voice analysis failed:', {
+        error: error.message,
+        stack: error.stack,
+        userId,
+        businessType
+      });
       
-      // Voice analysis failed silently - continue with default style
+      // Store failure status
+      try {
+        await supabase
+          .from('communication_styles')
+          .upsert({
+            user_id: userId,
+            analysis_status: 'failed',
+            analysis_completed_at: new Date().toISOString(),
+            skip_reason: error.message,
+            style_profile: {
+              voice: {
+                empathyLevel: 0.7,
+                formalityLevel: 0.8,
+                directnessLevel: 0.8
+              },
+              tone: 'professional',
+              formality: 'balanced',
+              source: 'error_fallback'
+            },
+            learning_count: 0,
+            last_updated: new Date().toISOString()
+          }, { onConflict: 'user_id' });
+      } catch (dbError) {
+        console.error('Failed to store error status:', dbError);
+      }
+      
+      // Continue with default style - non-blocking error
     } finally {
       setIsAnalyzingVoice(false);
     }

@@ -493,52 +493,54 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
       className={`bg-gradient-to-br from-blue-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 ${
-        showFolderIds ? 'min-h-screen' : 'h-screen overflow-hidden'
+        showFolderIds ? 'min-h-screen' : 'min-h-screen'
       }`}
     >
-      <div className={`${showFolderIds ? 'space-y-10 overflow-y-auto max-h-screen' : 'space-y-6 overflow-hidden'} p-6 pb-12`}>
+      <div className={`${showFolderIds ? 'space-y-4 sm:space-y-6 lg:space-y-8 overflow-y-auto max-h-screen' : 'space-y-3 sm:space-y-4 lg:space-y-6 overflow-y-auto min-h-screen'} p-2 sm:p-3 lg:p-6 pb-6 sm:pb-8 lg:pb-12`}>
       {/* Welcome Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.2 }}
-        className={`bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 rounded-2xl border border-blue-100 dark:border-gray-600 shadow-lg ${
-          showFolderIds ? 'p-8' : 'p-6'
+        className={`bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-800 rounded-xl sm:rounded-2xl border border-blue-100 dark:border-gray-600 shadow-lg ${
+          showFolderIds ? 'p-4 sm:p-6 lg:p-8' : 'p-4 sm:p-6'
         }`}
       >
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 sm:gap-4 lg:gap-6">
           <div className="flex-1">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-blue-200 dark:border-gray-600">
-                <Sparkles className="h-7 w-7 text-blue-600 dark:text-blue-400" />
+            <div className="flex flex-col gap-2 sm:gap-3 mb-3 sm:mb-4">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-2 sm:p-3 bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow-sm border border-blue-200 dark:border-gray-600">
+                  <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 text-blue-600 dark:text-blue-400" />
+                </div>
+                <h1 className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
+                Welcome back, {profile?.client_config?.business?.name || profile?.email}!
+                </h1>
               </div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Welcome back, {profile?.client_config?.business?.name || profile?.email}!
-              </h1>
-          </div>
-            <p className="text-lg text-gray-600 dark:text-gray-300 mb-4">
-              Here's how your AI automation is performing
-            </p>
-            <div className="flex flex-wrap items-center gap-6 text-sm">
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 rounded-full">
+              <p className="text-sm sm:text-base lg:text-lg text-gray-600 dark:text-gray-300 ml-0 sm:ml-11 lg:ml-14">
+                Here's how your AI automation is performing
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 lg:gap-6 text-xs sm:text-sm ml-0 sm:ml-11 lg:ml-14">
+              <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-green-100 dark:bg-green-900/30 rounded-full">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 <span className="text-green-700 dark:text-green-400 font-medium">Automation Active</span>
               </div>
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+              <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-full">
                 {getProviderIcon()}
                 <span className="text-blue-700 dark:text-blue-400 font-medium capitalize">{emailProvider || 'Email'} Integration</span>
               </div>
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-full">
-                <Zap className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+              <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-full">
+                <Zap className="h-3 w-3 sm:h-4 sm:w-4 text-purple-600 dark:text-purple-400" />
                 <span className="text-purple-700 dark:text-purple-400 font-medium">Real-time Processing</span>
               </div>
             </div>
           </div>
-          <div className="flex-shrink-0 flex items-center gap-4">
+          <div className="flex-shrink-0 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 lg:gap-4 mt-3 sm:mt-0">
             <Button
               onClick={toggleTheme}
               size="sm"
-              className="p-2 bg-primary hover:bg-primary/90 text-primary-foreground"
+              className="p-2 bg-primary hover:bg-primary/90 text-primary-foreground self-start sm:self-auto"
             >
               {isDarkMode ? (
                 <Sun className="h-4 w-4 text-yellow-500" />
@@ -546,8 +548,8 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
                 <Moon className="h-4 w-4 text-primary-foreground" />
               )}
             </Button>
-            <div className="bg-white dark:bg-gray-700 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-600">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Time Period</label>
+            <div className="bg-white dark:bg-gray-700 rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-sm border border-gray-200 dark:border-gray-600 w-full sm:w-auto">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Time Period</label>
               <CustomDropdown
                 value={timeFilter}
                 onChange={setTimeFilter}
@@ -602,8 +604,8 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.1 }}
-        className={`rounded-2xl border shadow-lg relative overflow-hidden ${
-          showFolderIds ? 'p-8' : 'p-6'
+        className={`rounded-xl sm:rounded-2xl border shadow-lg relative overflow-hidden ${
+          showFolderIds ? 'p-4 sm:p-6 lg:p-8' : 'p-4 sm:p-6'
         } ${
           calculatorResults.costSaved > 1000 
             ? 'bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-200 dark:border-green-700' 
@@ -627,16 +629,16 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
           />
         )}
         
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between relative z-10 gap-8">
-          <div className="flex items-center gap-4">
-            <div className={`p-3 rounded-xl shadow-sm ${
+        <div className="flex flex-col gap-4 sm:gap-6 lg:gap-8 relative z-10">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+            <div className={`p-3 sm:p-4 rounded-lg sm:rounded-xl shadow-sm ${
               calculatorResults.costSaved > 1000 
                 ? 'bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-700' 
                 : calculatorResults.costSaved > 0
                 ? 'bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700'
                 : 'bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600'
             }`}>
-              <DollarSign className={`h-6 w-6 ${
+              <DollarSign className={`h-6 w-6 sm:h-7 sm:w-7 ${
                 calculatorResults.costSaved > 1000 
                   ? 'text-green-600 dark:text-green-400' 
                   : calculatorResults.costSaved > 0
@@ -645,27 +647,27 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
               }`} />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
+              <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-1">
                 Projected Annual Savings
               </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-300">
+              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
                 Based on your current email automation performance
               </p>
           </div>
           </div>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-8">
-            <div className="text-center sm:text-right">
-              <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">Processing Rate</div>
-              <div className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+            <div className="text-center sm:text-left">
+              <div className="text-sm sm:text-base text-gray-600 dark:text-gray-300 mb-1">Processing Rate</div>
+              <div className="text-base sm:text-lg lg:text-xl font-semibold text-gray-800 dark:text-gray-200">
                 {calculatorResults.emailsPerDay > 0 
                   ? `${calculatorResults.emailsPerDay.toFixed(1)} emails/day` 
                   : 'No data available'
                 }
               </div>
             </div>
-            <div className="text-center sm:text-right">
-              <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">Time Saved</div>
-              <div className={`text-lg font-semibold ${
+            <div className="text-center sm:text-left">
+              <div className="text-sm sm:text-base text-gray-600 dark:text-gray-300 mb-1">Time Saved</div>
+              <div className={`text-base sm:text-lg lg:text-xl font-semibold ${
                 calculatorResults.timeSaved > 100 
                   ? 'text-green-600 dark:text-green-400' 
                   : calculatorResults.timeSaved > 0
@@ -678,9 +680,9 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
                 }
               </div>
             </div>
-            <div className="text-center sm:text-right">
-              <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">Annual Savings</div>
-              <div className={`text-2xl font-bold ${
+            <div className="text-center sm:text-left">
+              <div className="text-sm sm:text-base text-gray-600 dark:text-gray-300 mb-1">Annual Savings</div>
+              <div className={`text-xl sm:text-2xl lg:text-3xl font-bold ${
                 calculatorResults.costSaved > 1000 
                   ? 'text-green-600 dark:text-green-400' 
                   : calculatorResults.costSaved > 0
@@ -701,19 +703,19 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
           className={`rounded-2xl border shadow-lg ${
-            showFolderIds ? 'p-8' : 'p-6'
+            showFolderIds ? 'p-4 sm:p-6 lg:p-8' : 'p-4 sm:p-6'
           } bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700`}
         >
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div className="flex items-center gap-4">
-              <div className={`p-3 rounded-xl shadow-sm ${
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 sm:gap-6">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+              <div className={`p-2 sm:p-3 rounded-xl shadow-sm ${
             workflowStatus.status === 'fully_functional' 
                   ? 'bg-blue-100 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700' 
               : workflowStatus.status === 'has_issues'
                   ? 'bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700'
                   : 'bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600'
               }`}>
-                <div className={`w-4 h-4 rounded-full ${
+                <div className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full ${
                 workflowStatus.status === 'fully_functional' 
                     ? 'bg-blue-500 animate-pulse' 
                   : workflowStatus.status === 'has_issues'
@@ -722,7 +724,7 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
               }`}></div>
               </div>
               <div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+                <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1">
                   {workflowStatus.status === 'fully_functional' 
                     ? 'Workflow Fully Active' 
                     : workflowStatus.status === 'has_issues'
@@ -730,7 +732,7 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
                     : 'Workflow Not Active'
                   }
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
                   {workflowStatus.status === 'fully_functional' 
                     ? 'Your automation is processing emails in real-time' 
                     : workflowStatus.status === 'has_issues'
@@ -740,12 +742,12 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
                 </p>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:space-x-2">
               <Button
                 size="sm"
                 onClick={checkWorkflowStatus}
                 disabled={isCheckingWorkflow}
-                className="text-xs bg-primary hover:bg-primary/90 text-primary-foreground"
+                className="text-xs bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto"
               >
                 <RefreshCw className={`h-3 w-3 mr-1 ${isCheckingWorkflow ? 'animate-spin' : ''}`} />
                 Check Status
@@ -756,7 +758,7 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
                   size="sm"
                   onClick={forceWorkflowActivation}
                   disabled={isCheckingWorkflow}
-                  className="text-xs bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
+                  className="text-xs bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700 w-full sm:w-auto"
                 >
                   <Zap className="h-3 w-3 mr-1" />
                   Activate
@@ -772,43 +774,43 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.15 }}
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6"
       >
         <motion.div 
           whileHover={{ scale: 1.02, y: -2 }}
-          className={`bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300 ${
-            showFolderIds ? 'p-8' : 'p-6'
+          className={`bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300 ${
+            showFolderIds ? 'p-4 sm:p-6 lg:p-8' : 'p-4 sm:p-6'
           }`}
         >
-          <div className="flex items-center justify-between mb-6">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-800/30 shadow-sm">
+          <div className="flex items-center justify-between mb-4 sm:mb-6">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-800/30 shadow-sm">
               {getProviderIcon()}
             </div>
-            <div className="flex items-center space-x-1 text-sm font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded-full">
-              <TrendingUp className="w-4 h-4" />
+            <div className="flex items-center space-x-1 text-xs sm:text-sm font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded-full">
+              <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
               <span>+{Math.abs(emailStats.percentageChange30Days || 0).toFixed(0)}%</span>
             </div>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1 sm:space-y-2">
             {isInitialLoad ? (
-              <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+              <div className="h-6 sm:h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
             ) : (
-              <h3 className="text-3xl font-bold text-gray-900 dark:text-white">{emailStats.emailsProcessedLast30Days}</h3>
+              <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{emailStats.emailsProcessedLast30Days}</h3>
             )}
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Emails Processed ({timeFilter === '7d' ? '7 days' : timeFilter === '30d' ? '30 days' : timeFilter === '90d' ? '90 days' : '365 days'})</p>
+            <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-300">Emails Processed ({timeFilter === '7d' ? '7 days' : timeFilter === '30d' ? '30 days' : timeFilter === '90d' ? '90 days' : '365 days'})</p>
             <p className="text-xs text-gray-500 dark:text-gray-400">Avg per day: {calculatorResults.emailsPerDay.toFixed(1)}</p>
                 </div>
         </motion.div>
 
         <motion.div 
           whileHover={{ scale: 1.02, y: -2 }}
-          className={`bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300 ${
-            showFolderIds ? 'p-8' : 'p-6'
+          className={`bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300 ${
+            showFolderIds ? 'p-4 sm:p-6 lg:p-8' : 'p-4 sm:p-6'
           }`}
         >
           <div className="flex items-center justify-between mb-6">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900/30 dark:to-purple-800/30 shadow-sm">
-              <Zap className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900/30 dark:to-purple-800/30 shadow-sm">
+              <Zap className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 dark:text-purple-400" />
             </div>
             <div className="flex items-center space-x-1 text-sm font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded-full">
               <TrendingUp className="w-4 h-4" />
@@ -828,13 +830,13 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
 
         <motion.div 
           whileHover={{ scale: 1.02, y: -2 }}
-          className={`bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300 ${
-            showFolderIds ? 'p-8' : 'p-6'
+          className={`bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300 ${
+            showFolderIds ? 'p-4 sm:p-6 lg:p-8' : 'p-4 sm:p-6'
           }`}
         >
           <div className="flex items-center justify-between mb-6">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30 shadow-sm">
-              <Clock className="w-6 h-6 text-green-600 dark:text-green-400" />
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/30 dark:to-green-800/30 shadow-sm">
+              <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-green-600 dark:text-green-400" />
             </div>
             <div className="flex items-center space-x-1 text-sm font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded-full">
               <TrendingUp className="w-4 h-4" />
@@ -854,13 +856,13 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
 
         <motion.div 
           whileHover={{ scale: 1.02, y: -2 }}
-          className={`bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300 ${
-            showFolderIds ? 'p-8' : 'p-6'
+          className={`bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-300 ${
+            showFolderIds ? 'p-4 sm:p-6 lg:p-8' : 'p-4 sm:p-6'
           }`}
         >
           <div className="flex items-center justify-between mb-6">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br from-emerald-100 to-emerald-200 dark:from-emerald-900/30 dark:to-emerald-800/30 shadow-sm">
-              <DollarSign className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center bg-gradient-to-br from-emerald-100 to-emerald-200 dark:from-emerald-900/30 dark:to-emerald-800/30 shadow-sm">
+              <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div className="flex items-center space-x-1 text-sm font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded-full">
               <TrendingUp className="w-4 h-4" />
@@ -884,22 +886,22 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.25 }}
-        className="bg-white dark:bg-gray-800 rounded-2xl p-10 border border-gray-200 dark:border-gray-700 shadow-lg"
+        className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 lg:p-10 border border-gray-200 dark:border-gray-700 shadow-lg"
       >
-        <div className="flex items-center justify-between mb-10">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-xl shadow-sm">
-              <Target className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6 mb-6 sm:mb-8 lg:mb-10">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-2 sm:p-3 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-xl shadow-sm">
+              <Target className="h-5 w-5 sm:h-6 sm:w-6 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Efficiency Calculator</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-300">Customize your automation parameters</p>
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Efficiency Calculator</h3>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300">Customize your automation parameters</p>
             </div>
           </div>
           <Button
             size="sm"
             onClick={() => setShowFolderIds(!showFolderIds)}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-2"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-2 w-full sm:w-auto"
           >
             <Calculator className="h-4 w-4" />
             {showFolderIds ? 'Hide Calculator' : 'Show Calculator'}
@@ -913,11 +915,11 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="grid grid-cols-1 xl:grid-cols-3 gap-8"
+              className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8"
             >
             {/* Left Column - Configuration */}
             <div className="space-y-6">
-              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-600">
                 <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-6 flex items-center gap-2">
                   <Settings className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                   Configure Your Workflow
@@ -972,7 +974,7 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
               </div>
 
               {/* Live Data Info */}
-              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-600">
                 <h5 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4 flex items-center gap-2">
                   <BarChart3 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                   Live Data & Assumptions
@@ -996,7 +998,7 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
 
             {/* Middle Column - Results */}
             <div className="space-y-6">
-              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-600">
                 <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-6 flex items-center gap-2">
                   <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
                   Annual Savings
@@ -1063,7 +1065,7 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
 
             {/* Right Column - Details */}
             <div className="space-y-6">
-              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-6 border border-gray-200 dark:border-gray-600">
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 sm:p-6 border border-gray-200 dark:border-gray-600">
                 <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-6 flex items-center gap-2">
                   <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                   Calculation Details
@@ -1097,8 +1099,8 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.4 }}
-        className={`bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mb-8 ${
-          showFolderIds ? 'p-8' : 'p-6'
+        className={`bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm mb-6 sm:mb-8 ${
+          showFolderIds ? 'p-4 sm:p-6 lg:p-8' : 'p-4 sm:p-6'
         }`}
       >
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">

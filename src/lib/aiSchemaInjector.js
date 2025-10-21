@@ -2,6 +2,7 @@ import { mergeAIBusinessSchemas } from './aiSchemaMerger.js';
 import { goldStandardSystemPrompt } from './goldStandardSystemPrompt.js';
 import { goldStandardReplyPrompt } from './goldStandardReplyPrompt.js';
 import { labelLibrary, getLabelDescription, generateSystemMessageWithLabels } from './labelLibrary.js';
+import { EnhancedDynamicClassifierGenerator } from './enhancedDynamicClassifierGenerator.js';
 
 /**
  * Extracts AI configuration from merged AI schemas for n8n deployment
@@ -329,8 +330,7 @@ export const loadLabelSchemaForBusinessTypes = async (businessTypes, managers = 
 
 /**
  * Build production-style classifier (Hot Tub Man style) with full keyword integration
- * Includes tertiary categories, special rules, and auto-reply logic
- * ENHANCED: Now uses actual provisioned labels instead of just schema definitions
+ * ENHANCED: Now uses EnhancedDynamicClassifierGenerator for comprehensive business-specific classification
  * @param {object} aiConfig - AI configuration from Layer 1
  * @param {object} labelConfig - Label schema from Layer 3
  * @param {object} businessInfo - Business details
@@ -359,9 +359,70 @@ export const buildProductionClassifier = (aiConfig, labelConfig, businessInfo, m
     },
     managers: managers?.length || 0,
     suppliers: suppliers?.length || 0,
-    actualLabels: actualLabels?.length || 0
+    actualLabels: actualLabels?.length || 0,
+    hasLabelConfig: !!labelConfig,
+    labelConfigLabels: labelConfig?.labels?.length || 0
   });
   
+  // ARCHITECTURAL DECISION: Use EnhancedDynamicClassifierGenerator as primary
+  // The label schemas (labelConfig) now focus on folder structure only
+  // The classifier uses generic, business-agnostic categories that work across all business types
+  // This ensures consistency and maintainability as we scale to hundreds of clients
+  
+  try {
+    const primaryBusinessType = businessInfo.businessTypes?.[0] || businessInfo.businessType || 'General Services';
+    
+    console.log('🚀 Using EnhancedDynamicClassifierGenerator for:', primaryBusinessType);
+    console.log('📋 Classifier strategy: Generic categories + Business-specific tertiary customizations');
+    
+    const classifierGenerator = new EnhancedDynamicClassifierGenerator(
+      primaryBusinessType,
+      businessInfo,
+      managers,
+      suppliers
+    );
+    
+    const enhancedSystemMessage = classifierGenerator.generateClassifierSystemMessage();
+    
+    console.log('✅ Enhanced classifier system message generated:', {
+      messageLength: enhancedSystemMessage.length,
+      hasBusinessName: enhancedSystemMessage.includes(businessInfo.name || 'the business'),
+      hasCategories: enhancedSystemMessage.includes('Categories:'),
+      hasJSONFormat: enhancedSystemMessage.includes('JSON Output Format'),
+      hasTertiaryCategories: enhancedSystemMessage.includes('FromBusiness') && enhancedSystemMessage.includes('ToBusiness'),
+      messagePreview: enhancedSystemMessage.substring(0, 200) + '...'
+    });
+    
+    return enhancedSystemMessage;
+    
+  } catch (error) {
+    console.error('❌ Error generating enhanced classifier, falling back to label-based:', error);
+    
+    // FALLBACK: Use labelConfig if EnhancedDynamicClassifierGenerator fails
+    // This is only used if there's an error with the dynamic generator
+    if (labelConfig?.labels && labelConfig.labels.length > 0) {
+      console.log('⚠️ Falling back to labelConfig-based classifier');
+      return buildOriginalProductionClassifier(aiConfig, labelConfig, businessInfo, managers, suppliers, actualLabels);
+    }
+    
+    // FINAL FALLBACK: Return a minimal classifier
+    console.error('❌ All classifier generation methods failed, returning minimal classifier');
+    return `You are an email classifier for ${businessInfo.name || 'the business'}. 
+Categorize emails and return JSON with summary, primary_category, confidence, and ai_can_reply fields.`;
+  }
+};
+
+/**
+ * Original buildProductionClassifier implementation (fallback)
+ * @param {object} aiConfig - AI configuration from Layer 1
+ * @param {object} labelConfig - Label schema from Layer 3
+ * @param {object} businessInfo - Business details
+ * @param {object} managers - Array of manager objects
+ * @param {object} suppliers - Array of supplier objects
+ * @param {object} actualLabels - Actual labels created in email system (optional)
+ * @returns {string} - Production-ready classifier prompt
+ */
+const buildOriginalProductionClassifier = (aiConfig, labelConfig, businessInfo, managers = [], suppliers = [], actualLabels = null) => {
   let message = `You are an expert email processing and routing system for "${businessInfo.name || 'the business'}".
 
 Your SOLE task is to analyze the provided email and return a single, structured JSON object containing a summary, precise classifications, and extracted entities. Follow all rules precisely.
@@ -499,6 +560,14 @@ Return **only** the JSON object—no extra text.
   message += `  "ai_can_reply": true\n`;
   message += `}\n`;
   message += `\`\`\`\n`;
+  
+  console.log('🔍 DEBUG: buildOriginalProductionClassifier generated system message:', {
+    messageLength: message.length,
+    hasBusinessName: message.includes(businessInfo.name || 'the business'),
+    hasCategories: message.includes('Category Structure'),
+    hasJSONFormat: message.includes('JSON Output Format'),
+    messagePreview: message.substring(0, 200) + '...'
+  });
   
   return message;
 };

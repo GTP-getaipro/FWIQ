@@ -490,35 +490,49 @@ export class UnifiedProfileManager {
   normalizeBusinessTypes(rawData) {
     // Handle multiple business types array (database field: business_types)
     if (rawData.business_types && Array.isArray(rawData.business_types)) {
-      return rawData.business_types;
+      // Filter out undefined values
+      const filteredTypes = rawData.business_types.filter(type => type && type !== 'undefined');
+      if (filteredTypes.length > 0) {
+        return filteredTypes;
+      }
     }
     
     // Handle multiple business types array (camelCase)
     if (rawData.businessTypes && Array.isArray(rawData.businessTypes)) {
-      return rawData.businessTypes;
+      // Filter out undefined values
+      const filteredTypes = rawData.businessTypes.filter(type => type && type !== 'undefined');
+      if (filteredTypes.length > 0) {
+        return filteredTypes;
+      }
     }
     
     // Handle single business type (database field: business_type)
-    if (rawData.business_type) {
+    if (rawData.business_type && rawData.business_type !== 'undefined') {
       return [rawData.business_type];
     }
     
     // Handle single business type (camelCase)
-    if (rawData.businessType) {
+    if (rawData.businessType && rawData.businessType !== 'undefined') {
       return [rawData.businessType];
     }
     
     // Handle business.types
     if (rawData.business?.types && Array.isArray(rawData.business.types)) {
-      return rawData.business.types;
+      // Filter out undefined values
+      const filteredTypes = rawData.business.types.filter(type => type && type !== 'undefined');
+      if (filteredTypes.length > 0) {
+        return filteredTypes;
+      }
     }
     
     // Handle business.type
-    if (rawData.business?.type) {
+    if (rawData.business?.type && rawData.business.type !== 'undefined') {
       return [rawData.business.type];
     }
     
-    return [];
+    // Fallback to default business type if nothing is found
+    console.warn('⚠️ No valid business types found, using default: Hot tub & Spa');
+    return ['Hot tub & Spa'];
   }
 
   /**

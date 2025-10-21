@@ -311,6 +311,11 @@ export const injectOnboardingData = async (clientData) => {
       );
       aiPlaceholders['<<<AI_SYSTEM_MESSAGE>>>'] = productionClassifier;
       console.log('✅ Production-style classifier generated with tertiary categories, special rules, and auto-reply logic');
+      console.log('🔍 DEBUG: AI System Message placeholder set:', {
+        hasClassifier: !!productionClassifier,
+        classifierLength: productionClassifier?.length || 0,
+        placeholderKey: '<<<AI_SYSTEM_MESSAGE>>>'
+      });
     } else {
       // Fallback to label-aware system message
       const labelAwareSystemMessage = buildLabelAwareSystemMessage(aiConfig, labelConfig, businessInfo);
@@ -411,6 +416,17 @@ export const injectOnboardingData = async (clientData) => {
     });
   }
 
+  // Debug: Check if AI_SYSTEM_MESSAGE placeholder exists in replacements
+  if (replacements['<<<AI_SYSTEM_MESSAGE>>>']) {
+    console.log('🔍 DEBUG: AI_SYSTEM_MESSAGE found in replacements:', {
+      hasValue: !!replacements['<<<AI_SYSTEM_MESSAGE>>>'],
+      valueLength: replacements['<<<AI_SYSTEM_MESSAGE>>>']?.length || 0,
+      valuePreview: replacements['<<<AI_SYSTEM_MESSAGE>>>']?.substring(0, 100) + '...'
+    });
+  } else {
+    console.warn('⚠️ AI_SYSTEM_MESSAGE placeholder not found in replacements!');
+  }
+  
   // Apply all replacements
   for (const [placeholder, value] of Object.entries(replacements)) {
     // Ensure value is a string and sanitize it for workflow use

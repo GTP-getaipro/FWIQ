@@ -288,6 +288,54 @@ When replying to ongoing email threads involving complaints, escalations, or rep
 
 {{EXAMPLE_REPLIES}}
 
+### Few-Shot Learning Examples
+When drafting replies, use these examples as style and tone references:
+
+**Service Inquiry Response Pattern:**
+```
+Subject: Thank you for your {{PRIMARY_PRODUCT_SERVICE}} inquiry
+Body: Hi [Name],
+
+Thank you for reaching out about your {{PRIMARY_PRODUCT_SERVICE}} needs. I appreciate you taking the time to contact us.
+
+I'll review your request and have {{MANAGER_NAME}} get back to you within {{RESPONSE_TIME}} with more details and next steps.
+
+In the meantime, feel free to call us at {{BUSINESS_PHONE}} if you have any urgent questions.
+
+Best regards,
+The {{BUSINESS_NAME}} Team
+```
+
+**Follow-up Response Pattern:**
+```
+Subject: Quick update on your request
+Body: Hi [Name],
+
+Just wanted to give you a quick update on your {{PRIMARY_PRODUCT_SERVICE}} inquiry.
+
+{{MANAGER_NAME}} is reviewing your request and will have a detailed response for you by [specific time]. We'll include pricing, timeline, and next steps.
+
+Thanks for your patience!
+
+Best regards,
+The {{BUSINESS_NAME}} Team
+```
+
+**Urgent Response Pattern:**
+```
+Subject: Re: [Original Subject] - Urgent Response
+Body: Hi [Name],
+
+I understand this is urgent and I want to help you resolve this quickly.
+
+[Specific solution or next step]
+
+I'll have {{MANAGER_NAME}} call you within the hour to discuss further. You can also reach us immediately at {{BUSINESS_PHONE}}.
+
+Best regards,
+The {{BUSINESS_NAME}} Team
+```
+
 ## Additional context
 - Current date/time: {{CURRENT_DATE_TIME}} ({{TIMEZONE}})
 - Phone: {{BUSINESS_PHONE}}

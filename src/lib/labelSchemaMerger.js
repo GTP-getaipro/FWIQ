@@ -327,44 +327,48 @@ const mergeDomainDetection = (schemas) => {
  * @returns {object} - Merged label schema with production features
  */
 export const mergeBusinessTypeSchemas = (businessTypes, managers = [], suppliers = []) => {
-  // Validate input
-  if (!Array.isArray(businessTypes) || businessTypes.length === 0) {
-    console.warn('No business types provided, using base schema');
+  // Validate input and filter out undefined values
+  const validBusinessTypes = Array.isArray(businessTypes) 
+    ? businessTypes.filter(type => type && type !== 'undefined' && type !== null)
+    : [];
+    
+  if (validBusinessTypes.length === 0) {
+    console.warn('No valid business types provided, using base schema');
     return getCompleteSchemaForBusiness('Pools & Spas', managers, suppliers); // Default fallback
   }
 
   // If only one business type, return its schema directly
-  if (businessTypes.length === 1) {
-    const schema = getSchemaForBusinessType(businessTypes[0], managers, suppliers);
+  if (validBusinessTypes.length === 1) {
+    const schema = getSchemaForBusinessType(validBusinessTypes[0], managers, suppliers);
     return schema || getCompleteSchemaForBusiness('Pools & Spas', managers, suppliers);
   }
 
   // Load all schemas for selected business types
-  const schemas = businessTypes
+  const schemas = validBusinessTypes
     .map(type => getSchemaForBusinessType(type, managers, suppliers))
     .filter(schema => schema !== null);
 
   // If no valid schemas found, use base template
   if (schemas.length === 0) {
-    console.warn('No valid schemas found for business types:', businessTypes);
+    console.warn('No valid schemas found for business types:', validBusinessTypes);
     return getCompleteSchemaForBusiness('Pools & Spas', managers, suppliers);
   }
 
-  console.log(`🔄 Merging ${schemas.length} label schemas for:`, businessTypes);
+  console.log(`🔄 Merging ${schemas.length} label schemas for:`, validBusinessTypes);
 
   // Merge all components
   const mergedSchema = {
     meta: {
       schemaVersion: "v3.0",
-      industry: businessTypes.join(' + '),
+      industry: validBusinessTypes.join(' + '),
       author: "AI Schema Merger - Multi-Business Production",
       lastUpdated: new Date().toISOString(),
       source: "merged",
-      sourceBusinessTypes: businessTypes,
+      sourceBusinessTypes: validBusinessTypes,
       enhancedClassification: true,
       productionStyle: true
     },
-    description: `Merged label schema for ${businessTypes.join(' and ')} businesses with production features`,
+    description: `Merged label schema for ${validBusinessTypes.join(' and ')} businesses with production features`,
     rootOrder: mergeRootOrder(schemas),
     labels: mergeLabels(schemas),
     dynamicVariables: mergeDynamicVariables(schemas)

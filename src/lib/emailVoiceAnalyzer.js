@@ -23,26 +23,49 @@ class EmailVoiceAnalyzer {
    */
   async analyzeEmailVoice(userId, businessType) {
     try {
+      console.log('🎤 analyzeEmailVoice START:', { userId, businessType, timestamp: new Date().toISOString() });
+      
       // Check if we already have a recent analysis
       const cachedAnalysis = await this.getCachedAnalysis(userId);
+      console.log('🔍 Cache check result:', { 
+        hasCached: !!cachedAnalysis, 
+        isRecent: cachedAnalysis ? this.isAnalysisRecent(cachedAnalysis) : false,
+        emailCount: cachedAnalysis?.emailCount || 0 
+      });
+      
       if (cachedAnalysis && this.isAnalysisRecent(cachedAnalysis) && cachedAnalysis.emailCount > 0) {
+        console.log('✅ Using cached analysis (recent and has emails)');
         return cachedAnalysis;
       }
       
       // If cached analysis has no emails, force a fresh analysis
       if (cachedAnalysis && cachedAnalysis.emailCount === 0) {
-        // Force fresh analysis silently
+        console.log('⚠️ Cached analysis has 0 emails - forcing fresh analysis');
       }
 
       // Get user's email integration
+      console.log('🔍 Looking for email integration...');
       const integration = await this.getEmailIntegration(userId);
       if (!integration) {
+        console.error('❌ No email integration found for user:', userId);
         throw new Error('No email integration found');
       }
+      console.log('✅ Found integration:', { provider: integration.provider, id: integration.id });
 
       // Fetch recent emails
+      console.log('📧 Starting email fetch...', { provider: integration.provider });
+      const startFetchTime = Date.now();
       const emails = await this.fetchRecentEmails(userId, integration);
+      const fetchDuration = Date.now() - startFetchTime;
+      
+      console.log('📧 Email fetch completed:', { 
+        emailCount: emails?.length || 0, 
+        duration: `${fetchDuration}ms`,
+        provider: integration.provider 
+      });
+      
       if (!emails || emails.length === 0) {
+        console.warn('⚠️ No emails found - returning default profile');
         // Return a default voice analysis silently
         return {
           tone: 'professional',
@@ -52,15 +75,21 @@ class EmailVoiceAnalyzer {
           confidence: 0,
           sampleSize: 0,
           skipped: true,
-          reason: 'No emails found in database yet'
+          reason: 'No emails found after fetching'
         };
       }
 
       // Analyze writing style
+      console.log('🔍 Starting voice analysis...', { emailCount: emails.length });
+      const analysisStartTime = Date.now();
       const voiceAnalysis = await this.performVoiceAnalysis(emails, businessType);
+      const analysisDuration = Date.now() - analysisStartTime;
+      console.log('✅ Voice analysis completed:', { duration: `${analysisDuration}ms`, tone: voiceAnalysis.tone });
 
       // Store analysis results
+      console.log('💾 Storing voice analysis...');
       await this.storeVoiceAnalysis(userId, voiceAnalysis);
+      console.log('✅ Voice analysis stored successfully');
 
       // Voice analysis completed successfully
       return voiceAnalysis;
@@ -143,61 +172,165 @@ class EmailVoiceAnalyzer {
 
   /**
    * Fetch recent SENT emails for analysis (Gmail or Outlook)
-   * ENHANCED: Direct API calls for both providers, fetches SENT emails only
+   * ENHANCED: Direct API calls with retry logic, token refresh, and multiple fallbacks
    */
   async fetchRecentEmails(userId, integration) {
-    try {
-      // Fetching SENT emails for voice analysis
+    const maxRetries = 3;
+    let attempt = 0;
+    
+    while (attempt < maxRetries) {
+      attempt++;
       
-      // Use oauthTokenManager to get fresh token
-      const { getValidAccessToken } = await import('./oauthTokenManager.js');
-      const accessToken = await getValidAccessToken(userId, integration.provider);
-      
-      if (!accessToken) {
-        throw new Error(`No valid access token for ${integration.provider}`);
-      }
-
-      let sentEmails = [];
-
-      // Provider-specific API calls for SENT emails
-      if (integration.provider === 'gmail') {
-        sentEmails = await this.fetchGmailSentEmails(accessToken, 50);
-      } else if (integration.provider === 'outlook') {
-        sentEmails = await this.fetchOutlookSentEmails(accessToken, 50);
-      }
-
-      // Note: Email storage in queue is optional - voice analysis works directly with fetched emails
-      // The emails are analyzed in-memory without requiring database storage
-      
-      return sentEmails;
-
-    } catch (error) {
-      console.error(`❌ Error fetching ${integration.provider} sent emails:`, error);
-      
-      // Fallback: Try database queue (might have some historical emails)
-      console.log('📧 API failed, trying database queue fallback...');
       try {
-        const { data: queueEmails, error: queueError } = await supabase
-          .from('email_queue')
-          .select('*')
-          .eq('client_id', userId)
-          .eq('direction', 'outbound') // Only sent emails
-          .order('created_at', { ascending: false })
-          .limit(50);
-
-        if (queueError) {
-          console.warn('⚠️ Database queue fallback failed:', queueError.message);
-          return [];
+        console.log(`🔄 Fetching sent emails (attempt ${attempt}/${maxRetries})...`);
+        
+        // Use oauthTokenManager to get fresh token
+        const { getValidAccessToken } = await import('./oauthTokenManager.js');
+        const accessToken = await getValidAccessToken(userId, integration.provider);
+        
+        if (!accessToken) {
+          throw new Error(`No valid access token for ${integration.provider}`);
         }
 
-        console.log(`📬 Fallback: Found ${queueEmails?.length || 0} sent emails in database`);
-        return queueEmails || [];
+        let sentEmails = [];
 
-      } catch (fallbackError) {
-        console.error('❌ All fetch methods failed:', fallbackError.message);
-        return []; // Return empty array, graceful degradation
+        // Provider-specific API calls for SENT emails with enhanced parameters
+        if (integration.provider === 'gmail') {
+          // Try multiple fetch strategies for Gmail
+          try {
+            // Strategy 1: Fetch from SENT label
+            sentEmails = await this.fetchGmailSentEmails(accessToken, 50);
+            
+            // Strategy 2: If no emails, try fetching with broader criteria
+            if (sentEmails.length === 0) {
+              console.log('📧 No emails in SENT label, trying broader search...');
+              sentEmails = await this.fetchGmailSentEmailsBroadSearch(accessToken, 50);
+            }
+          } catch (gmailError) {
+            console.warn('Gmail fetch failed, trying alternative method:', gmailError.message);
+            sentEmails = await this.fetchGmailSentEmailsBroadSearch(accessToken, 50);
+          }
+          
+        } else if (integration.provider === 'outlook') {
+          // Try multiple fetch strategies for Outlook
+          try {
+            // Strategy 1: Fetch from SentItems folder
+            sentEmails = await this.fetchOutlookSentEmails(accessToken, 50);
+            
+            // Strategy 2: If no emails, try fetching with broader criteria
+            if (sentEmails.length === 0) {
+              console.log('📧 No emails in SentItems, trying broader search...');
+              sentEmails = await this.fetchOutlookSentEmailsBroadSearch(accessToken, 50);
+            }
+          } catch (outlookError) {
+            console.warn('Outlook fetch failed, trying alternative method:', outlookError.message);
+            sentEmails = await this.fetchOutlookSentEmailsBroadSearch(accessToken, 50);
+          }
+        }
+
+        // Filter out automated/system emails for better voice learning
+        sentEmails = this.filterQualityEmails(sentEmails);
+        
+        console.log(`✅ Successfully fetched ${sentEmails.length} quality sent emails`);
+        
+        if (sentEmails.length > 0) {
+          // Note: Email storage in queue is optional - voice analysis works directly with fetched emails
+          return sentEmails;
+        }
+        
+        // If no emails found, try next attempt after delay
+        if (attempt < maxRetries) {
+          console.log(`⏳ No emails found, waiting before retry ${attempt + 1}...`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          continue;
+        }
+
+      } catch (error) {
+        console.error(`❌ Error fetching emails (attempt ${attempt}/${maxRetries}):`, error.message);
+        
+        if (attempt < maxRetries) {
+          // Wait before retry with exponential backoff
+          const delay = Math.min(1000 * Math.pow(2, attempt), 5000);
+          console.log(`⏳ Waiting ${delay}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
       }
     }
+    
+    // All retries exhausted, try database fallback
+    console.log('📧 All API attempts failed, trying database queue fallback...');
+    try {
+      const { data: queueEmails, error: queueError } = await supabase
+        .from('email_queue')
+        .select('*')
+        .eq('client_id', userId)
+        .eq('direction', 'outbound') // Only sent emails
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (queueError) {
+        console.warn('⚠️ Database queue fallback failed:', queueError.message);
+        return [];
+      }
+
+      const filteredEmails = this.filterQualityEmails(queueEmails || []);
+      console.log(`📬 Fallback: Found ${filteredEmails.length} quality sent emails in database`);
+      return filteredEmails;
+
+    } catch (fallbackError) {
+      console.error('❌ All fetch methods failed:', fallbackError.message);
+      return []; // Return empty array, graceful degradation
+    }
+  }
+  
+  /**
+   * Filter out automated/system emails for better voice learning
+   * ENHANCED: Removes auto-replies, notifications, and system emails
+   */
+  filterQualityEmails(emails) {
+    if (!Array.isArray(emails) || emails.length === 0) {
+      return [];
+    }
+    
+    const filteredEmails = emails.filter(email => {
+      const subject = (email.subject || '').toLowerCase();
+      const body = (email.body || '').toLowerCase();
+      
+      // Filter out automated emails
+      const automatedPatterns = [
+        'automatic reply',
+        'out of office',
+        'auto-reply',
+        'do not reply',
+        'noreply',
+        'no-reply',
+        'automated message',
+        'undeliverable',
+        'delivery failure',
+        'mailer-daemon',
+        'postmaster',
+        'notification',
+        '[automated]',
+        'system message'
+      ];
+      
+      const isAutomated = automatedPatterns.some(pattern => 
+        subject.includes(pattern) || body.includes(pattern)
+      );
+      
+      // Filter out emails that are too short (likely not meaningful)
+      const bodyLength = body.length;
+      const isTooShort = bodyLength < 50;
+      
+      // Filter out emails with no body
+      const hasNoBody = !body || body.trim() === '';
+      
+      return !isAutomated && !isTooShort && !hasNoBody;
+    });
+    
+    console.log(`🔍 Filtered ${emails.length} emails to ${filteredEmails.length} quality emails`);
+    return filteredEmails;
   }
 
   /**
@@ -298,6 +431,103 @@ class EmailVoiceAnalyzer {
     } catch (error) {
       console.error('❌ Outlook sent emails fetch failed:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Fetch Gmail sent emails with broader search criteria
+   * ENHANCED: Fallback method for when standard SENT label query fails
+   */
+  async fetchGmailSentEmailsBroadSearch(accessToken, maxResults = 50) {
+    try {
+      // Use broader search: from:me (emails sent by the authenticated user)
+      const response = await fetch(
+        `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=${maxResults}&q=from:me`,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Gmail API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const messages = data.messages || [];
+
+      // Fetch full message details for each
+      const emails = await Promise.all(
+        messages.map(async (msg) => {
+          try {
+            const msgResponse = await fetch(
+              `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${accessToken}`,
+                  'Content-Type': 'application/json'
+                }
+              }
+            );
+
+            if (!msgResponse.ok) {
+              return null;
+            }
+
+            const fullMsg = await msgResponse.json();
+            return this.parseGmailMessage(fullMsg);
+          } catch (error) {
+            console.warn(`Failed to fetch Gmail message ${msg.id}:`, error.message);
+            return null;
+          }
+        })
+      );
+
+      const validEmails = emails.filter(email => email !== null);
+      console.log(`✅ Fetched ${validEmails.length} Gmail sent emails (broad search)`);
+      return validEmails;
+
+    } catch (error) {
+      console.error('❌ Gmail broad search failed:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Fetch Outlook sent emails with broader search criteria
+   * ENHANCED: Fallback method for when standard SentItems query fails
+   */
+  async fetchOutlookSentEmailsBroadSearch(accessToken, maxResults = 50) {
+    try {
+      // Use broader search: filter messages where user is in FROM field
+      const response = await fetch(
+        `https://graph.microsoft.com/v1.0/me/messages?$top=${maxResults}&$filter=from/emailAddress/address ne null&$select=id,subject,body,from,toRecipients,sentDateTime&$orderby=sentDateTime desc`,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Outlook API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const messages = data.value || [];
+
+      // Parse Outlook messages to unified format
+      const emails = messages.map(msg => this.parseOutlookMessage(msg));
+
+      console.log(`✅ Fetched ${emails.length} Outlook sent emails (broad search)`);
+      return emails;
+
+    } catch (error) {
+      console.error('❌ Outlook broad search failed:', error);
+      return [];
     }
   }
 
@@ -804,14 +1034,45 @@ Body: ${email.body.substring(0, 500)}...
       // Convert analysis to communication_styles format (3-Layer Schema compatible)
       const styleProfile = this.convertToStyleProfile(analysis);
       
+      // ENHANCED: Add richer metadata and examples
+      const enhancedStyleProfile = {
+        ...styleProfile,
+        metadata: {
+          analysisVersion: '2.0',
+          analysisType: 'initial_historical',
+          emailCount: analysis.sampleSize || analysis.emailCount || 0,
+          analyzedAt: new Date().toISOString(),
+          dataQuality: this.calculateDataQuality(analysis),
+          confidenceScore: analysis.confidence || 0,
+          businessType: analysis.businessType || 'unknown',
+          source: analysis.source || 'email_history_analysis'
+        },
+        // Add few-shot examples if available
+        fewShotExamples: this.extractFewShotExamples(analysis),
+        // Add signature phrases for consistent style
+        signaturePhrases: analysis.commonPhrases || styleProfile.signaturePhrases || [],
+        // Add communication patterns
+        patterns: {
+          greetingStyle: analysis.greetingPattern || styleProfile.greetingPattern || 'Hi [Name],',
+          closingStyle: analysis.closingPattern || styleProfile.closingPattern || 'Best regards,',
+          responseLength: analysis.emailStructure || 'medium',
+          technicalLevel: analysis.technicalLevel || 'moderate',
+          urgencyHandling: analysis.urgencyHandling || 'responsive'
+        }
+      };
+      
       // Store in communication_styles table (PRIMARY - used by n8n deployment)
       const { error: styleError } = await supabase
         .from('communication_styles')
         .upsert({
           user_id: userId,
-          style_profile: styleProfile,
+          style_profile: enhancedStyleProfile,
           learning_count: 0, // Initial analysis, not from AI-Human comparisons
-          last_updated: new Date().toISOString()
+          last_updated: new Date().toISOString(),
+          // ENHANCED: Add status tracking
+          analysis_status: 'completed',
+          analysis_completed_at: new Date().toISOString(),
+          email_sample_count: analysis.sampleSize || analysis.emailCount || 0
         }, {
           onConflict: 'user_id'
         });
@@ -819,7 +1080,12 @@ Body: ${email.body.substring(0, 500)}...
       if (styleError) {
         console.warn('⚠️ Could not store in communication_styles (table may not exist):', styleError.message);
       } else {
-        // Voice profile stored in communication_styles table
+        console.log('✅ Voice profile stored in communication_styles with enhanced metadata:', {
+          emailCount: analysis.sampleSize || analysis.emailCount || 0,
+          fewShotExamples: enhancedStyleProfile.fewShotExamples?.length || 0,
+          signaturePhrases: enhancedStyleProfile.signaturePhrases?.length || 0,
+          dataQuality: enhancedStyleProfile.metadata.dataQuality
+        });
       }
 
       // Also store in profiles for backward compatibility
@@ -1029,6 +1295,7 @@ Body: ${email.body.substring(0, 500)}...
 
   /**
    * Select the best examples from a category for few-shot learning
+   * ENHANCED: Improved selection criteria and formatting
    * @param {Array} emails - Emails in the category
    * @param {string} category - Category name
    * @returns {Array} - Best examples for this category
@@ -1040,17 +1307,27 @@ Body: ${email.body.substring(0, 500)}...
       score: this.scoreEmailForExample(email, category)
     }));
     
-    // Sort by score (highest first) and take top 2-3
+    // Sort by score (highest first) and take top 3-5
     const sortedEmails = scoredEmails
       .sort((a, b) => b.score - a.score)
-      .slice(0, 3);
+      .slice(0, 5);
     
-    // Format examples for the AI system
-    return sortedEmails.map(email => ({
-      subject: email.subject,
+    // Format examples for the AI system with enhanced metadata
+    return sortedEmails.map((email, index) => ({
+      subject: email.subject || 'No Subject',
       body: this.cleanEmailBody(email.body),
       context: this.extractContext(email, category),
-      quality: email.score
+      quality: email.score,
+      category: category,
+      exampleId: `${category.toLowerCase()}_example_${index + 1}`,
+      wordCount: this.getWordCount(email.body),
+      hasGreeting: this.hasGreeting(email.body),
+      hasClosing: this.hasClosing(email.body),
+      tone: this.extractTone(email.body),
+      formality: this.extractFormality(email.body),
+      helpfulness: this.assessHelpfulness(email.body),
+      // Add business-specific context
+      businessRelevance: this.assessBusinessRelevance(email.body, category)
     }));
   }
 
@@ -1318,6 +1595,237 @@ Body: ${email.body.substring(0, 500)}...
     }
     
     return await this.analyzeEmailVoice(userId, businessType);
+  }
+  
+  /**
+   * Calculate data quality score based on analysis results
+   * ENHANCED: Provides quality metric for voice learning effectiveness
+   */
+  calculateDataQuality(analysis) {
+    let score = 0;
+    let maxScore = 100;
+    
+    // Email count contributes to quality (max 30 points)
+    const emailCount = analysis.sampleSize || analysis.emailCount || 0;
+    if (emailCount >= 50) score += 30;
+    else if (emailCount >= 30) score += 25;
+    else if (emailCount >= 15) score += 20;
+    else if (emailCount >= 5) score += 15;
+    else score += Math.min(emailCount * 3, 15);
+    
+    // Confidence score contributes (max 25 points)
+    const confidence = analysis.confidence || 0;
+    score += confidence * 25;
+    
+    // Presence of examples contributes (max 20 points)
+    if (analysis.examples && analysis.examples.length > 0) {
+      score += Math.min(analysis.examples.length * 5, 20);
+    }
+    
+    // Presence of common phrases contributes (max 15 points)
+    if (analysis.commonPhrases && analysis.commonPhrases.length > 0) {
+      score += Math.min(analysis.commonPhrases.length * 3, 15);
+    }
+    
+    // Non-skipped analysis gets bonus (max 10 points)
+    if (!analysis.skipped && !analysis.fallbackReason) {
+      score += 10;
+    }
+    
+    return Math.min(Math.round(score), maxScore);
+  }
+  
+  /**
+   * Get word count of email body
+   * @param {string} body - Email body text
+   * @returns {number} - Word count
+   */
+  getWordCount(body) {
+    if (!body) return 0;
+    const cleanBody = this.cleanEmailBody(body);
+    return cleanBody.split(/\s+/).filter(word => word.length > 0).length;
+  }
+
+  /**
+   * Check if email has a greeting
+   * @param {string} body - Email body text
+   * @returns {boolean} - Has greeting
+   */
+  hasGreeting(body) {
+    if (!body) return false;
+    const cleanBody = this.cleanEmailBody(body).toLowerCase();
+    const greetings = ['hi ', 'hello ', 'dear ', 'good morning', 'good afternoon', 'good evening'];
+    return greetings.some(greeting => cleanBody.startsWith(greeting));
+  }
+
+  /**
+   * Check if email has a closing
+   * @param {string} body - Email body text
+   * @returns {boolean} - Has closing
+   */
+  hasClosing(body) {
+    if (!body) return false;
+    const cleanBody = this.cleanEmailBody(body).toLowerCase();
+    const closings = ['best regards', 'sincerely', 'thanks', 'thank you', 'cheers', 'kind regards'];
+    return closings.some(closing => cleanBody.includes(closing));
+  }
+
+  /**
+   * Extract tone from email body
+   * @param {string} body - Email body text
+   * @returns {string} - Detected tone
+   */
+  extractTone(body) {
+    if (!body) return 'neutral';
+    const cleanBody = this.cleanEmailBody(body).toLowerCase();
+    
+    if (cleanBody.includes('urgent') || cleanBody.includes('asap') || cleanBody.includes('immediately')) {
+      return 'urgent';
+    } else if (cleanBody.includes('thank') || cleanBody.includes('appreciate') || cleanBody.includes('grateful')) {
+      return 'grateful';
+    } else if (cleanBody.includes('sorry') || cleanBody.includes('apologize') || cleanBody.includes('regret')) {
+      return 'apologetic';
+    } else if (cleanBody.includes('excited') || cleanBody.includes('looking forward') || cleanBody.includes('thrilled')) {
+      return 'enthusiastic';
+    } else if (cleanBody.includes('concerned') || cleanBody.includes('worried') || cleanBody.includes('issue')) {
+      return 'concerned';
+    }
+    
+    return 'professional';
+  }
+
+  /**
+   * Extract formality level from email body
+   * @param {string} body - Email body text
+   * @returns {string} - Formality level
+   */
+  extractFormality(body) {
+    if (!body) return 'moderate';
+    const cleanBody = this.cleanEmailBody(body).toLowerCase();
+    
+    // Formal indicators
+    const formalWords = ['sincerely', 'respectfully', 'cordially', 'regards', 'dear sir', 'dear madam'];
+    const informalWords = ['hey', 'hi there', 'cheers', 'thanks!', 'awesome', 'cool'];
+    
+    const formalCount = formalWords.filter(word => cleanBody.includes(word)).length;
+    const informalCount = informalWords.filter(word => cleanBody.includes(word)).length;
+    
+    if (formalCount > informalCount) return 'formal';
+    if (informalCount > formalCount) return 'informal';
+    return 'moderate';
+  }
+
+  /**
+   * Assess helpfulness of email content
+   * @param {string} body - Email body text
+   * @returns {number} - Helpfulness score (0-100)
+   */
+  assessHelpfulness(body) {
+    if (!body) return 0;
+    const cleanBody = this.cleanEmailBody(body).toLowerCase();
+    
+    let score = 50; // Base score
+    
+    // Positive indicators
+    if (cleanBody.includes('help') || cleanBody.includes('assist')) score += 10;
+    if (cleanBody.includes('solution') || cleanBody.includes('resolve')) score += 10;
+    if (cleanBody.includes('next step') || cleanBody.includes('follow up')) score += 10;
+    if (cleanBody.includes('contact') || cleanBody.includes('call')) score += 5;
+    if (cleanBody.includes('schedule') || cleanBody.includes('appointment')) score += 5;
+    if (cleanBody.includes('information') || cleanBody.includes('details')) score += 5;
+    
+    // Negative indicators
+    if (cleanBody.includes('unfortunately') || cleanBody.includes('cannot')) score -= 5;
+    if (cleanBody.includes('busy') || cleanBody.includes('unavailable')) score -= 5;
+    
+    return Math.max(0, Math.min(100, score));
+  }
+
+  /**
+   * Assess business relevance of email content
+   * @param {string} body - Email body text
+   * @param {string} category - Email category
+   * @returns {number} - Relevance score (0-100)
+   */
+  assessBusinessRelevance(body, category) {
+    if (!body) return 0;
+    const cleanBody = this.cleanEmailBody(body).toLowerCase();
+    
+    let score = 60; // Base relevance score
+    
+    // Category-specific relevance indicators
+    const categoryKeywords = {
+      'Support': ['help', 'issue', 'problem', 'fix', 'repair', 'service'],
+      'Sales': ['quote', 'price', 'cost', 'buy', 'purchase', 'order'],
+      'Urgent': ['urgent', 'asap', 'emergency', 'immediately', 'critical'],
+      'General': ['inquiry', 'question', 'information', 'details'],
+      'Follow-up': ['follow up', 'checking', 'update', 'status', 'progress']
+    };
+    
+    const keywords = categoryKeywords[category] || [];
+    const keywordMatches = keywords.filter(keyword => cleanBody.includes(keyword)).length;
+    score += keywordMatches * 5;
+    
+    // Business context indicators
+    if (cleanBody.includes('customer') || cleanBody.includes('client')) score += 5;
+    if (cleanBody.includes('service') || cleanBody.includes('business')) score += 5;
+    if (cleanBody.includes('appointment') || cleanBody.includes('schedule')) score += 5;
+    
+    return Math.max(0, Math.min(100, score));
+  }
+
+  /**
+   * Extract few-shot examples from analysis
+   * ENHANCED: Converts email examples into few-shot prompts for AI training
+   */
+  extractFewShotExamples(analysis) {
+    if (!analysis.examples || analysis.examples.length === 0) {
+      return [];
+    }
+    
+    // Take up to 5 best examples
+    const examples = analysis.examples.slice(0, 5).map((example, index) => ({
+      id: `example_${index + 1}`,
+      category: example.category || 'general',
+      userEmail: example.human_reply || example.userEmail || '',
+      context: example.context || example.subject || 'Email communication',
+      tone: analysis.tone || 'professional',
+      responseLength: example.human_reply?.length || 0,
+      quality: this.calculateExampleQuality(example, analysis),
+      timestamp: example.timestamp || new Date().toISOString()
+    }));
+    
+    // Filter out low-quality examples
+    return examples.filter(ex => ex.quality >= 0.5 && ex.responseLength > 50);
+  }
+  
+  /**
+   * Calculate quality score for individual example
+   */
+  calculateExampleQuality(example, analysis) {
+    let quality = 0.5; // Base quality
+    
+    // Example has actual content
+    if (example.human_reply && example.human_reply.length > 100) {
+      quality += 0.2;
+    }
+    
+    // Example has category
+    if (example.category) {
+      quality += 0.1;
+    }
+    
+    // Example matches learned tone
+    if (analysis.tone && example.tone === analysis.tone) {
+      quality += 0.1;
+    }
+    
+    // Example has context
+    if (example.context || example.subject) {
+      quality += 0.1;
+    }
+    
+    return Math.min(quality, 1.0);
   }
 }
 
