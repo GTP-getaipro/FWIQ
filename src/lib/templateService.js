@@ -19,38 +19,22 @@ export function clearTemplateCache() {
  */
 async function loadTemplateForProvider(provider = 'gmail') {
   try {
-    // Try to import the template as a module first (more reliable in production)
-    try {
-      const templateModule = provider === 'outlook' 
-        ? await import('../templates/outlook-template.json')
-        : await import('../templates/gmail-template.json');
-      
-      const template = templateModule.default || templateModule;
-      console.log(`✅ Production ${provider} template loaded via import:`, {
-        nodes: template.nodes?.length,
-        version: template.meta?.templateVersion
-      });
-      return template;
-    } catch (importError) {
-      console.warn(`⚠️ Template import failed, trying fetch:`, importError.message);
-      
-      // Fallback to fetch if import fails
-      const timestamp = Date.now();
-      const templateFile = provider === 'outlook' 
-        ? 'outlook-workflow-template.json' 
-        : 'gmail-workflow-template.json';
-      
-      const response = await fetch(`/templates/${templateFile}?t=${timestamp}`);
-      if (!response.ok) {
-        throw new Error(`Failed to load ${provider} template: ${response.statusText}`);
-      }
-      const template = await response.json();
-      console.log(`✅ Production ${provider} template loaded via fetch:`, {
-        nodes: template.nodes?.length,
-        version: template.meta?.templateVersion
-      });
-      return template;
+    // Load template from public directory via fetch
+    const timestamp = Date.now();
+    const templateFile = provider === 'outlook' 
+      ? 'outlook-workflow-template.json' 
+      : 'gmail-workflow-template.json';
+    
+    const response = await fetch(`/templates/${templateFile}?t=${timestamp}`);
+    if (!response.ok) {
+      throw new Error(`Failed to load ${provider} template: ${response.statusText}`);
     }
+    const template = await response.json();
+    console.log(`✅ Production ${provider} template loaded via fetch:`, {
+      nodes: template.nodes?.length,
+      version: template.meta?.templateVersion
+    });
+    return template;
   } catch (error) {
     console.error(`❌ Failed to load ${provider} template:`, error);
     // Return a minimal fallback
