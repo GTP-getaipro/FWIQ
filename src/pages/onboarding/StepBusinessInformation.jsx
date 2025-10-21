@@ -635,7 +635,9 @@ const StepBusinessInformation = () => {
     if (error) {
       toast({ variant: 'destructive', title: 'Failed to save business information', description: error.message });
     } else {
-      // Create n8n credentials with business name (non-blocking)
+      // Create n8n credentials with business name (this is the main credential creation step)
+      console.log('🔐 Step 4: Creating N8N credentials with business name...');
+      
       // First, get only the connected providers to avoid errors
       const { data: integrations, error: integrationsError } = await supabase
         .from('integrations')
@@ -652,20 +654,36 @@ const StepBusinessInformation = () => {
         connectedProviders = ['gmail', 'outlook'];
       } else {
         connectedProviders = integrations?.map(i => i.provider) || [];
-        console.log('🔍 Found connected providers:', connectedProviders);
+        console.log('🔍 Found connected providers for credential creation:', connectedProviders);
       }
 
       // Only attempt credential creation for connected providers
       if (connectedProviders.length > 0) {
+        console.log(`🚀 Creating N8N credentials for ${connectedProviders.length} providers with business name: "${values.businessName}"`);
+        
         createN8nCredentialsWithBusinessName(user.id, values.businessName, businessCategory, connectedProviders)
           .then(results => {
-            console.log('✅ N8N credentials created with business name:', results);
+            console.log('✅ N8N credentials created successfully with business name:', results);
+            toast({
+              title: 'N8N Credentials Created!',
+              description: `Credentials created for ${connectedProviders.join(' and ')} with business name "${values.businessName}"`,
+            });
           })
           .catch(err => {
             console.warn('⚠️ Failed to create n8n credentials with business name (non-critical):', err);
+            toast({
+              variant: 'destructive',
+              title: 'Credential Creation Warning',
+              description: 'Business info saved, but N8N credentials creation failed. This will be retried during deployment.',
+            });
           });
       } else {
         console.log('⚠️ No connected email providers found, skipping credential creation');
+        toast({
+          variant: 'destructive',
+          title: 'No Email Connections',
+          description: 'Please connect your email in step 1 before proceeding.',
+        });
       }
 
       // Set flag that form was successfully submitted

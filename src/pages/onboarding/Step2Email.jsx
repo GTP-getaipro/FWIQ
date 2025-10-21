@@ -136,13 +136,7 @@ const Step2Email = () => {
 
   // Helper function to validate integration
   const validateIntegrationToken = (integration) => {
-    const { n8n_credential_id, provider, status } = integration;
-    
-    // Check if n8n credential exists (optional for now due to N8N API issues)
-    if (!n8n_credential_id) {
-      console.log(`⚠️ ${provider}: No n8n credential ID found (N8N API issue - continuing anyway)`);
-      // Don't return false - allow to continue without N8N credential for now
-    }
+    const { provider, status } = integration;
     
     // Integration must be active
     if (status !== 'active') {
@@ -150,7 +144,7 @@ const Step2Email = () => {
       return false;
     }
     
-    console.log(`✅ ${provider}: Integration validation passed (n8n_credential_id: ${n8n_credential_id || 'none - using direct API'})`);
+    console.log(`✅ ${provider}: Integration validation passed (N8N credentials will be created at step 4)`);
     return true;
   };
 
@@ -251,14 +245,8 @@ const Step2Email = () => {
             throw new Error('No active integrations found after OAuth completion');
           }
 
-          // Verify we have valid n8n credentials (tokens are stored in n8n)
-          // Check if we have valid integrations (with or without N8N credentials)
+          // Check if we have valid integrations (N8N credentials will be created at step 4)
           const hasValidIntegrations = activeIntegrations.length > 0;
-          
-          // Check for N8N credentials (optional due to API issues)
-          const hasValidCredentials = activeIntegrations.some(integration => 
-            integration.n8n_credential_id && integration.n8n_credential_id.length > 0
-          );
 
           if (!hasValidIntegrations) {
             console.log(`No active integrations found (attempt ${retryCount + 1})`);
@@ -270,10 +258,7 @@ const Step2Email = () => {
             throw new Error('No active integrations found after OAuth completion');
           }
 
-          if (!hasValidCredentials) {
-            console.log(`⚠️ No N8N credentials found (attempt ${retryCount + 1}) - continuing with direct API access`);
-            // Don't fail - continue with direct API access
-          }
+          console.log(`✅ Found ${activeIntegrations.length} active integrations - N8N credentials will be created at step 4`);
 
           integrationVerified = true;
           
