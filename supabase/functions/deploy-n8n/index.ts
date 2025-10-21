@@ -708,6 +708,7 @@ async function injectOnboardingData(clientData, workflowTemplate) {
     'clientData.business': clientData.business,
     'clientData.business?.types': clientData.business?.types,
     'clientData.business?.type': clientData.business?.type,
+    'clientData.business?.business_types': clientData.business?.business_types,
     'extracted businessTypes': businessTypes,
     'businessTypes length': businessTypes?.length,
     'businessTypes content': businessTypes?.map((bt, i) => `[${i}]: ${bt}`)
@@ -931,6 +932,17 @@ async function handler(req) {
     // Fetch client config and integrations
     const { data: profile, error: profileError } = await supabaseAdmin.from('profiles').select('client_config, managers, suppliers, email_labels, business_types').eq('id', userId).single(); // Type assertion for profile
     if (profileError || !profile?.client_config) throw new Error('Client configuration not found');
+    
+    // DEBUG: Log the profile data to understand the structure
+    console.log('🔍 DEBUG: Profile data structure:', {
+      'profile keys': Object.keys(profile),
+      'profile.business_types': profile.business_types,
+      'profile.client_config': profile.client_config,
+      'profile.client_config.business': profile.client_config?.business,
+      'profile.client_config.business.types': profile.client_config?.business?.types,
+      'profile.client_config.business.business_types': profile.client_config?.business?.business_types,
+      'profile.client_config.business.business_type': profile.client_config?.business?.business_type
+    });
     // Fetch learned voice profile (communication style)
     const { data: voiceData } = await supabaseAdmin.from('communication_styles').select('style_profile, learning_count, last_updated').eq('user_id', userId).maybeSingle(); // Type assertion for voiceData
     const voiceProfile = voiceData || null;
@@ -1261,6 +1273,12 @@ async function handler(req) {
       provider: provider,
       aiSystemMessage: extractedAiSystemMessage, // Add the extracted AI system message
       behaviorReplyPrompt: extractedBehaviorReplyPrompt, // Add the extracted behavior reply prompt
+      // Ensure business types are properly included
+      business: {
+        ...profile.client_config?.business,
+        types: profile.business_types || [profile.business_type] || profile.client_config?.business?.types || [profile.client_config?.business?.business_type],
+        business_types: profile.business_types || [profile.business_type] || profile.client_config?.business?.business_types || [profile.client_config?.business?.business_type]
+      },
       integrations: {
         gmail: {
           credentialId: gmailId || ''

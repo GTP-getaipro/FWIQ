@@ -45,6 +45,7 @@ const StepBusinessInformation = () => {
   const [showServiceSelector, setShowServiceSelector] = useState(false);
   const [selectedServices, setSelectedServices] = useState([]);
   const [autoSaveStatus, setAutoSaveStatus] = useState('idle'); // 'idle', 'saving', 'saved'
+  const [databaseDataLoaded, setDatabaseDataLoaded] = useState(false); // Track if database data was loaded
   const timezones = moment.tz.names();
 
   const validationRules = {
@@ -74,6 +75,9 @@ const StepBusinessInformation = () => {
     primaryContactName: '',
     primaryContactRole: '',
     primaryContactEmail: '',
+    secondaryContactName: '', // FIX: Add missing field
+    secondaryContactEmail: '', // FIX: Add missing field
+    supportEmail: '', // FIX: Add missing field
     afterHoursPhone: '',
     responseSLA: '24h',
     defaultEscalationManager: '',
@@ -85,6 +89,8 @@ const StepBusinessInformation = () => {
     signatureText: '',
     crmProviderName: '',
     crmAlertEmails: '',
+    phoneProviderName: '', // FIX: Add missing field
+    phoneProviderEmails: '', // FIX: Add missing field
     businessHours: {
       mon_fri: '09:00-18:00',
       sat: '10:00-16:00',
@@ -95,11 +101,21 @@ const StepBusinessInformation = () => {
   const fetchProfileData = useCallback(async () => {
     if (!user) return;
     setIsLoading(true);
+    
+    console.log('🔍 DEBUG: Fetching profile data for user:', user.id);
+    
     const { data, error } = await supabase
       .from('profiles')
       .select('business_type, business_types, managers, client_config')
       .eq('id', user.id)
       .single();
+
+    console.log('🔍 DEBUG: Profile fetch result:', {
+      error: error,
+      data: data,
+      hasClientConfig: !!data?.client_config,
+      clientConfigKeys: data?.client_config ? Object.keys(data.client_config) : 'no config'
+    });
 
     if (error && error.code !== 'PGRST116') {
       console.error('Error fetching profile:', error);
@@ -119,6 +135,16 @@ const StepBusinessInformation = () => {
         const contact = config.contact || {};
         const rules = config.rules || {};
         
+        console.log('🔍 DEBUG: Setting form values from database:', {
+          businessName: business.name,
+          address: business.address,
+          phone: contact.phone,
+          website: contact.website,
+          primaryContactName: contact.primary?.name,
+          businessCategory: businessCategory,
+          businessTypes: businessTypes
+        });
+
         setValues(prev => ({
           ...prev,
           businessName: business.name || '',
@@ -133,9 +159,14 @@ const StepBusinessInformation = () => {
           primaryContactName: contact.primary?.name || '',
           primaryContactRole: contact.primary?.role || '',
           primaryContactEmail: contact.primary?.email || '',
-          afterHoursPhone: contact.afterHoursPhone || '',
+          secondaryContactName: contact.secondary?.name || '', // FIX: Add missing field
+          secondaryContactEmail: contact.secondary?.email || '', // FIX: Add missing field
+          supportEmail: contact.supportEmail || '', // FIX: Add missing field
+          afterHoursPhone: contact.phone || contact.afterHoursPhone || '', // FIX: Use correct field name
           crmProviderName: rules.crmProvider?.name || '',
           crmAlertEmails: Array.isArray(rules.crmAlertEmails) ? rules.crmAlertEmails.join(', ') : (rules.crmAlertEmails || ''),
+          phoneProviderName: rules.phoneProvider?.name || '', // FIX: Add missing field
+          phoneProviderEmails: Array.isArray(rules.phoneProvider?.emails) ? rules.phoneProvider.emails.join(', ') : (rules.phoneProvider?.emails || ''), // FIX: Add missing field
           responseSLA: rules.sla || '24h',
           defaultEscalationManager: rules.defaultEscalationManager || '',
           escalationRules: rules.escalationRules || '',
@@ -156,9 +187,15 @@ const StepBusinessInformation = () => {
           setServices([]);
         }
         setHolidayExceptions(rules.holidays && rules.holidays.length > 0 ? rules.holidays.map(h => ({ date: h, reason: '' })) : [{ date: '', reason: '' }]);
+        
+        // Mark that database data was loaded
+        setDatabaseDataLoaded(true);
+        console.log('🔍 DEBUG: Database data loaded successfully');
       } else {
         // No existing config - auto-prefill disabled to prevent showing business info by default
         // await checkForAutoPrefill();
+        console.log('🔍 DEBUG: No database data found');
+        setDatabaseDataLoaded(false);
       }
       
       // Auto-prefill disabled to prevent showing business info by default
@@ -271,7 +308,7 @@ const StepBusinessInformation = () => {
       currency: formData.currency || prevValues.currency,
       emailDomain: formData.emailDomain || prevValues.emailDomain,
       website: formData.website || prevValues.website,
-      afterHoursPhone: formData.phone || prevValues.afterHoursPhone,
+      afterHoursPhone: formData.phone || formData.afterHoursPhone || prevValues.afterHoursPhone,
       primaryContactName: formData.primaryContactName || prevValues.primaryContactName,
       primaryContactRole: formData.primaryContactRole || prevValues.primaryContactRole,
     }));
@@ -334,36 +371,63 @@ const StepBusinessInformation = () => {
     
     try {
       const savedData = localStorage.getItem(`onboarding_business_info_${user.id}`);
+      console.log('🔍 DEBUG: Checking localStorage for saved data:', {
+        hasSavedData: !!savedData,
+        userId: user.id
+      });
+      
       if (savedData) {
         const formData = JSON.parse(savedData);
         
         // Only restore if data is less than 24 hours old
         const isRecent = Date.now() - formData.timestamp < 24 * 60 * 60 * 1000;
         
+        console.log('🔍 DEBUG: localStorage data analysis:', {
+          timestamp: formData.timestamp,
+          isRecent: isRecent,
+          ageHours: (Date.now() - formData.timestamp) / (1000 * 60 * 60),
+          hasValues: !!formData.values,
+          businessCategory: formData.businessCategory,
+          businessTypes: formData.businessTypes
+        });
+        
         if (isRecent) {
-          console.log('🔄 Restoring form data from localStorage');
-          setValues(prev => ({ ...prev, ...formData.values }));
-          setFormLinks(formData.formLinks || [{ label: '', url: '' }]);
-          setSocialLinks(formData.socialLinks || ['']);
-          setServices(formData.services || []);
-          setHolidayExceptions(formData.holidayExceptions || [{ date: '', reason: '' }]);
-          setBusinessCategory(formData.businessCategory || '');
-          setBusinessTypes(formData.businessTypes || []);
-          setManagers(formData.managers || []);
-          
-          toast({
-            title: "📝 Form Data Restored",
-            description: "Your previous entries have been restored. You can continue where you left off.",
+          console.log('🔄 Checking if localStorage restore is needed:', {
+            databaseDataLoaded: databaseDataLoaded,
+            hasLocalStorageData: !!formData.values?.businessName
           });
+          
+          // Only restore from localStorage if database data wasn't loaded
+          if (!databaseDataLoaded) {
+            console.log('🔄 No database data found, restoring from localStorage');
+            setValues(prev => ({ ...prev, ...formData.values }));
+            setFormLinks(formData.formLinks || [{ label: '', url: '' }]);
+            setSocialLinks(formData.socialLinks || ['']);
+            setServices(formData.services || []);
+            setHolidayExceptions(formData.holidayExceptions || [{ date: '', reason: '' }]);
+            setBusinessCategory(formData.businessCategory || '');
+            setBusinessTypes(formData.businessTypes || []);
+            setManagers(formData.managers || []);
+            
+            toast({
+              title: "📝 Form Data Restored",
+              description: "Your previous entries have been restored. You can continue where you left off.",
+            });
+          } else {
+            console.log('🔄 Database data exists, skipping localStorage restore');
+          }
         } else {
+          console.log('🗑️ Removing old localStorage data');
           // Remove old data
           localStorage.removeItem(`onboarding_business_info_${user.id}`);
         }
+      } else {
+        console.log('🔍 DEBUG: No saved data found in localStorage');
       }
     } catch (error) {
       console.warn('Failed to restore form data from localStorage:', error);
     }
-  }, [user?.id, setValues, toast]);
+  }, [user?.id, setValues, toast, databaseDataLoaded]);
 
   // Auto-save form data whenever it changes
   useEffect(() => {
@@ -386,9 +450,12 @@ const StepBusinessInformation = () => {
       sessionStorage.removeItem(`form_submitted_${user.id}`);
     }
     
+    console.log('🔍 DEBUG: Component mounted, starting data loading sequence');
+    
     fetchProfileData();
     // Restore form data after fetching profile data
     setTimeout(() => {
+      console.log('🔍 DEBUG: Starting localStorage restore after 500ms delay');
       restoreFormDataFromStorage();
     }, 500);
   }, [fetchProfileData, restoreFormDataFromStorage, user?.id]);
@@ -551,7 +618,7 @@ const StepBusinessInformation = () => {
       contact: {
         primary: { name: values.primaryContactName, role: values.primaryContactRole, email: values.primaryContactEmail },
         secondary: { name: values.secondaryContactName, email: values.secondaryContactEmail },
-        phone: values.phone,
+        phone: values.afterHoursPhone, // FIX: Use the correct field name
         supportEmail: values.supportEmail,
         website: values.website,
         formLinks: formLinks.filter(link => link.label.trim() !== '' && link.url.trim() !== ''),
@@ -624,6 +691,13 @@ const StepBusinessInformation = () => {
       completedAt: new Date().toISOString()
     });
 
+    console.log('🔍 DEBUG: Saving business information:', {
+      userId: user.id,
+      newClientConfig: newClientConfig,
+      businessTypes: businessTypes,
+      businessCategory: businessCategory
+    });
+
     const { error } = await supabase
       .from('profiles')
       .update({
@@ -631,6 +705,11 @@ const StepBusinessInformation = () => {
         onboarding_step: 'deploy'
       })
       .eq('id', user.id);
+
+    console.log('🔍 DEBUG: Save result:', {
+      error: error,
+      success: !error
+    });
 
     setIsLoading(false);
 
@@ -1141,6 +1220,24 @@ const StepBusinessInformation = () => {
                   <p className="text-xs text-gray-500 mb-2">Main business email address for customer communications</p>
                   <Input id="primaryContactEmail" name="primaryContactEmail" type="email" value={values.primaryContactEmail} onChange={handleChange} placeholder="adam@thehottubman.ca" />
                   {errors.primaryContactEmail && <p className="text-red-500 text-sm mt-1">{errors.primaryContactEmail}</p>}
+                </div>
+                
+                <div>
+                  <Label htmlFor="secondaryContactName">Secondary Contact Name</Label>
+                  <p className="text-xs text-gray-500 mb-2">Backup contact person (optional)</p>
+                  <Input id="secondaryContactName" name="secondaryContactName" value={values.secondaryContactName} onChange={handleChange} placeholder="Jane Smith" />
+                </div>
+                
+                <div>
+                  <Label htmlFor="secondaryContactEmail">Secondary Contact Email</Label>
+                  <p className="text-xs text-gray-500 mb-2">Backup contact email (optional)</p>
+                  <Input id="secondaryContactEmail" name="secondaryContactEmail" type="email" value={values.secondaryContactEmail} onChange={handleChange} placeholder="jane@thehottubman.ca" />
+                </div>
+                
+                <div>
+                  <Label htmlFor="supportEmail">Support Email</Label>
+                  <p className="text-xs text-gray-500 mb-2">Email for customer support inquiries (optional)</p>
+                  <Input id="supportEmail" name="supportEmail" type="email" value={values.supportEmail} onChange={handleChange} placeholder="support@thehottubman.ca" />
                 </div>
                 
                 <div>
