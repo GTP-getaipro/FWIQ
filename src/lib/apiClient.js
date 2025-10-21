@@ -157,20 +157,24 @@ export const analyticsApi = {
    * Track an analytics event
    * @param {Object} eventData - Event data
    * @param {string} accessToken - Authentication token
+   * @param {string} baseUrl - Base URL for the API
    * @returns {Promise<Object>} API response
    */
-  trackEvent: (eventData, accessToken = null) => {
-    return apiPost('/api/analytics/events', eventData, accessToken);
+  trackEvent: (eventData, accessToken = null, baseUrl = '') => {
+    const url = baseUrl ? `${baseUrl}/api/analytics/events` : '/api/analytics/events';
+    return apiPost(url, eventData, accessToken);
   },
 
   /**
    * Store session data
    * @param {Object} sessionData - Session data
    * @param {string} accessToken - Authentication token
+   * @param {string} baseUrl - Base URL for the API
    * @returns {Promise<Object>} API response
    */
-  storeSession: (sessionData, accessToken = null) => {
-    return apiPost('/api/analytics/sessions', sessionData, accessToken);
+  storeSession: (sessionData, accessToken = null, baseUrl = '') => {
+    const url = baseUrl ? `${baseUrl}/api/analytics/sessions` : '/api/analytics/sessions';
+    return apiPost(url, sessionData, accessToken);
   },
 
   /**
@@ -178,10 +182,12 @@ export const analyticsApi = {
    * @param {string} userId - User ID
    * @param {string} timeRange - Time range (24h, 7d, 30d)
    * @param {string} accessToken - Authentication token
+   * @param {string} baseUrl - Base URL for the API
    * @returns {Promise<Object>} API response
    */
-  getDashboard: (userId, timeRange = '7d', accessToken = null) => {
-    return apiGet(`/api/analytics/dashboard/${userId}?timeRange=${timeRange}`, accessToken);
+  getDashboard: (userId, timeRange = '7d', accessToken = null, baseUrl = '') => {
+    const url = baseUrl ? `${baseUrl}/api/analytics/dashboard/${userId}?timeRange=${timeRange}` : `/api/analytics/dashboard/${userId}?timeRange=${timeRange}`;
+    return apiGet(url, accessToken);
   }
 };
 

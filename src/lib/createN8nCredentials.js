@@ -74,7 +74,12 @@ export async function createN8nCredentialWithBusinessName(userId, provider, busi
       };
     }
 
-    const response = await fetch('http://localhost:3001/api/oauth/create-credential', {
+    // Get backend URL from runtime config or environment
+    const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
+    const backendUrl = runtimeConfig?.BACKEND_URL || 
+                      import.meta.env.BACKEND_URL || 
+                      'http://localhost:3001';
+    const response = await fetch(`${backendUrl}/api/oauth/create-credential`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

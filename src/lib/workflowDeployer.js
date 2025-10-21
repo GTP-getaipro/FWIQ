@@ -156,7 +156,11 @@ export class WorkflowDeployer {
       console.log('🔍 Testing N8N availability via backend API...');
       
       // Test backend API availability
-      const backendUrl =  'http://localhost:3001';
+      // Get backend URL from runtime config or environment
+      const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
+      const backendUrl = runtimeConfig?.BACKEND_URL || 
+                        import.meta.env.BACKEND_URL || 
+                        'http://localhost:3001';
       const response = await fetch(`${backendUrl}/api/workflows/deploy`, {
         method: 'POST',
         headers: {
@@ -567,7 +571,11 @@ export class WorkflowDeployer {
         // Method 2: Fallback to backend API
         try {
           console.log('🔹 Attempting deployment via Backend API...');
-          const backendUrl =  'http://localhost:3001';
+          // Get backend URL from runtime config or environment
+      const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
+      const backendUrl = runtimeConfig?.BACKEND_URL || 
+                        import.meta.env.BACKEND_URL || 
+                        'http://localhost:3001';
           const backendResponse = await fetch(`${backendUrl}/api/workflows/deploy`, {
             method: 'POST',
             headers: {

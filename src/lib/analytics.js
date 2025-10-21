@@ -37,7 +37,21 @@ export class Analytics {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         this.userId = user.id;
+        logger.debug('Analytics initialized with authenticated user', { userId: this.userId });
+      } else {
+        logger.debug('Analytics initialized without authenticated user');
       }
+      
+      // Listen for auth state changes
+      supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          this.userId = session.user.id;
+          logger.debug('Analytics: User signed in', { userId: this.userId });
+        } else if (event === 'SIGNED_OUT') {
+          this.userId = null;
+          logger.debug('Analytics: User signed out');
+        }
+      });
       
       // Track page load
       this.trackPageView(window.location.pathname);
@@ -245,11 +259,17 @@ export class Analytics {
       const { data: { user } } = await supabase.auth.getUser();
       const accessToken = user?.access_token;
       
+      // Get backend URL from runtime config or environment
+      const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
+      const backendUrl = runtimeConfig?.BACKEND_URL || 
+                        import.meta.env.BACKEND_URL || 
+                        'http://localhost:3001';
+      
       const response = await analyticsApi.trackEvent({
         type,
         data,
         timestamp: new Date().toISOString()
-      }, accessToken);
+      }, accessToken, backendUrl);
       
       if (!response.success) {
         throw new Error(`Analytics API error: ${response.error}`);
@@ -258,6 +278,17 @@ export class Analytics {
       // Fallback to Supabase - only if user is authenticated
       if (this.userId) {
         try {
+          // Verify user is still authenticated before inserting
+          const { data: { user }, error: authError } = await supabase.auth.getUser();
+          if (authError || !user || user.id !== this.userId) {
+            logger.warn('User authentication invalid, skipping analytics event', { 
+              type, 
+              sessionId: this.sessionId,
+              authError: authError?.message 
+            });
+            return;
+          }
+
           await supabase
             .from('outlook_analytics_events')
             .insert({

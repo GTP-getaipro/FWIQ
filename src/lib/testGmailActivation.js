@@ -37,7 +37,12 @@ export const testGmailActivation = async (userId) => {
 
     // Step 2: Test token validation
     try {
-      const response = await fetch('http://localhost:3001/api/oauth/validate-token', {
+      // Get backend URL from runtime config or environment
+      const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
+      const backendUrl = runtimeConfig?.BACKEND_URL || 
+                        import.meta.env.BACKEND_URL || 
+                        'http://localhost:3001';
+      const response = await fetch(`${backendUrl}/api/oauth/validate-token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -56,7 +61,7 @@ export const testGmailActivation = async (userId) => {
           console.log('🔄 Token needs refresh, testing refresh endpoint...');
           
           // Step 3: Test token refresh
-          const refreshResponse = await fetch('http://localhost:3001/api/oauth/refresh-token', {
+          const refreshResponse = await fetch(`${backendUrl}/api/oauth/refresh-token`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'

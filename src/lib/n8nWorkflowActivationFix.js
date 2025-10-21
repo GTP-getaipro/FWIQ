@@ -11,7 +11,11 @@ export class N8nWorkflowActivationFix {
   constructor() {
     this.n8nBaseUrl = 'https://n8n.srv995290.hstgr.cloud';
     this.n8nApiKey = import.meta.env.N8N_API_KEY;
-    this.backendUrl = import.meta.env.BACKEND_URL || 'http://localhost:3001';
+    // Get backend URL from runtime config or environment
+    const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
+    this.backendUrl = runtimeConfig?.BACKEND_URL || 
+                     import.meta.env.BACKEND_URL || 
+                     'http://localhost:3001';
   }
 
   /**

@@ -131,7 +131,12 @@ export class BusinessProfileExtractor {
         }
 
         // Use server-side endpoint for token refresh (client-side can't access secrets)
-        const refreshResponse = await fetch('http://localhost:3001/api/auth/refresh-token', {
+        // Get backend URL from runtime config or environment
+        const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
+        const backendUrl = runtimeConfig?.BACKEND_URL || 
+                          import.meta.env.BACKEND_URL || 
+                          'http://localhost:3001';
+        const refreshResponse = await fetch(`${backendUrl}/api/auth/refresh-token`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
