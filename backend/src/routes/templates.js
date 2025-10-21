@@ -14,9 +14,20 @@ const __dirname = path.dirname(__filename);
  */
 router.get('/gmail', async (req, res) => {
   try {
-    const templatePath = path.join(__dirname, '../../public/templates/gmail-workflow-template.json');
+    // Fix path resolution - go up from backend/src/routes to project root
+    const templatePath = path.join(__dirname, '../../../public/templates/gmail-workflow-template.json');
+    
+    logger.info('Loading Gmail template from:', templatePath);
+    
+    // Check if file exists
+    if (!fs.existsSync(templatePath)) {
+      logger.error('Gmail template file not found at:', templatePath);
+      return res.status(404).json({ error: 'Gmail template file not found' });
+    }
+    
     const template = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
     
+    logger.info('Gmail template loaded successfully, nodes count:', template.nodes?.length || 0);
     res.json(template);
   } catch (error) {
     logger.error('Failed to load Gmail template:', error);
@@ -30,9 +41,20 @@ router.get('/gmail', async (req, res) => {
  */
 router.get('/outlook', async (req, res) => {
   try {
-    const templatePath = path.join(__dirname, '../../public/templates/outlook-workflow-template.json');
+    // Fix path resolution - go up from backend/src/routes to project root
+    const templatePath = path.join(__dirname, '../../../public/templates/outlook-workflow-template.json');
+    
+    logger.info('Loading Outlook template from:', templatePath);
+    
+    // Check if file exists
+    if (!fs.existsSync(templatePath)) {
+      logger.error('Outlook template file not found at:', templatePath);
+      return res.status(404).json({ error: 'Outlook template file not found' });
+    }
+    
     const template = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
     
+    logger.info('Outlook template loaded successfully, nodes count:', template.nodes?.length || 0);
     res.json(template);
   } catch (error) {
     logger.error('Failed to load Outlook template:', error);
