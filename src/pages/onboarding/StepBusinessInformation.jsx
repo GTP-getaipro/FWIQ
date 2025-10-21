@@ -539,6 +539,8 @@ const StepBusinessInformation = () => {
         name: values.businessName,
         legalEntity: values.legalEntityName,
         category: businessCategory,
+        business_type: businessTypes[0], // Add primary business type
+        business_types: businessTypes,   // Add all business types
         taxId: values.taxNumber,
         address: values.address,
         serviceArea: values.serviceArea,
