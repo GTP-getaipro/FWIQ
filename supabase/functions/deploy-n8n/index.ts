@@ -681,6 +681,18 @@ async function loadWorkflowTemplate(businessType) {
 }
 async function injectOnboardingData(clientData, workflowTemplate) {
   let templateString = JSON.stringify(workflowTemplate);
+  
+  // DEBUG: Log the complete client data structure
+  console.log('🔍 DEBUG: Complete client data structure:', {
+    'clientData keys': Object.keys(clientData),
+    'clientData.business': clientData.business,
+    'clientData.business keys': clientData.business ? Object.keys(clientData.business) : 'no business object',
+    'clientData.businessTypes': clientData.businessTypes,
+    'clientData.businessType': clientData.businessType,
+    'clientData.business_name': clientData.business_name,
+    'clientData.businessName': clientData.businessName
+  });
+  
   const { business = {}, contact = {}, services = [], rules = {}, integrations = {}, id: clientId, version } = clientData;
   // Build signature block
   const signatureBlock = `\n\nBest regards,\nThe ${business.name || 'Your Business'} Team\n${contact.phone || ''}`;
@@ -690,6 +702,17 @@ async function injectOnboardingData(clientData, workflowTemplate) {
   const businessTypes = clientData.business?.types || (clientData.business?.type ? [
     clientData.business.type
   ] : []);
+  
+  // DEBUG: Log the business types extraction
+  console.log('🔍 DEBUG: Business types extraction:', {
+    'clientData.business': clientData.business,
+    'clientData.business?.types': clientData.business?.types,
+    'clientData.business?.type': clientData.business?.type,
+    'extracted businessTypes': businessTypes,
+    'businessTypes length': businessTypes?.length,
+    'businessTypes content': businessTypes?.map((bt, i) => `[${i}]: ${bt}`)
+  });
+  
   const businessTypesText = Array.isArray(businessTypes) ? businessTypes.join(' + ') : businessTypes;
   // BUILD AI CONFIGURATION (Layer 1)
   // Use the frontend-generated AI system message from buildProductionClassifier()
