@@ -162,10 +162,6 @@ function slugify(input, fallback) {
   
   return dynamicSystemMessage;
 }
-\`\`\`
-`;
-  return systemMessage;
-}
 async function n8nRequest(path, init = {}) {
   const url = `${N8N_BASE_URL.replace(/\/$/, '')}/api/v1${path}`;
   const headers = {
@@ -1300,19 +1296,6 @@ async function handler(req) {
     return new Response(JSON.stringify({
       success: false,
       error: err.message
-    }), {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      }
-    });
-  } catch (startupError) {
-    console.error('❌ Edge Function startup error:', startupError);
-    return new Response(JSON.stringify({
-      success: false,
-      error: 'Edge Function startup failed',
-      details: startupError.message
     }), {
       status: 500,
       headers: {
