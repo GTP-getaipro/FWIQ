@@ -10,10 +10,16 @@ console.info('n8n-proxy function starting');
 const N8N_BASE_URL = Deno.env.get('N8N_BASE_URL');
 const N8N_API_KEY = Deno.env.get('N8N_API_KEY');
 
+// Debug environment variables
+console.log('Environment check:', {
+  N8N_BASE_URL: N8N_BASE_URL ? 'SET' : 'NOT SET',
+  N8N_API_KEY: N8N_API_KEY ? 'SET' : 'NOT SET'
+});
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-N8N-API-KEY, x-client-info, apikey',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-N8N-API-KEY, x-n8n-api-key, x-client-info, apikey',
   'Access-Control-Max-Age': '86400'
 };
 
@@ -27,6 +33,21 @@ Deno.serve(async (req: Request) => {
   // Preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 200, headers: CORS_HEADERS });
+  }
+
+  // Check for required environment variables
+  if (!N8N_BASE_URL || !N8N_API_KEY) {
+    console.error('Missing required environment variables:', {
+      N8N_BASE_URL: !!N8N_BASE_URL,
+      N8N_API_KEY: !!N8N_API_KEY
+    });
+    return new Response(JSON.stringify({ 
+      error: 'Edge Function not properly configured',
+      message: 'Missing N8N_BASE_URL or N8N_API_KEY environment variables'
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
+    });
   }
 
   try {
