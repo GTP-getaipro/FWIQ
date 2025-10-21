@@ -815,7 +815,7 @@ app.post('/api/oauth/get-token', asyncHandler(async (req, res) => {
   try {
     const supabase = createClient(
       process.env.VITE_SUPABASE_URL,
-      process.env.VITE_SUPABASE_ANON_KEY
+      process.env.ANON_KEY
     );
     
     // Get integration from database

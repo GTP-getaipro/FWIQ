@@ -10,7 +10,7 @@ const router = express.Router();
 // Initialize Supabase client
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SERVICE_ROLE_KEY
 );
 
 // Validation schema

@@ -9,7 +9,7 @@ const router = express.Router();
 // Initialize Supabase client for health checks
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SERVICE_ROLE_KEY
 );
 
 /**

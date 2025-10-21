@@ -32,7 +32,7 @@ router.post('/refresh-token', asyncHandler(async (req, res) => {
   // Create Supabase client
   const supabase = createClient(
     process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.SERVICE_ROLE_KEY
   );
 
   try {
@@ -172,7 +172,7 @@ router.post('/validate-token', asyncHandler(async (req, res) => {
   // Create Supabase client
   const supabase = createClient(
     process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.SERVICE_ROLE_KEY
   );
 
   try {

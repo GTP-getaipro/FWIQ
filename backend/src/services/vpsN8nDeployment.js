@@ -9,7 +9,7 @@ import { FloWorxN8nService } from './floworx-n8n-service.cjs';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SERVICE_ROLE_KEY
 );
 
 // Initialize the working FloWorx n8n service with Supabase client
@@ -577,7 +577,7 @@ export async function handleVpsN8nDeployment(req, res) {
       try {
         const supabase = createClient(
           process.env.SUPABASE_URL,
-          process.env.SUPABASE_SERVICE_ROLE_KEY
+          process.env.SERVICE_ROLE_KEY
         );
 
         const { data: profile } = await supabase

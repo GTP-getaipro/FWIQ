@@ -45,7 +45,7 @@ router.post('/update-credential-name', validate(updateCredentialNameSchema), asy
   // Create Supabase client
   const supabase = createClient(
     process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.SERVICE_ROLE_KEY
   );
 
   try {
@@ -120,7 +120,7 @@ router.post('/exchange-token', validate(exchangeTokenSchema), asyncHandler(async
   // Create Supabase client
   const supabase = createClient(
     process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.SERVICE_ROLE_KEY
   );
 
   if (provider !== 'outlook' && provider !== 'gmail') {
@@ -290,7 +290,7 @@ router.post('/get-token', validate(getTokenSchema), asyncHandler(async (req, res
   // Create Supabase client
   const supabase = createClient(
     process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.SERVICE_ROLE_KEY
   );
 
   try {
@@ -344,7 +344,7 @@ router.post('/refresh-token', validate(refreshTokenSchema), asyncHandler(async (
   // Create Supabase client
   const supabase = createClient(
     process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.SERVICE_ROLE_KEY
   );
 
   try {
@@ -520,7 +520,7 @@ router.post('/create-credential', asyncHandler(async (req, res) => {
   // Create Supabase client
   const supabase = createClient(
     process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.SERVICE_ROLE_KEY
   );
 
   try {

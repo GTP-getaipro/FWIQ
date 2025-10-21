@@ -27,11 +27,11 @@ class SupabaseClientManager {
   createClient() {
     try {
       const supabaseUrl = process.env.SUPABASE_URL;
-      const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const supabaseServiceKey = process.env.SERVICE_ROLE_KEY;
 
       if (!supabaseUrl || !supabaseServiceKey) {
         logger.error('Missing required Supabase environment variables');
-        throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required');
+        throw new Error('SUPABASE_URL and SERVICE_ROLE_KEY are required');
       }
 
       const client = createClient(supabaseUrl, supabaseServiceKey, {
