@@ -25,6 +25,7 @@ import healthRoutes from './routes/health.js';
 import analyticsRoutes from './routes/analytics.js';
 import securityRoutes from './routes/security.js';
 import templatesRoutes from './routes/templates.js';
+import voiceLearningRoutes from './routes/voice-learning.js';
 
 // Import VPS N8N deployment service
 import { handleVpsN8nDeployment } from './services/vpsN8nDeployment.js';
