@@ -36,10 +36,30 @@ function getNextKey() {
 const N8N_BASE_URL = Deno.env.get('N8N_BASE_URL') || Deno.env.get('NBN_BASE_URL') || '';
 const N8N_API_KEY = Deno.env.get('N8N_API_KEY') || Deno.env.get('NBN_API_KEY') || '';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SERVICE_ROLE_KEY');
+const SERVICE_ROLE_KEY = Deno.env.get('SERVICE_ROLE_KEY');
 const GMAIL_CLIENT_ID = Deno.env.get('GMAIL_CLIENT_ID') || Deno.env.get('GOOGLE_CLIENT_ID') || '';
 const GMAIL_CLIENT_SECRET = Deno.env.get('GMAIL_CLIENT_SECRET') || Deno.env.get('GOOGLE_CLIENT_SECRET') || '';
-const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+
+// Debug environment variables
+console.log('Environment check:', {
+  N8N_BASE_URL: N8N_BASE_URL ? 'SET' : 'NOT SET',
+  N8N_API_KEY: N8N_API_KEY ? 'SET' : 'NOT SET',
+  SUPABASE_URL: SUPABASE_URL ? 'SET' : 'NOT SET',
+  SERVICE_ROLE_KEY: SERVICE_ROLE_KEY ? 'SET' : 'NOT SET',
+  GMAIL_CLIENT_ID: GMAIL_CLIENT_ID ? 'SET' : 'NOT SET',
+  GMAIL_CLIENT_SECRET: GMAIL_CLIENT_SECRET ? 'SET' : 'NOT SET'
+});
+
+// Check for required environment variables
+if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
+  console.error('Missing required environment variables:', {
+    SUPABASE_URL: !!SUPABASE_URL,
+    SERVICE_ROLE_KEY: !!SERVICE_ROLE_KEY
+  });
+  throw new Error('Missing SUPABASE_URL or SERVICE_ROLE_KEY environment variables');
+}
+
+const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: {
     autoRefreshToken: false,
     persistSession: false
@@ -783,18 +803,24 @@ SIGNATURE: ${signatureBlock}
   return JSON.parse(templateString);
 }
 async function handler(req) {
-  // Handle CORS preflight
-  if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-      }
-    });
-  }
   try {
+    console.log('🚀 Edge Function started:', {
+      method: req.method,
+      url: req.url,
+      timestamp: new Date().toISOString()
+    });
+
+    // Handle CORS preflight
+    if (req.method === 'OPTIONS') {
+      return new Response(null, {
+        status: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+        }
+      });
+    }
     if (req.method !== 'POST') return new Response('Method not allowed', {
       status: 405,
       headers: {
@@ -1274,6 +1300,19 @@ async function handler(req) {
     return new Response(JSON.stringify({
       success: false,
       error: err.message
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
+  } catch (startupError) {
+    console.error('❌ Edge Function startup error:', startupError);
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'Edge Function startup failed',
+      details: startupError.message
     }), {
       status: 500,
       headers: {
