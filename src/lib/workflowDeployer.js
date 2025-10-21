@@ -479,17 +479,26 @@ export class WorkflowDeployer {
         businessName: completeClientData.business.name,
         businessPhone: completeClientData.contact.phone,
         businessWebsite: completeClientData.business.websiteUrl,
-        businessTypes: completeClientData.business.types,
+        businessTypes: completeClientData.business.types || (completeClientData.business.business_type ? [completeClientData.business.business_type] : []),
         managersCount: completeClientData.managers?.length || 0,
         suppliersCount: completeClientData.suppliers?.length || 0,
         servicesCount: completeClientData.services?.length || 0
+      });
+      
+      // DEBUG: Log the business object structure to understand the data format
+      console.log('🔍 DEBUG: Business object structure:', {
+        'completeClientData.business': completeClientData.business,
+        'completeClientData.business.types': completeClientData.business.types,
+        'completeClientData.business.business_type': completeClientData.business.business_type,
+        'completeClientData.business.business_types': completeClientData.business.business_types,
+        'business object keys': completeClientData.business ? Object.keys(completeClientData.business) : 'no business object'
       });
       
       // Debug: Log the raw onboarding data to see what's actually in the database
       console.log('🔍 DEBUG: Raw onboarding data structure:', {
         businessInfo: onboardingData.business?.info,
         businessContact: onboardingData.business?.contact,
-        businessTypes: onboardingData.business?.types,
+        businessTypes: onboardingData.business?.types || (onboardingData.business?.business_type ? [onboardingData.business.business_type] : []),
         businessName: onboardingData.business?.info?.name,
         businessEmailDomain: onboardingData.business?.info?.emailDomain,
         businessPhone: onboardingData.business?.contact?.phone,
