@@ -312,7 +312,7 @@ const Dashboard = () => {
         </div>
       </motion.header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 bg-white dark:bg-gray-900 h-[calc(100vh-4rem)] overflow-hidden">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 bg-white dark:bg-gray-900 min-h-[calc(100vh-4rem)] overflow-y-auto">
         <DashboardProvider user={user}>
           <DashboardContent user={user} />
         </DashboardProvider>
