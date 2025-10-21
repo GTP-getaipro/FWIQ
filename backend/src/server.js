@@ -928,6 +928,7 @@ app.use('/api/workflows', authMiddleware, workflowRoutes);
 app.use('/api/ai', authMiddleware, aiRoutes);
 app.use('/api/analytics', authMiddleware, analyticsRoutes);
 app.use('/api/templates', templatesRoutes);
+app.use('/api/voice-learning', voiceLearningRoutes); // Voice learning endpoint
 app.use('/api', securityRoutes); // CSP reports don't require auth
 
 // Response time logging middleware
