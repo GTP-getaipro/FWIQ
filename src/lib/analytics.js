@@ -256,8 +256,8 @@ export class Analytics {
       }
 
       // Try to send to backend API first
-      const { data: { user } } = await supabase.auth.getUser();
-      const accessToken = user?.access_token;
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
       
       // Get backend URL from runtime config or environment
       const runtimeConfig = typeof window !== 'undefined' && window.__RUNTIME_CONFIG__;
