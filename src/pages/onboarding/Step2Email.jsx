@@ -169,6 +169,14 @@ const Step2Email = () => {
       const maxTimeout = 15000; // 15 seconds maximum
       const startTime = Date.now();
       
+      // Set a fallback timeout to clear loading state if process takes too long
+      const fallbackTimeout = setTimeout(() => {
+        console.warn('⚠️ OAuth completion process timeout - clearing loading state');
+        setLoading(prev => ({ ...prev, page: false }));
+        setOauthStatus('warning');
+        setOauthMessage('Process taking longer than expected, but continuing...');
+      }, 20000); // 20 seconds fallback
+      
       // Wait for backend to process the OAuth callback and database to be updated
       await new Promise(resolve => setTimeout(resolve, 1000)); // Reduced from 3000ms to 1000ms
       
@@ -338,6 +346,12 @@ const Step2Email = () => {
             hasAnyConnection: anyConnected
           });
           
+          // Clear the page loading state to show the normal UI
+          setLoading(prev => ({ ...prev, page: false }));
+          
+          // Clear the fallback timeout since we completed successfully
+          clearTimeout(fallbackTimeout);
+          
           // Clear status after 5 seconds to show the normal UI
           setTimeout(() => {
             setOauthStatus(null);
@@ -362,6 +376,12 @@ const Step2Email = () => {
             setConnections({ gmail: true, outlook: false }); // Assume at least one connection
             setHasAnyConnection(true);
             
+            // Clear the page loading state to show the normal UI
+            setLoading(prev => ({ ...prev, page: false }));
+            
+            // Clear the fallback timeout since we completed
+            clearTimeout(fallbackTimeout);
+            
             // Clear status after 5 seconds
             setTimeout(() => {
               setOauthStatus(null);
@@ -383,6 +403,12 @@ const Step2Email = () => {
         // Set a basic connection state to allow progression
         setConnections({ gmail: true, outlook: false }); // Assume at least one connection
         setHasAnyConnection(true);
+        
+        // Clear the page loading state to show the normal UI
+        setLoading(prev => ({ ...prev, page: false }));
+        
+        // Clear the fallback timeout since we completed
+        clearTimeout(fallbackTimeout);
         
         toast({
           variant: 'default',
