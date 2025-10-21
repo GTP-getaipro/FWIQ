@@ -836,7 +836,36 @@ async function handler(req) {
         'Content-Type': 'application/json'
       }
     });
-    const requestBody = await req.json();
+    
+    // Debug request body parsing
+    let requestBody;
+    try {
+      const rawBody = await req.text();
+      console.log('🔍 Raw request body:', rawBody.substring(0, 200) + '...');
+      console.log('🔍 Content-Type header:', req.headers.get('content-type'));
+      
+      if (!rawBody) {
+        throw new Error('Empty request body');
+      }
+      
+      requestBody = JSON.parse(rawBody);
+      console.log('✅ Successfully parsed JSON request body');
+    } catch (parseError) {
+      console.error('❌ Failed to parse request body:', parseError.message);
+      console.error('❌ Raw body preview:', await req.text().then(t => t.substring(0, 100)));
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Invalid JSON in request body',
+        details: parseError.message
+      }), {
+        status: 400,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json'
+        }
+      });
+    }
+    
     const { userId, checkOnly } = requestBody;
     if (!userId) return new Response('Missing userId', {
       status: 400,
