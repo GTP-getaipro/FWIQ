@@ -474,17 +474,39 @@ Please provide a JSON response with the following structure:
    */
   async storeVoiceAnalysis(userId, voiceAnalysis, sampleSize) {
     try {
-      // Store sample_size inside the voice analysis object
-      const styleProfile = {
-        ...voiceAnalysis,
-        sample_size: sampleSize
+      // Extract data for dedicated columns
+      const vocabularyPatterns = {
+        common_words: voiceAnalysis.vocabulary?.commonWords || [],
+        preferred_phrases: voiceAnalysis.vocabulary?.preferredPhrases || [],
+        avoid_words: voiceAnalysis.vocabulary?.avoidWords || [],
+        terminology: voiceAnalysis.vocabulary?.terminology || []
+      };
+
+      const toneAnalysis = {
+        tone: voiceAnalysis.tone || 'professional',
+        formality: voiceAnalysis.formality || 'professional',
+        personality: voiceAnalysis.personality || 'friendly',
+        confidence_level: voiceAnalysis.confidence || 0.75
+      };
+
+      const responseTemplates = {
+        greeting: voiceAnalysis.responseTemplates?.greeting || '',
+        closing: voiceAnalysis.responseTemplates?.closing || '',
+        followup: voiceAnalysis.responseTemplates?.followup || '',
+        urgent: voiceAnalysis.responseTemplates?.urgent || ''
       };
 
       const { error } = await supabase
         .from('communication_styles')
         .upsert({
           user_id: userId,
-          style_profile: styleProfile,
+          vocabulary_patterns: vocabularyPatterns,
+          tone_analysis: toneAnalysis,
+          signature_phrases: voiceAnalysis.signaturePhrases || [],
+          response_templates: responseTemplates,
+          sample_size: sampleSize,
+          style_profile: voiceAnalysis, // Keep for backward compatibility
+          updated_at: new Date().toISOString(),
           last_updated: new Date().toISOString()
         }, {
           onConflict: 'user_id'
@@ -495,7 +517,12 @@ Please provide a JSON response with the following structure:
         throw error;
       }
 
-      logger.info(`Voice analysis stored for user ${userId}`);
+      logger.info(`Voice analysis stored for user ${userId}`, {
+        vocabularyWords: vocabularyPatterns.common_words.length,
+        signaturePhrases: voiceAnalysis.signaturePhrases?.length || 0,
+        sampleSize,
+        tone: toneAnalysis.tone
+      });
     } catch (error) {
       logger.error('Error storing voice analysis:', error);
       throw error;

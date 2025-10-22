@@ -205,19 +205,55 @@ Return only valid JSON format.`;
     return Math.min(score, 100);
   }
 
-  async saveStyleProfile(userId, styleProfile) {
+  async saveStyleProfile(userId, styleProfile, sampleSize = 0) {
     try {
+      // Extract data from styleProfile for dedicated columns
+      const vocabularyPatterns = {
+        common_words: styleProfile.vocabulary?.commonWords || [],
+        preferred_phrases: styleProfile.vocabulary?.preferredPhrases || [],
+        avoid_words: styleProfile.vocabulary?.avoidWords || [],
+        terminology: styleProfile.vocabulary?.industryTerminology || []
+      };
+
+      const toneAnalysis = {
+        tone: styleProfile.tone || 'professional',
+        formality: styleProfile.formality || 'professional',
+        personality: styleProfile.personality || 'friendly',
+        confidence_level: styleProfile.confidence || 0.75,
+        sentence_structure: styleProfile.sentenceStructure || 'varied'
+      };
+
+      const responseTemplates = {
+        greeting: styleProfile.responseTemplates?.greeting || '',
+        closing: styleProfile.responseTemplates?.closing || '',
+        followup: styleProfile.responseTemplates?.followUpStyle || '',
+        urgent: styleProfile.responseTemplates?.urgentResponse || '',
+        routine: styleProfile.responseTemplates?.routineResponse || ''
+      };
+
       const { error } = await supabase
         .from('communication_styles')
         .upsert({
           user_id: userId,
-          style_profile: styleProfile,
+          vocabulary_patterns: vocabularyPatterns,
+          tone_analysis: toneAnalysis,
+          signature_phrases: styleProfile.signaturePhrases || [],
+          response_templates: responseTemplates,
+          sample_size: sampleSize,
+          style_profile: styleProfile, // Keep for backward compatibility
+          updated_at: new Date().toISOString(),
           last_updated: new Date().toISOString()
         }, { onConflict: 'user_id' });
 
       if (error) throw error;
       
       console.log('Style profile saved successfully for user:', userId);
+      console.log('📊 Profile stats:', {
+        vocabularyWords: vocabularyPatterns.common_words.length,
+        signaturePhrases: styleProfile.signaturePhrases?.length || 0,
+        sampleSize,
+        tone: toneAnalysis.tone
+      });
     } catch (error) {
       console.error('Failed to save style profile:', error);
       throw error;
