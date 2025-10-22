@@ -280,22 +280,38 @@ export async function provisionLabelSchemaFor(userId, businessType) {
       console.log('⚠️ Manual deletion detected - forcing label recreation');
       allFoldersPresent = false;
     } else {
-      // For Outlook, try to map existing folders to schema first
-      if (integrations.provider === 'outlook' && syncResult.currentLabels > 0) {
-        console.log('📧 Outlook provider detected - attempting folder mapping...');
-        const mappingResult = mapExistingOutlookFoldersToSchema(enhancedStandardLabels, syncResult.labelMap);
-        if (mappingResult.success) {
-          console.log('✅ Successfully mapped existing Outlook folders to schema');
-          allFoldersPresent = true;
-          // Update existingLabels with mapped folders
-          existingLabels = mappingResult.mappedLabels;
-        } else {
-          console.log('⚠️ Could not map all existing folders - proceeding with standard check');
-          allFoldersPresent = checkIfAllFoldersPresent(enhancedStandardLabels, existingLabels);
-        }
-      } else {
-        allFoldersPresent = checkIfAllFoldersPresent(enhancedStandardLabels, existingLabels);
+    // ✨ FIXED: Always check if proper schema folders exist, don't try to map unrelated folders
+    console.log('🔍 Checking for proper schema-based folders...');
+    console.log('📋 Required schema folders:', Object.keys(enhancedStandardLabels));
+    console.log('📁 Existing folders from sync:', Object.keys(syncResult.labelMap || {}));
+    
+    allFoldersPresent = checkIfAllFoldersPresent(enhancedStandardLabels, existingLabels);
+    
+    // If we have existing folders but they don't match the schema, force recreation
+    if (syncResult.currentLabels > 0 && !allFoldersPresent) {
+      console.log('⚠️ Found existing folders but they don\'t match the required schema - forcing recreation');
+      console.log('📁 Existing folders:', Object.keys(syncResult.labelMap || {}));
+      console.log('📋 Required schema folders:', Object.keys(enhancedStandardLabels));
+      
+      // Check if any existing folders match the schema
+      const existingFolderNames = Object.keys(syncResult.labelMap || {});
+      const requiredFolderNames = Object.keys(enhancedStandardLabels);
+      const matchingFolders = existingFolderNames.filter(existing => 
+        requiredFolderNames.some(required => 
+          existing.toLowerCase() === required.toLowerCase()
+        )
+      );
+      
+      console.log('🔍 Matching folders found:', matchingFolders);
+      
+      if (matchingFolders.length === 0) {
+        console.log('❌ No existing folders match the required schema - forcing complete recreation');
+        allFoldersPresent = false;
+      } else if (matchingFolders.length < requiredFolderNames.length * 0.5) {
+        console.log('⚠️ Less than 50% of required folders exist - forcing recreation');
+        allFoldersPresent = false;
       }
+    }
     }
     
     if (allFoldersPresent) {
@@ -340,8 +356,10 @@ export async function provisionLabelSchemaFor(userId, businessType) {
       userId
     );
 
-    // ✨ UPDATED: Integrate only missing folders
-    console.log('🔄 Step 2: Creating missing labels...');
+    // ✨ UPDATED: Create proper business structure labels (BANKING, SALES, SUPPORT, etc.)
+    // This ensures we create the correct schema-based folders instead of mapping unrelated existing folders
+    console.log('🔄 Step 2: Creating proper business structure labels...');
+    console.log('📋 Creating labels for Hot tub & Spa business:', Object.keys(enhancedStandardLabels));
     const result = await manager.integrateAllFolders(enhancedStandardLabels, existingLabels);
     console.log(`✅ Integration result:`, result);
 
