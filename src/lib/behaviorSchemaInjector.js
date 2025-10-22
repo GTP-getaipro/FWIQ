@@ -13,7 +13,11 @@ import { GoldStandardReplyPrompt } from './goldStandardReplyPrompt.js';
 export const extractBehaviorConfigForN8n = (businessTypes, businessInfo = {}, voiceProfile = null) => {
   console.log('🔍 DEBUG: extractBehaviorConfigForN8n called with:', {
     businessTypes,
+    businessTypesArray: Array.isArray(businessTypes) ? businessTypes : 'not an array',
+    businessTypesLength: Array.isArray(businessTypes) ? businessTypes.length : 0,
+    businessTypesValues: Array.isArray(businessTypes) ? businessTypes.map(t => `"${t}" (${typeof t})`) : 'N/A',
     businessInfo: businessInfo?.name,
+    businessInfoTypes: businessInfo?.businessTypes,
     hasVoiceProfile: !!voiceProfile
   });
   
@@ -104,6 +108,7 @@ export const extractBehaviorConfigForN8n = (businessTypes, businessInfo = {}, vo
   // Debug: Log what we're passing to generateReplyPrompt
   console.log('🔍 DEBUG: Prompt data being passed to generateReplyPrompt:', {
     businessName: promptData.businessName,
+    businessType: promptData.businessType,
     businessPhone: promptData.businessPhone,
     websiteUrl: promptData.websiteUrl,
     primaryProductService: promptData.primaryProductService,
