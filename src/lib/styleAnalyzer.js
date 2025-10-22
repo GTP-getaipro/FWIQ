@@ -3,11 +3,12 @@ import { supabase } from '@/lib/customSupabaseClient';
 
 export class CommunicationStyleAnalyzer {
   constructor() {
-    // Use environment variable for OpenAI API key
-    const apiKey = import.meta.env.OPENAI_API_KEY || 
+    // Use environment variable for OpenAI API key (standardized to VITE_OPENAI_API_KEY)
+    const apiKey = import.meta.env.VITE_OPENAI_API_KEY || 
+                   import.meta.env.OPENAI_API_KEY ||
                    process.env.OPENAI_API_KEY;
     
-    if (!apiKey || apiKey.includes('your-openai-api-key')) {
+    if (!apiKey || apiKey.includes('your-openai-api-key') || apiKey === 'test-openai-key') {
       console.warn('OpenAI API key not found or is placeholder. Style analysis will be limited.');
       this.openai = null;
     } else {

@@ -375,23 +375,36 @@ const testTokenValidity = async (provider, accessToken) => {
 export const validateTokensForLabels = async (userId, provider) => {
   console.log(`🔍 Validating tokens for ${provider} label provisioning`);
 
-  // Get integration data
-  const { data: integration, error: integrationError } = await supabase
-    .from('integrations')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('provider', provider)
-    .eq('status', 'active')
-    .order('updated_at', { ascending: false })
-    .limit(1)
-    .single();
+  try {
+    // Get integration data
+    const { data: integration, error: integrationError } = await supabase
+      .from('integrations')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('provider', provider)
+      .eq('status', 'active')
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .single();
 
-  if (integrationError || !integration) {
-    throw new Error(`Active ${provider} integration not found`);
+    if (integrationError || !integration) {
+      console.error(`❌ Active ${provider} integration not found:`, integrationError);
+      throw new Error(`Active ${provider} integration not found. Please reconnect your ${provider} account.`);
+    }
+
+    // Get valid access token (refresh if needed)
+    const accessToken = await getValidAccessToken(userId, provider);
+    
+    if (!accessToken) {
+      throw new Error(`Failed to get valid access token for ${provider}. Please reconnect your account.`);
+    }
+
+    console.log(`✅ Valid ${provider} token obtained for label provisioning`);
+    return { accessToken, integration };
+  } catch (error) {
+    console.error(`❌ Token validation failed for ${provider}:`, error.message);
+    throw new Error(`Token validation failed for ${provider}: ${error.message}`);
   }
-
-  // Get valid access token (refresh if needed)
-  const accessToken = await getValidAccessToken(userId, provider);
 
   // Check if tokens are managed by n8n
   if (accessToken === 'N8N_MANAGED') {
