@@ -374,29 +374,49 @@ export const buildProductionClassifier = (aiConfig, labelConfig, businessInfo, m
     
     console.log('🚀 Using EnhancedDynamicClassifierGenerator for:', primaryBusinessType);
     console.log('📋 Classifier strategy: Generic categories + Business-specific tertiary customizations');
+    console.log('🔍 DEBUG: Business info passed to generator:', {
+      name: businessInfo.name,
+      businessTypes: businessInfo.businessTypes,
+      managers: managers?.length || 0,
+      suppliers: suppliers?.length || 0
+    });
     
+    // Ensure EnhancedDynamicClassifierGenerator is properly instantiated
     const classifierGenerator = new EnhancedDynamicClassifierGenerator(
       primaryBusinessType,
       businessInfo,
-      managers,
-      suppliers
+      managers || [],
+      suppliers || []
     );
+    
+    console.log('✅ EnhancedDynamicClassifierGenerator instantiated successfully');
     
     const enhancedSystemMessage = classifierGenerator.generateClassifierSystemMessage();
     
     console.log('✅ Enhanced classifier system message generated:', {
-      messageLength: enhancedSystemMessage.length,
-      hasBusinessName: enhancedSystemMessage.includes(businessInfo.name || 'the business'),
-      hasCategories: enhancedSystemMessage.includes('Categories:'),
-      hasJSONFormat: enhancedSystemMessage.includes('JSON Output Format'),
-      hasTertiaryCategories: enhancedSystemMessage.includes('FromBusiness') && enhancedSystemMessage.includes('ToBusiness'),
-      messagePreview: enhancedSystemMessage.substring(0, 200) + '...'
+      messageLength: enhancedSystemMessage?.length || 0,
+      hasBusinessName: enhancedSystemMessage?.includes(businessInfo.name || 'the business') || false,
+      hasCategories: enhancedSystemMessage?.includes('Categories:') || false,
+      hasJSONFormat: enhancedSystemMessage?.includes('JSON Output Format') || false,
+      hasTertiaryCategories: enhancedSystemMessage?.includes('FromBusiness') && enhancedSystemMessage?.includes('ToBusiness') || false,
+      messagePreview: enhancedSystemMessage?.substring(0, 200) + '...' || 'No message generated'
     });
+    
+    // Validate the generated message
+    if (!enhancedSystemMessage || enhancedSystemMessage.length < 100) {
+      throw new Error('Generated system message is too short or empty');
+    }
     
     return enhancedSystemMessage;
     
   } catch (error) {
-    console.error('❌ Error generating enhanced classifier, falling back to label-based:', error);
+    console.error('❌ Error generating enhanced classifier:', error);
+    console.error('❌ Error details:', {
+      message: error.message,
+      stack: error.stack,
+      businessType: businessInfo.businessTypes?.[0] || businessInfo.businessType,
+      businessName: businessInfo.name
+    });
     
     // FALLBACK: Use labelConfig if EnhancedDynamicClassifierGenerator fails
     // This is only used if there's an error with the dynamic generator
@@ -408,7 +428,33 @@ export const buildProductionClassifier = (aiConfig, labelConfig, businessInfo, m
     // FINAL FALLBACK: Return a minimal classifier
     console.error('❌ All classifier generation methods failed, returning minimal classifier');
     return `You are an email classifier for ${businessInfo.name || 'the business'}. 
-Categorize emails and return JSON with summary, primary_category, confidence, and ai_can_reply fields.`;
+Categorize emails and return JSON with summary, primary_category, confidence, and ai_can_reply fields.
+
+Business Context:
+- Business Name: ${businessInfo.name || 'Business'}
+- Business Type: ${businessInfo.businessTypes?.[0] || businessInfo.businessType || 'General Services'}
+- Email Domain: ${businessInfo.emailDomain || 'example.com'}
+
+Categories:
+- BANKING: Financial transactions and banking-related emails
+- SALES: Sales inquiries and new business opportunities  
+- SUPPORT: Customer support and service requests
+- URGENT: Emergency and urgent requests
+
+Return JSON format:
+{
+  "summary": "Brief email summary",
+  "primary_category": "BANKING|SALES|SUPPORT|URGENT",
+  "secondary_category": "Specific subcategory or null",
+  "tertiary_category": "Specific tertiary category or null", 
+  "confidence": 0.9,
+  "ai_can_reply": true,
+  "entities": {
+    "contact_name": "Name if found",
+    "email_address": "Email if found",
+    "phone_number": "Phone if found"
+  }
+}`;
   }
 };
 
