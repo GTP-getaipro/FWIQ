@@ -9,7 +9,6 @@
 
 import { supabase } from './customSupabaseClient.js';
 import { getValidAccessToken } from './oauthTokenManager.js';
-import { fetchGmailLabels, fetchOutlookFoldersRecursive } from './gmailLabelSync.js';
 import { getFolderIdsForN8n } from './labelSyncValidator.js';
 
 /**
@@ -96,12 +95,12 @@ export async function checkFolderHealth(userId, provider = null) {
       };
     }
 
-    // Fetch actual folders from provider using existing functions
+    // Fetch actual folders from provider using direct API calls
     let actualFolders = [];
     if (provider === 'gmail') {
-      actualFolders = await fetchGmailLabels(accessToken);
+      actualFolders = await fetchCurrentGmailLabels(accessToken);
     } else if (provider === 'outlook') {
-      actualFolders = await fetchOutlookFoldersRecursive(accessToken);
+      actualFolders = await fetchCurrentOutlookFolders(accessToken);
     }
 
     console.log(`📬 Actual folders found: ${actualFolders.length}`);
@@ -198,5 +197,101 @@ export async function getFolderHealthSummary(userId, provider = null) {
     businessLabelsCount: health.businessLabelsCount,
     actualFoldersCount: health.actualFoldersCount
   };
+}
+
+/**
+ * Fetch current Gmail labels using Gmail API
+ * @param {string} accessToken - Gmail OAuth access token
+ * @returns {Promise<Array>} Array of label objects with id and name
+ */
+async function fetchCurrentGmailLabels(accessToken) {
+  try {
+    const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/labels', {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Gmail API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const labels = data.labels || [];
+
+    // Filter to user-created labels only (exclude system labels)
+    const userLabels = labels.filter(label => 
+      label.type === 'user' && !label.name.startsWith('CATEGORY_')
+    );
+
+    return userLabels.map(label => ({
+      id: label.id,
+      name: label.name
+    }));
+  } catch (error) {
+    console.error('❌ Error fetching Gmail labels:', error);
+    return [];
+  }
+}
+
+/**
+ * Fetch current Outlook folders using Microsoft Graph API
+ * @param {string} accessToken - Outlook OAuth access token
+ * @returns {Promise<Array>} Array of folder objects with id and name
+ */
+async function fetchCurrentOutlookFolders(accessToken) {
+  try {
+    // Fetch all mail folders recursively
+    const folders = await fetchOutlookFoldersRecursive(accessToken);
+    
+    return folders.map(folder => ({
+      id: folder.id,
+      name: folder.displayName
+    }));
+  } catch (error) {
+    console.error('❌ Error fetching Outlook folders:', error);
+    return [];
+  }
+}
+
+/**
+ * Recursively fetch all Outlook folders including child folders
+ * @param {string} accessToken - Outlook OAuth access token
+ * @param {string} parentId - Parent folder ID (null for root folders)
+ * @returns {Promise<Array>} Array of all folders
+ */
+async function fetchOutlookFoldersRecursive(accessToken, parentId = null) {
+  try {
+    const url = parentId
+      ? `https://graph.microsoft.com/v1.0/me/mailFolders/${parentId}/childFolders`
+      : 'https://graph.microsoft.com/v1.0/me/mailFolders';
+
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Microsoft Graph API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const folders = data.value || [];
+
+    // Recursively fetch child folders
+    let allFolders = [...folders];
+    for (const folder of folders) {
+      const childFolders = await fetchOutlookFoldersRecursive(accessToken, folder.id);
+      allFolders = allFolders.concat(childFolders);
+    }
+
+    return allFolders;
+  } catch (error) {
+    console.error('❌ Error fetching Outlook folders recursively:', error);
+    return [];
+  }
 }
 
