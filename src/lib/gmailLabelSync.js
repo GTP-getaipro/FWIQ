@@ -253,6 +253,35 @@ export async function syncGmailLabelsWithDatabase(userId, provider = 'gmail', bu
 
     console.log(`✅ Database updated with ${Object.keys(labelMap).length} current labels`);
     
+    // ✅ NEW: Also sync to business_labels table for folder health monitoring
+    if (businessProfileId && currentLabels.length > 0) {
+      console.log(`📊 Syncing ${currentLabels.length} labels to business_labels table...`);
+      
+      const normalizedLabels = currentLabels.map(label => ({
+        label_id: label.id,
+        label_name: label.name,
+        provider: provider,
+        business_profile_id: businessProfileId,
+        business_type: businessType,
+        color: label.color?.backgroundColor || null,
+        synced_at: new Date().toISOString(),
+        is_deleted: false
+      }));
+      
+      const { error: upsertError } = await supabase
+        .from('business_labels')
+        .upsert(normalizedLabels, { 
+          onConflict: 'label_id',
+          ignoreDuplicates: false 
+        });
+      
+      if (upsertError) {
+        console.warn('⚠️ Failed to sync to business_labels table:', upsertError.message);
+      } else {
+        console.log(`✅ Synced ${normalizedLabels.length} labels to business_labels table`);
+      }
+    }
+    
     if (hadLabelsBefore && !hasLabelsNow) {
       console.log('📝 Manual deletion detected - labels will need to be recreated');
     }
