@@ -474,13 +474,18 @@ Please provide a JSON response with the following structure:
    */
   async storeVoiceAnalysis(userId, voiceAnalysis, sampleSize) {
     try {
+      // Store sample_size inside the voice analysis object
+      const styleProfile = {
+        ...voiceAnalysis,
+        sample_size: sampleSize
+      };
+
       const { error } = await supabase
         .from('communication_styles')
         .upsert({
           user_id: userId,
-          style_profile: voiceAnalysis,
-          sample_size: sampleSize,
-          updated_at: new Date().toISOString()
+          style_profile: styleProfile,
+          last_updated: new Date().toISOString()
         }, {
           onConflict: 'user_id'
         });

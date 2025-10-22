@@ -212,14 +212,7 @@ Return only valid JSON format.`;
         .upsert({
           user_id: userId,
           style_profile: styleProfile,
-          vocabulary_patterns: styleProfile.vocabulary,
-          tone_analysis: {
-            tone: styleProfile.tone,
-            formality: styleProfile.formality,
-            personality: styleProfile.personality
-          },
-          signature_phrases: styleProfile.signaturePhrases.map(p => p.phrase),
-          response_templates: styleProfile.responsePatterns
+          last_updated: new Date().toISOString()
         }, { onConflict: 'user_id' });
 
       if (error) throw error;

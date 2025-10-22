@@ -273,10 +273,6 @@ export class StyleProfileManager {
     const profileData = {
       user_id: userId,
       style_profile: exportedProfile.profile.style_profile,
-      vocabulary_patterns: exportedProfile.profile.vocabulary_patterns,
-      tone_analysis: exportedProfile.profile.tone_analysis,
-      signature_phrases: exportedProfile.profile.signature_phrases,
-      response_templates: exportedProfile.profile.response_templates,
       last_updated: new Date().toISOString()
     };
 

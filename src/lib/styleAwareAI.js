@@ -68,9 +68,13 @@ export class StyleAwareAI {
 
   createPersonalizedPrompt(styleProfile, businessContext) {
     const profile = styleProfile.style_profile || {};
-    const vocabulary = styleProfile.vocabulary_patterns || {};
-    const toneAnalysis = styleProfile.tone_analysis || {};
-    const signaturePhrases = styleProfile.signature_phrases || [];
+    const vocabulary = profile.vocabulary || {};
+    const toneAnalysis = { 
+      tone: profile.tone, 
+      formality: profile.formality, 
+      personality: profile.personality 
+    } || {};
+    const signaturePhrases = profile.signaturePhrases || [];
 
     const businessName = businessContext.businessName || 'the business';
     const businessType = businessContext.businessType || 'service business';
@@ -274,7 +278,7 @@ ${businessName}`
     validation.appropriateLength = Math.abs(actualLength - expectedLength) < expectedLength * 0.5;
 
     // Check for signature phrases
-    const signaturePhrases = styleProfile?.signature_phrases || [];
+    const signaturePhrases = styleProfile?.style_profile?.signaturePhrases || [];
     validation.usesSignaturePhrases = signaturePhrases.some(phrase => 
       responseText.includes(phrase.toLowerCase())
     );

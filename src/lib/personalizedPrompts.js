@@ -53,7 +53,11 @@ export class PersonalizedPrompts {
 
   generateSystemPrompt(styleProfile, businessContext) {
     const profile = styleProfile.style_profile || {};
-    const toneAnalysis = styleProfile.tone_analysis || {};
+    const toneAnalysis = { 
+      tone: profile.tone, 
+      formality: profile.formality, 
+      personality: profile.personality 
+    } || {};
     const businessType = businessContext.businessType || 'General';
     const industryContext = this.industryContexts[businessType] || this.industryContexts['General'];
 
