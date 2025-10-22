@@ -772,13 +772,6 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
         </motion.div>
       )}
 
-      {/* Folder Health Widget */}
-      {profile?.id && (
-        <FolderHealthWidget 
-          userId={profile.id}
-          onRefreshNeeded={() => navigate('/onboarding/deploy')}
-        />
-      )}
 
       {/* Key Metrics */}
       <motion.div
@@ -1104,6 +1097,14 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
         )}
         </AnimatePresence>
       </motion.div>
+
+      {/* Folder Health Widget */}
+      {profile?.id && (
+        <FolderHealthWidget 
+          userId={profile.id}
+          onRefreshNeeded={() => navigate('/onboarding/team-setup')}
+        />
+      )}
 
       {/* 🔄 Redeploy Automation Section */}
       <motion.div
