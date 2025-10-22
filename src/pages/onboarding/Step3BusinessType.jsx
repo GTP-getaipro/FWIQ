@@ -10,6 +10,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useOnboardingData } from '@/lib/onboardingDataAggregator';
 import { emailVoiceAnalyzer } from '@/lib/emailVoiceAnalyzer';
+import { autoProvisionOnBusinessTypeChange, getFolderProvisioningFeedback } from '@/lib/automaticFolderProvisioning';
 // Label provisioning moved to Step 4 (Team Setup)
 
 const businessTypes = [
@@ -297,6 +298,10 @@ const Step3BusinessType = () => {
       console.log('🚀 TRIGGERING VOICE ANALYSIS:', { userId: user.id, businessType: selectedTypes[0] });
       triggerVoiceAnalysis(user.id, selectedTypes[0]);
 
+      // 📁 NEW: Trigger automatic folder provisioning (non-blocking)
+      console.log('📁 TRIGGERING AUTOMATIC FOLDER PROVISIONING:', { userId: user.id, businessTypes: selectedTypes });
+      triggerAutomaticFolderProvisioning(user.id, selectedTypes);
+
       navigate('/onboarding/team-setup');
     } catch (error) {
       toast({
@@ -432,6 +437,57 @@ const Step3BusinessType = () => {
       // Continue with default style - non-blocking error
     } finally {
       setIsAnalyzingVoice(false);
+    }
+  };
+
+  /**
+   * Trigger automatic folder provisioning in background (non-blocking)
+   * Checks if email integration exists and team is set up before provisioning
+   */
+  const triggerAutomaticFolderProvisioning = async (userId, businessTypes) => {
+    try {
+      console.log('📁 Starting automatic folder provisioning...', {
+        userId,
+        businessTypes,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Call automatic provisioning service
+      const result = await autoProvisionOnBusinessTypeChange(userId, businessTypes);
+      
+      // Get user-friendly feedback
+      const feedback = getFolderProvisioningFeedback(result);
+      
+      // Log result for debugging
+      console.log('📁 Folder provisioning result:', {
+        success: result.success,
+        skipped: result.skipped,
+        message: feedback.message,
+        details: feedback.details
+      });
+      
+      // Show feedback to user (only if folders were actually created or failed)
+      if (!result.skipped && result.success) {
+        toast({
+          title: feedback.title,
+          description: feedback.message,
+          duration: 5000,
+        });
+      } else if (!result.skipped && !result.success) {
+        // Only show error if it's a real error (not just skipped due to missing integration)
+        console.warn('⚠️ Folder provisioning issue:', feedback.message);
+      }
+      
+    } catch (error) {
+      console.error('❌ Automatic folder provisioning failed:', {
+        error: error.message,
+        stack: error.stack,
+        userId,
+        businessTypes
+      });
+      
+      // Don't show error to user - this is a background process
+      // Folders will be created later when they deploy or during team setup
     }
   };
 
