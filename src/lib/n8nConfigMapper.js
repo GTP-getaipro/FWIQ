@@ -226,8 +226,8 @@ const mapIntegratedProfileToN8n = async (profileResult, userId) => {
   const enhancedClientConfig = {
     name: profile.business?.name || clientConfig.business_name || 'Business',
     business_name: profile.business?.name || clientConfig.business_name || 'Business',
-    business_type: profile.business?.primaryType || clientConfig.business_type || 'Hot tub & Spa',
-    business_types: profile.business?.types || clientConfig.business_types || ['Hot tub & Spa'],
+    business_type: profile.business?.primaryType || profile.business_type || clientConfig.business?.business_type || clientConfig.business_type || 'Hot tub & Spa',
+    business_types: profile.business?.types || profile.business_types || clientConfig.business?.business_types || clientConfig.business_types || [profile.business_type] || [clientConfig.business_type] || ['Hot tub & Spa'],
     emailDomain: profile.business?.emailDomain || clientConfig.email_domain || '',
     email_domain: profile.business?.emailDomain || clientConfig.email_domain || '',
     timezone: profile.business?.timezone || clientConfig.timezone || 'UTC',
