@@ -152,15 +152,26 @@ const formatBusinessHours = (businessHours) => {
 export const injectOnboardingData = async (clientData) => {
   // Get the appropriate template based on business type(s)
   // Support both single type (string) and multiple types (array)
-  let businessType = clientData.business?.type || 'Pools & Spas';
-  
-  // Handle business_types array (multi-business mode)
-  if (clientData.business?.types && Array.isArray(clientData.business.types) && clientData.business.types.length > 0) {
-    businessType = clientData.business.types;
-  }
+  // Extract business types with comprehensive fallback chain
+  let businessType = clientData.businessTypes || 
+                     clientData.business_types ||
+                     clientData.business?.business_types ||
+                     clientData.business?.types ||
+                     clientData.business?.businessType ||
+                     clientData.business?.business_type ||
+                     clientData.business?.type ||
+                     'General Services';
   
   // Normalize to array for schema processing
   const businessTypes = Array.isArray(businessType) ? businessType : [businessType];
+  
+  console.log('🔍 DEBUG: Business types extracted:', {
+    businessTypes,
+    source: clientData.businessTypes ? 'clientData.businessTypes' :
+            clientData.business_types ? 'clientData.business_types' :
+            clientData.business?.business_types ? 'business.business_types' :
+            clientData.business?.types ? 'business.types' : 'fallback'
+  });
   
   // Detect provider from clientData
   const provider = clientData.provider || 'gmail';
