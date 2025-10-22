@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle, AlertTriangle, RefreshCw, Folder, Info } from 'lucide-react';
+import { CheckCircle, AlertTriangle, RefreshCw, Folder, Info, Brain, AlertCircle } from 'lucide-react';
 import { getFolderHealthSummary } from '@/lib/folderHealthCheck';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -208,6 +208,119 @@ const FolderHealthWidget = ({ userId, provider, onRefreshNeeded }) => {
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-4">
           Last checked: {new Date(folderHealth.lastChecked).toLocaleString()}
         </p>
+      )}
+
+      {/* Classifier Coverage Section */}
+      {folderHealth.classifierCoverage && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+          className={`mt-4 p-3 rounded-lg border ${
+            folderHealth.classifierCoverage.healthy
+              ? 'border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/20'
+              : 'border-orange-200 dark:border-orange-700 bg-orange-50 dark:bg-orange-900/20'
+          }`}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <Brain className={`h-4 w-4 ${
+              folderHealth.classifierCoverage.healthy
+                ? 'text-green-600 dark:text-green-400'
+                : 'text-orange-600 dark:text-orange-400'
+            }`} />
+            <h4 className={`text-sm font-medium ${
+              folderHealth.classifierCoverage.healthy
+                ? 'text-green-900 dark:text-green-100'
+                : 'text-orange-900 dark:text-orange-100'
+            }`}>
+              AI Classifier Coverage
+            </h4>
+          </div>
+          
+          <div className="flex items-center justify-between text-sm">
+            <span className={`${
+              folderHealth.classifierCoverage.healthy
+                ? 'text-green-700 dark:text-green-300'
+                : 'text-orange-700 dark:text-orange-300'
+            }`}>
+              {folderHealth.classifierCoverage.classifiableFolders}/{folderHealth.classifierCoverage.totalFolders} folders classifiable
+            </span>
+            <span className={`font-medium ${
+              folderHealth.classifierCoverage.healthy
+                ? 'text-green-800 dark:text-green-200'
+                : 'text-orange-800 dark:text-orange-200'
+            }`}>
+              {folderHealth.classifierCoverage.coveragePercentage}%
+            </span>
+          </div>
+          
+          {/* Classifier Coverage Bar */}
+          <div className="mt-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${folderHealth.classifierCoverage.coveragePercentage}%` }}
+              transition={{ duration: 0.8, ease: 'easeOut', delay: 0.4 }}
+              className={`h-full rounded-full ${
+                folderHealth.classifierCoverage.coveragePercentage >= 90
+                  ? 'bg-green-500'
+                  : folderHealth.classifierCoverage.coveragePercentage >= 70
+                  ? 'bg-orange-500'
+                  : 'bg-red-500'
+              }`}
+            />
+          </div>
+          
+          {/* Warnings */}
+          {folderHealth.classifierCoverage.warnings && folderHealth.classifierCoverage.warnings.length > 0 && (
+            <div className="mt-2 space-y-1">
+              {folderHealth.classifierCoverage.warnings.map((warning, index) => (
+                <div key={index} className="flex items-start gap-2 text-xs text-orange-600 dark:text-orange-400">
+                  <AlertCircle className="h-3 w-3 flex-shrink-0 mt-0.5" />
+                  <span>{warning}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          {/* Unclassifiable Folders */}
+          {folderHealth.classifierCoverage.unclassifiableCount > 0 && (
+            <div className="mt-2">
+              <button
+                onClick={() => setShowDetails(!showDetails)}
+                className="flex items-center gap-1 text-xs text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-200 transition-colors"
+              >
+                <Info className="h-3 w-3" />
+                <span>
+                  {showDetails ? 'Hide' : 'Show'} {folderHealth.classifierCoverage.unclassifiableCount} unclassifiable folder{folderHealth.classifierCoverage.unclassifiableCount > 1 ? 's' : ''}
+                </span>
+              </button>
+              
+              {showDetails && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  transition={{ duration: 0.3 }}
+                  className="mt-2 space-y-1"
+                >
+                  {folderHealth.classifierCoverage.unclassifiableFolders.map((folderName, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-2 text-xs text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 rounded px-2 py-1"
+                    >
+                      <Folder className="h-3 w-3 flex-shrink-0" />
+                      <span className="truncate">{folderName}</span>
+                    </div>
+                  ))}
+                  {folderHealth.classifierCoverage.unclassifiableCount > folderHealth.classifierCoverage.unclassifiableFolders.length && (
+                    <p className="text-xs text-orange-600 dark:text-orange-400 italic px-2">
+                      And {folderHealth.classifierCoverage.unclassifiableCount - folderHealth.classifierCoverage.unclassifiableFolders.length} more...
+                    </p>
+                  )}
+                </motion.div>
+              )}
+            </div>
+          )}
+        </motion.div>
       )}
 
       {/* Provider Badge */}

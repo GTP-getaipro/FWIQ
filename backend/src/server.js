@@ -13,6 +13,7 @@ import { createClient } from '@supabase/supabase-js';
 import { authMiddleware } from './middleware/auth.js';
 import { errorHandler, asyncHandler } from './middleware/errorHandler.js';
 import logger from './utils/logger.js';
+import { getActualLabelMapping, generateLabelMappingCode } from './utils/labelMappingService.js';
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -313,7 +314,12 @@ app.post('/api/workflows/deploy', asyncHandler(async (req, res) => {
     const gmailCredentialId = gmailCred?.credential_id || `gmail_${userId.substring(0, 8)}`;
     const openaiCredentialId = openaiCred ? `openai_${userId.substring(0, 8)}` : 'openai_shared';
 
-    console.log(`Using credentials - Gmail: ${gmailCredentialId}, OpenAI: ${openaiCredentialId}`);
+    // Get actual label mapping from database
+    const provider = gmailCred ? 'gmail' : 'outlook';
+    const labelMapping = await getActualLabelMapping(userId, provider);
+    const labelMappingCode = generateLabelMappingCode(labelMapping);
+    
+    console.log(`📋 Using ${provider} label mapping with ${Object.keys(labelMapping).length} entries`);
 
     // Create credentials in N8N if they don't exist
     await createN8nCredentials(n8nBaseUrl, n8nApiKey, {
@@ -337,21 +343,26 @@ app.post('/api/workflows/deploy', asyncHandler(async (req, res) => {
             },
             "simple": false,
             "filters": {
-              "q": "in:inbox -(from:(*@floworx-iq.com))"
+              "q": provider === 'gmail' ? "in:inbox -(from:(*@floworx-iq.com))" : "in:inbox"
             },
             "options": {
               "downloadAttachments": true
             }
           },
-          "type": "n8n-nodes-base.gmailTrigger",
-          "typeVersion": 1.2,
+          "type": provider === 'gmail' ? "n8n-nodes-base.gmailTrigger" : "n8n-nodes-base.microsoftOutlookTrigger",
+          "typeVersion": provider === 'gmail' ? 1.2 : 1,
           "position": [-1200, 336],
-          "id": "gmail-trigger",
-          "name": "Gmail Trigger",
-          "credentials": {
+          "id": `${provider}-trigger`,
+          "name": `${provider.charAt(0).toUpperCase() + provider.slice(1)} Trigger`,
+          "credentials": provider === 'gmail' ? {
             "gmailOAuth2": {
               "id": gmailCredentialId,
               "name": `Gmail - ${profile?.email || 'Client'}`
+            }
+          } : {
+            "microsoftOutlookOAuth2Api": {
+              "id": gmailCredentialId, // Reuse the same credential ID for Outlook
+              "name": `Outlook - ${profile?.email || 'Client'}`
             }
           }
         },
@@ -454,7 +465,7 @@ app.post('/api/workflows/deploy', asyncHandler(async (req, res) => {
         },
         {
           "parameters": {
-            "jsCode": "const item = $input.item.json.parsed_output;\\n\\n// --- MAPPING OF CATEGORIES TO GMAIL LABEL IDs ---\\nconst labelMap = {\\n  // Primary Categories\\n  'Sales': 'Label_Sales',\\n  'Support': 'Label_Support',\\n  'Billing': 'Label_Billing',\\n  'Appointment': 'Label_Appointment',\\n  'Recruitment': 'Label_Recruitment',\\n  'Supplier': 'Label_Supplier',\\n  'GoogleReview': 'Label_GoogleReview',\\n  'Urgent': 'Label_Urgent',\\n  'Misc': 'Label_Misc',\\n  // Support Secondary\\n  'TechnicalSupport': 'Label_TechnicalSupport',\\n  'PartsAndChemicals': 'Label_PartsAndChemicals',\\n  'AppointmentScheduling': 'Label_AppointmentScheduling',\\n  'General': 'Label_SupportGeneral',\\n  // Billing Secondary\\n  'Invoice': 'Label_Invoice',\\n  'Payment': 'Label_Payment',\\n  'Refund': 'Label_Refund',\\n  'Receipts': 'Label_Receipts',\\n  // Supplier Secondary\\n  'AquaSpaSupply': 'Label_AquaSpaSupply',\\n  'StrongSpas': 'Label_StrongSpas',\\n  'BalboaWaterGroup': 'Label_BalboaWaterGroup',\\n  'WaterwayPlastics': 'Label_WaterwayPlastics'\\n};\\n\\nconst labelsToApply = new Set();\\n\\n// Add labels based on classification\\nif (item.primary_category && labelMap[item.primary_category]) {\\n  labelsToApply.add(labelMap[item.primary_category]);\\n}\\nif (item.secondary_category && labelMap[item.secondary_category]) {\\n  labelsToApply.add(labelMap[item.secondary_category]);\\n}\\nif (item.tertiary_category && labelMap[item.tertiary_category]) {\\n  labelsToApply.add(labelMap[item.tertiary_category]);\\n}\\n\\n// Return the original data plus the array of label IDs\\n$input.item.json.labelIds = Array.from(labelsToApply);\\nreturn $input.item.json;"
+            "jsCode": labelMappingCode
           },
           "type": "n8n-nodes-base.code",
           "typeVersion": 2,
@@ -464,19 +475,28 @@ app.post('/api/workflows/deploy', asyncHandler(async (req, res) => {
         },
         {
           "parameters": {
-            "operation": "addLabels",
-            "messageId": "={{ $json.parsed_output.id }}",
-            "labelIds": "={{ $json.labelIds }}"
+            "operation": provider === 'gmail' ? "addLabels" : "moveToFolder",
+            "messageId": "={{ $json.parsed_output.id || $json.id }}",
+            ...(provider === 'gmail' ? {
+              "labelIds": "={{ $json.labelsToApply }}"
+            } : {
+              "folderId": "={{ $json.labelsToApply[0] }}"
+            })
           },
-          "type": "n8n-nodes-base.gmail",
-          "typeVersion": 2.1,
+          "type": provider === 'gmail' ? "n8n-nodes-base.gmail" : "n8n-nodes-base.microsoftOutlook",
+          "typeVersion": provider === 'gmail' ? 2.1 : 1,
           "position": [496, 336],
-          "id": "apply-labels",
-          "name": "Apply Labels",
-          "credentials": {
+          "id": `apply-${provider}-labels`,
+          "name": `Apply ${provider.charAt(0).toUpperCase() + provider.slice(1)} Labels`,
+          "credentials": provider === 'gmail' ? {
             "gmailOAuth2": {
               "id": gmailCredentialId,
               "name": `Gmail - ${profile?.email || 'Client'}`
+            }
+          } : {
+            "microsoftOutlookOAuth2Api": {
+              "id": gmailCredentialId,
+              "name": `Outlook - ${profile?.email || 'Client'}`
             }
           }
         },
@@ -576,7 +596,7 @@ app.post('/api/workflows/deploy', asyncHandler(async (req, res) => {
         }
       ],
       connections: {
-        "Gmail Trigger": {
+        [`${provider.charAt(0).toUpperCase() + provider.slice(1)} Trigger`]: {
           "main": [
             [
               {
@@ -653,14 +673,14 @@ app.post('/api/workflows/deploy', asyncHandler(async (req, res) => {
           "main": [
             [
               {
-                "node": "Apply Labels",
+                "node": `Apply ${provider.charAt(0).toUpperCase() + provider.slice(1)} Labels`,
                 "type": "main",
                 "index": 0
               }
             ]
           ]
         },
-        "Apply Labels": {
+        [`Apply ${provider.charAt(0).toUpperCase() + provider.slice(1)} Labels`]: {
           "main": [
             [
               {

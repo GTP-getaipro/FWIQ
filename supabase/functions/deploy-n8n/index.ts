@@ -300,6 +300,273 @@ async function validateFolderHealth(
 }
 
 /**
+ * Generate dynamic label mapping code for N8N workflow
+ * Maps AI classifier categories to actual Gmail/Outlook label IDs
+ */
+function generateDynamicLabelMappingCode(emailLabels: Record<string, string>, provider: string): string {
+  console.log(`🏗️ Generating dynamic label mapping code for ${provider}...`);
+  console.log(`📋 Email labels available: ${Object.keys(emailLabels).length}`);
+  
+  // Create label mapping object from email_labels
+  const labelMapping: Record<string, string> = {};
+  
+  for (const [categoryName, labelId] of Object.entries(emailLabels)) {
+    // Normalize category name for matching
+    const normalizedName = categoryName.toUpperCase().trim();
+    labelMapping[normalizedName] = labelId;
+    
+    // Handle hierarchical paths (e.g., "BANKING/e-Transfer", "SUPPORT/General")
+    if (categoryName.includes('/')) {
+      const parts = categoryName.split('/');
+      const primaryCategory = parts[0].toUpperCase().trim();
+      const secondaryCategory = parts[1]?.toUpperCase().trim();
+      const tertiaryCategory = parts[2]?.toUpperCase().trim();
+      
+      // Add primary category mapping if not exists
+      if (!labelMapping[primaryCategory]) {
+        labelMapping[primaryCategory] = labelId;
+      }
+      
+      // Add secondary category mapping
+      if (secondaryCategory) {
+        labelMapping[secondaryCategory] = labelId;
+        
+        // Add full path mapping
+        labelMapping[`${primaryCategory}/${secondaryCategory}`] = labelId;
+      }
+      
+      // Add tertiary category mapping
+      if (tertiaryCategory) {
+        labelMapping[tertiaryCategory] = labelId;
+        
+        // Add full path mappings
+        labelMapping[`${primaryCategory}/${secondaryCategory}/${tertiaryCategory}`] = labelId;
+      }
+    }
+    
+    // Handle underscore-separated abbreviated keys (e.g., "SUPPO_GENE", "SALES_NEWS")
+    // Map them back to their full category names
+    if (categoryName.includes('_')) {
+      // Try to expand abbreviated category names
+      const expandedName = expandAbbreviatedCategory(categoryName);
+      if (expandedName && expandedName !== normalizedName) {
+        labelMapping[expandedName] = labelId;
+      }
+    }
+  }
+  
+  // Helper function to expand abbreviated category names
+  function expandAbbreviatedCategory(abbrev: string): string | null {
+    const expansionMap: Record<string, string> = {
+      // Primary categories
+      'BANKI': 'BANKING',
+      'SUPPO': 'SUPPORT',
+      'MANAG': 'MANAGER',
+      'SUPPL': 'SUPPLIERS',
+      'FORMS': 'FORMSUB',
+      'GOOGL': 'GOOGLEREVIEW',
+      'RECRU': 'RECRUITMENT',
+      'SOCIA': 'SOCIALMEDIA',
+      'URGEN': 'URGENT',
+      
+      // Secondary categories
+      'GENE': 'GENERAL',
+      'APPO': 'APPOINTMENTSCHEDULING',
+      'SCHE': 'SCHEDULING',
+      'TECH': 'TECHNICALSUPPORT',
+      'SUPP': 'SUPPORT',
+      'PART': 'PARTSANDCHEMICALS',
+      'INVO': 'INVOICE',
+      'RECE': 'RECEIPTS',
+      'PAYM': 'PAYMENT',
+      'CONF': 'CONFIRMATION',
+      'TRAN': 'TRANSFER',
+      'NEWS': 'NEWINQUIRY',
+      'CONS': 'CONSULTATION',
+      'ACCE': 'ACCESSORY',
+      'SALE': 'SALES',
+      'EMER': 'EMERGENCY',
+      'REPA': 'REPAIRS',
+      'LEAK': 'LEAK',
+      'POWE': 'POWER',
+      'OUTA': 'OUTAGE',
+      'OTHE': 'OTHER',
+      'INCO': 'INCOMING',
+      'CALL': 'CALLS',
+      'VOIC': 'VOICEMAIL',
+      'SOCI': 'SOCIAL',
+      'MEDI': 'MEDIA',
+      'SPEC': 'SPECIAL',
+      'OFFE': 'OFFERS',
+      'QUOT': 'QUOTE',
+      'REQU': 'REQUEST',
+      'SERV': 'SERVICE',
+      'SUBM': 'SUBMISSION',
+      'WORK': 'WORKORDER',
+      'REVI': 'REVIEW',
+      'RESP': 'RESPONSE',
+      'NEWR': 'NEWREVIEW',
+      'INTE': 'INTERVIEW',
+      'JOBA': 'JOBAPPLICATION',
+      'APPL': 'APPLICATION',
+      'NEWH': 'NEWHIRE',
+      'UNAS': 'UNASSIGNED',
+      'PERS': 'PERSONAL',
+      'GECK': 'GECKOALLIANCE',
+      'ALLI': 'ALLIANCE',
+      'HAYW': 'HAYWARD',
+      'PENT': 'PENTAIR',
+      'WATE': 'WATERWAY',
+      'PLAS': 'PLASTICS',
+      'GOOG': 'GOOGLE',
+      'MY': 'MY',
+      'BUS': 'BUSINESS',
+      'FACE': 'FACEBOOK',
+      'INST': 'INSTAGRAM',
+      'LINK': 'LINKEDIN',
+      'AQU': 'AQUA',
+      'SPA': 'SPA',
+      'NEW': 'NEW',
+      'AND': 'AND',
+      'CHE': 'CHEMICALS',
+      'ORD': 'ORDER',
+      'FOR': 'FORMS'
+    };
+    
+    // Try to expand the abbreviated name by looking up each part
+    const parts = abbrev.split('_');
+    const expanded = parts.map(part => expansionMap[part.toUpperCase()] || part).join('/');
+    
+    return expanded !== abbrev ? expanded : null;
+  }
+  
+  const labelMapString = JSON.stringify(labelMapping, null, 2);
+  
+  console.log(`✅ Generated label mapping with ${Object.keys(labelMapping).length} entries`);
+  
+  // Generate JavaScript code for N8N Code node
+  const jsCode = `// 🤖 DYNAMICALLY GENERATED LABEL MAPPING - DO NOT EDIT MANUALLY
+// This code is auto-generated during workflow deployment
+// Provider: ${provider}
+// Generated: ${new Date().toISOString()}
+
+const parsed = $json.parsed_output || $json;
+const provider = '${provider}';
+
+// 📋 Label mapping from FloWorx database
+const labelMap = ${labelMapString};
+
+// Helper: Normalize category name for matching
+function normalizeCategory(category) {
+  if (!category) return null;
+  return category.toString().toUpperCase().trim();
+}
+
+// Helper: Find label ID with intelligent matching
+function findLabelId(category, labelMap) {
+  if (!category) return null;
+  
+  const normalized = normalizeCategory(category);
+  
+  // 1. Try exact match
+  if (labelMap[normalized]) {
+    return labelMap[normalized];
+  }
+  
+  // 2. Try case-insensitive match
+  const exactMatch = Object.keys(labelMap).find(key => 
+    key.toUpperCase() === normalized
+  );
+  if (exactMatch) {
+    return labelMap[exactMatch];
+  }
+  
+  // 3. Try partial match (for categories with spaces or slashes)
+  const partialMatch = Object.keys(labelMap).find(key => {
+    const keyUpper = key.toUpperCase();
+    return keyUpper.includes(normalized) || normalized.includes(keyUpper);
+  });
+  if (partialMatch) {
+    return labelMap[partialMatch];
+  }
+  
+  return null;
+}
+
+// Build array of label IDs to apply
+const labelIds = [];
+
+// Add primary category label
+if (parsed.primary_category) {
+  const primaryLabelId = findLabelId(parsed.primary_category, labelMap);
+  if (primaryLabelId) {
+    labelIds.push(primaryLabelId);
+  }
+}
+
+// Add secondary category label (if exists)
+if (parsed.secondary_category) {
+  const secondaryLabelId = findLabelId(parsed.secondary_category, labelMap);
+  if (secondaryLabelId) {
+    labelIds.push(secondaryLabelId);
+  }
+  
+  // Also try hierarchical path: "Primary/Secondary"
+  const hierarchicalPath = \`\${parsed.primary_category}/\${parsed.secondary_category}\`;
+  const hierarchicalLabelId = findLabelId(hierarchicalPath, labelMap);
+  if (hierarchicalLabelId && !labelIds.includes(hierarchicalLabelId)) {
+    labelIds.push(hierarchicalLabelId);
+  }
+}
+
+// Add tertiary category label (if exists)
+if (parsed.tertiary_category) {
+  const tertiaryLabelId = findLabelId(parsed.tertiary_category, labelMap);
+  if (tertiaryLabelId) {
+    labelIds.push(tertiaryLabelId);
+  }
+  
+  // Also try full hierarchical path: "Primary/Secondary/Tertiary"
+  const fullPath = \`\${parsed.primary_category}/\${parsed.secondary_category}/\${parsed.tertiary_category}\`;
+  const fullPathLabelId = findLabelId(fullPath, labelMap);
+  if (fullPathLabelId && !labelIds.includes(fullPathLabelId)) {
+    labelIds.push(fullPathLabelId);
+  }
+}
+
+// Remove duplicates and filter valid label IDs
+const uniqueLabelIds = [...new Set(labelIds)].filter(id => 
+  id && typeof id === 'string' && (id.startsWith('Label_') || id.startsWith('AAMk'))
+);
+
+// Fallback to MISC label if no labels found
+let fallbackLabelId = findLabelId('MISC', labelMap) || findLabelId('Misc', labelMap);
+if (!fallbackLabelId) {
+  // Use first available label as last resort
+  fallbackLabelId = Object.values(labelMap)[0];
+}
+
+const finalLabels = uniqueLabelIds.length > 0 ? uniqueLabelIds : [fallbackLabelId];
+
+// Return result with label IDs
+return {
+  ...parsed,
+  labelsToApply: finalLabels,
+  provider: provider,
+  debugInfo: {
+    primaryCategory: parsed.primary_category,
+    secondaryCategory: parsed.secondary_category,
+    tertiaryCategory: parsed.tertiary_category,
+    foundLabelIds: labelIds,
+    finalLabels: finalLabels,
+    labelMapSize: Object.keys(labelMap).length
+  }
+};`;
+
+  return jsCode;
+}
+
+/**
  * Provision email folders/labels for Gmail or Outlook
  * Simplified version for Deno Edge Function - delegates to database function
  */
@@ -1908,6 +2175,20 @@ async function handler(req) {
             name: 'supabase-metrics'
           };
           supabaseNodesUpdated++;
+        }
+        
+        // 🆕 INJECT DYNAMIC LABEL MAPPING for "Generate Label Mappings" or "Label ID Mapper" nodes
+        if (node.type === 'n8n-nodes-base.code' && (node.name === 'Generate Label Mappings' || node.name === 'Label ID Mapper')) {
+          console.log(`📋 Injecting dynamic ${provider} label mapping into node: ${node.name}`);
+          
+          // Generate dynamic label mapping code
+          const labelMappingCode = generateDynamicLabelMappingCode(profile.email_labels || {}, provider);
+          
+          // Update the node's JavaScript code
+          node.parameters = node.parameters || {};
+          node.parameters.jsCode = labelMappingCode;
+          
+          console.log(`✅ Injected dynamic label mapping with ${Object.keys(profile.email_labels || {}).length} labels`);
         }
       });
       console.log(`✅ Credential injection complete for ${provider}:`);

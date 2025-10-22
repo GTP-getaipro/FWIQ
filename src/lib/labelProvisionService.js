@@ -163,7 +163,7 @@ export async function provisionLabelSchemaFor(userId, businessType) {
     // CRITICAL: Sync current Gmail label state with database first
     console.log('🔄 Syncing current Gmail label state with database...');
     const { syncGmailLabelsWithDatabase } = await import('@/lib/gmailLabelSync.js');
-    const syncResult = await syncGmailLabelsWithDatabase(userId, integrations.provider, businessProfileId);
+    const syncResult = await syncGmailLabelsWithDatabase(userId, integrations.provider, businessProfileId, businessTypes[0]);
     
     if (!syncResult.success) {
       console.warn(`⚠️ Label sync failed: ${syncResult.error}`);
@@ -371,7 +371,9 @@ export async function provisionLabelSchemaFor(userId, businessType) {
       provider: integrations.provider,
       labelsCreated: result.created?.length || 0,
       labelsMatched: result.matched?.length || 0,
-      totalLabels: (result.created?.length || 0) + (result.matched?.length || 0)
+      totalLabels: (result.created?.length || 0) + (result.matched?.length || 0),
+      skipped: false,
+      message: `Created ${result.created?.length || 0} new labels and matched ${result.matched?.length || 0} existing labels`
     };
 
   } catch (error) {

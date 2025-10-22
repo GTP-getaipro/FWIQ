@@ -87,7 +87,7 @@ export async function debugOutlookApiAccess(accessToken) {
   }
 }
 
-export async function syncGmailLabelsWithDatabase(userId, provider = 'gmail', businessProfileId = null) {
+export async function syncGmailLabelsWithDatabase(userId, provider = 'gmail', businessProfileId = null, businessType = null) {
   try {
     console.log(`🔄 Syncing ${provider} labels with database for user: ${userId}`);
     
@@ -105,6 +105,21 @@ export async function syncGmailLabelsWithDatabase(userId, provider = 'gmail', bu
     }
 
     console.log(`📧 Found ${provider} integration with credential: ${integration.n8n_credential_id}`);
+
+    // Get businessType if not provided
+    if (!businessType) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('client_config')
+        .eq('id', userId)
+        .single();
+      
+      businessType = profile?.client_config?.business_type || 
+                     profile?.client_config?.business_types?.[0] || 
+                     'General Services';
+      
+      console.log(`📋 Business type determined: ${businessType}`);
+    }
 
     // CRITICAL: Actually check the current state of the email box
     // We need to handle ALL scenarios: empty, partial, complete, or deleted labels

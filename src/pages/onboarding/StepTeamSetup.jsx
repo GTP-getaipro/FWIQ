@@ -271,9 +271,13 @@ const StepTeamSetup = () => {
               .eq('id', user.id);
               
             // Show success notification (non-intrusive)
+            const notificationMessage = provisioningResult.skipped 
+              ? `Found ${provisioningResult.totalLabels} existing email labels for your business.`
+              : `Created ${provisioningResult.labelsCreated} new email labels for your business.`;
+              
             toast({ 
               title: 'Email Labels Ready!', 
-              description: `Created ${provisioningResult.totalLabels} email labels for your business.` 
+              description: notificationMessage
             });
           } else {
             console.error('❌ Background label provisioning failed:', provisioningResult.error);
