@@ -412,6 +412,46 @@ export const injectOnboardingData = async (clientData) => {
   }
 
   // BASE REPLACEMENTS
+  // Layer 3: Email labels (validate before using)
+  let validatedEmailLabels = clientData.email_labels || {};
+  
+  // CRITICAL FIX: Validate label IDs before injecting into template
+  if (clientData.email_labels && Object.keys(clientData.email_labels).length > 0) {
+    console.log('🔍 Validating email labels before template injection...');
+    
+    // Check if we have valid label IDs
+    const invalidLabels = [];
+    const validLabels = {};
+    
+    Object.entries(clientData.email_labels).forEach(([labelName, labelData]) => {
+      const labelId = typeof labelData === 'string' ? labelData : labelData.id;
+      
+      if (!labelId) {
+        invalidLabels.push(labelName);
+        return;
+      }
+      
+      // Basic validation - check if it looks like a valid label ID
+      const isValidGmailId = labelId.startsWith('Label_') && labelId.length > 10;
+      const isValidOutlookId = labelId.startsWith('AAMkAD') && labelId.length > 20;
+      
+      if (isValidGmailId || isValidOutlookId) {
+        validLabels[labelName] = labelData;
+      } else {
+        invalidLabels.push(labelName);
+        console.warn(`⚠️ Invalid label ID format for ${labelName}: ${labelId}`);
+      }
+    });
+    
+    if (invalidLabels.length > 0) {
+      console.warn(`⚠️ Found ${invalidLabels.length} invalid labels: ${invalidLabels.join(', ')}`);
+      console.warn('📋 Using only valid labels for template injection');
+    }
+    
+    validatedEmailLabels = validLabels;
+    console.log(`✅ Using ${Object.keys(validLabels).length} validated labels for template injection`);
+  }
+
   const replacements = {
     // Business info
     "<<<BUSINESS_NAME>>>": sanitizeForWorkflowName(sanitizedBusinessName) || 'Your Business',
@@ -435,9 +475,9 @@ export const injectOnboardingData = async (clientData) => {
     "<<<MANAGERS_TEXT>>>": managersText,
     "<<<SUPPLIERS>>>": JSON.stringify((clientData.suppliers || []).map(s => ({ name: s.name, email: s.email, category: s.category }))),
     
-    // Layer 3: Email labels (already handled dynamically)
-    "<<<LABEL_MAP>>>": JSON.stringify(clientData.email_labels || {}),
-    "<<<LABEL_MAPPINGS>>>": JSON.stringify(clientData.email_labels || {}),
+    // Layer 3: Email labels (validated)
+    "<<<LABEL_MAP>>>": JSON.stringify(validatedEmailLabels),
+    "<<<LABEL_MAPPINGS>>>": JSON.stringify(validatedEmailLabels),
     
     // Content
     "<<<SIGNATURE_BLOCK>>>": signatureBlock,
@@ -455,11 +495,13 @@ export const injectOnboardingData = async (clientData) => {
     ...behaviorPlaceholders
   };
   
-  // Layer 3: Dynamic Label ID injection (for routing nodes)
-  if (clientData.email_labels) {
-    Object.keys(clientData.email_labels).forEach((labelName) => {
+  // Layer 3: Dynamic Label ID injection (for routing nodes) - using validated labels
+  if (validatedEmailLabels) {
+    Object.keys(validatedEmailLabels).forEach((labelName) => {
       const placeholderKey = `<<<LABEL_${labelName.toUpperCase().replace(/\s+/g, '_').replace(/\//g, '_')}_ID>>>`;
-      replacements[placeholderKey] = clientData.email_labels[labelName];
+      const labelData = validatedEmailLabels[labelName];
+      const labelId = typeof labelData === 'string' ? labelData : labelData.id;
+      replacements[placeholderKey] = labelId;
     });
   }
 
