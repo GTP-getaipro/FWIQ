@@ -213,6 +213,78 @@ Return JSON format:
 }
 
 /**
+ * Provision email folders/labels for Gmail or Outlook
+ * Simplified version for Deno Edge Function - delegates to database function
+ */
+async function provisionEmailFolders(
+  userId: string,
+  businessTypes: string[],
+  provider: string,
+  accessToken: string | null,
+  managers: any[] = [],
+  suppliers: any[] = []
+) {
+  try {
+    console.log(`📁 provisionEmailFolders called for user: ${userId}`);
+    console.log(`📋 Business types: ${businessTypes.join(', ')}`);
+    console.log(`📧 Provider: ${provider}`);
+    console.log(`👥 Managers: ${managers.length}, Suppliers: ${suppliers.length}`);
+    
+    // For now, call the database RPC function to handle folder provisioning
+    // This keeps the complex logic in the database where it can be shared
+    const { data, error } = await supabaseAdmin.rpc('provision_email_folders', {
+      p_user_id: userId,
+      p_business_types: businessTypes,
+      p_provider: provider,
+      p_access_token: accessToken,
+      p_managers: managers,
+      p_suppliers: suppliers
+    });
+    
+    if (error) {
+      console.error(`❌ Database RPC error in provision_email_folders:`, error);
+      // If the RPC function doesn't exist yet, return a success with empty data
+      // This allows deployment to continue while we implement the function
+      if (error.message?.includes('function') && error.message?.includes('does not exist')) {
+        console.warn(`⚠️ Database function 'provision_email_folders' not yet implemented`);
+        console.warn(`⚠️ Folder provisioning will be skipped for now`);
+        return {
+          success: false,
+          error: 'Database function not yet implemented',
+          created: 0,
+          matched: 0,
+          total: 0,
+          labelMap: {}
+        };
+      }
+      throw error;
+    }
+    
+    console.log(`✅ Folder provisioning RPC completed:`, data);
+    
+    return {
+      success: true,
+      created: data?.created || 0,
+      matched: data?.matched || 0,
+      total: data?.total || 0,
+      labelMap: data?.label_map || {},
+      provider: data?.provider || provider
+    };
+    
+  } catch (error) {
+    console.error(`❌ Error in provisionEmailFolders:`, error);
+    return {
+      success: false,
+      error: error.message || 'Unknown error',
+      created: 0,
+      matched: 0,
+      total: 0,
+      labelMap: {}
+    };
+  }
+}
+
+/**
  * Generate enhanced classifier system message (simplified for Deno Edge Function)
  */
 function generateEnhancedClassifierSystemMessage(businessType, businessInfo, managers = [], suppliers = []) {
@@ -1254,6 +1326,48 @@ async function handler(req) {
     const businessName = profile.client_config?.business?.name || 'Client';
     const businessSlug = slugify(businessName, 'client');
     const clientShort = String(userId).replace(/-/g, '').slice(0, 5);
+    
+    // ✅ NEW: Provision email folders/labels BEFORE workflow deployment
+    console.log('📁 Starting folder/label provisioning for email integration...');
+    try {
+      const businessTypes = profile.business_types || 
+                            profile.client_config?.business_types || 
+                            profile.client_config?.business?.business_types ||
+                            [profile.client_config?.business?.business_type] ||
+                            ['General Services'];
+      
+      console.log(`📋 Provisioning folders for business types: ${businessTypes.join(', ')}`);
+      
+      // Call folder provisioning function
+      const provisioningResult = await provisionEmailFolders(
+        userId, 
+        businessTypes, 
+        provider,
+        integration?.access_token || refreshToken,
+        profile.managers || [],
+        profile.suppliers || []
+      );
+      
+      if (provisioningResult.success) {
+        console.log(`✅ Folder provisioning completed successfully:`);
+        console.log(`   - Created: ${provisioningResult.created || 0} folders`);
+        console.log(`   - Matched: ${provisioningResult.matched || 0} folders`);
+        console.log(`   - Total: ${provisioningResult.total || 0} folders`);
+        
+        // Update email_labels in profile for workflow injection
+        if (provisioningResult.labelMap && Object.keys(provisioningResult.labelMap).length > 0) {
+          profile.email_labels = provisioningResult.labelMap;
+          console.log(`📊 Updated email_labels with ${Object.keys(provisioningResult.labelMap).length} folder mappings`);
+        }
+      } else {
+        console.warn(`⚠️ Folder provisioning failed: ${provisioningResult.error || 'Unknown error'}`);
+        console.warn(`⚠️ Continuing with deployment - folders may need to be created manually`);
+      }
+    } catch (folderError) {
+      console.error(`❌ Error during folder provisioning:`, folderError);
+      console.warn(`⚠️ Continuing with deployment despite folder provisioning error`);
+      // Don't throw - we want deployment to continue even if folder provisioning fails
+    }
     // Ensure email credential in n8n (Gmail OR Outlook based on detected provider)
     let gmailId = null;
     let outlookId = null;
