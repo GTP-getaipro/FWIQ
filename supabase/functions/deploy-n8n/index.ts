@@ -317,22 +317,45 @@ async function provisionEmailFolders(
     console.log(`📧 Provider: ${provider}`);
     console.log(`👥 Managers: ${managers.length}, Suppliers: ${suppliers.length}`);
     
-    // SIMPLIFIED: Skip folder provisioning in Edge Function
-    // The frontend already handles folder provisioning during onboarding
-    // Folders are created when business type is selected (Step 3)
-    // This Edge Function just needs to deploy the workflow with existing folders
-    console.log(`ℹ️ Folder provisioning handled by frontend during onboarding`);
-    console.log(`ℹ️ Edge Function will use existing folders from database`);
+    // For now, call the database RPC function to handle folder provisioning
+    // This keeps the complex logic in the database where it can be shared
+    const { data, error } = await supabaseAdmin.rpc('provision_email_folders', {
+      p_user_id: userId,
+      p_business_types: businessTypes,
+      p_provider: provider,
+      p_access_token: accessToken,
+      p_managers: managers,
+      p_suppliers: suppliers
+    });
+    
+    if (error) {
+      console.error(`❌ Database RPC error in provision_email_folders:`, error);
+      // If the RPC function doesn't exist yet, return a success with empty data
+      // This allows deployment to continue while we implement the function
+      if (error.message?.includes('function') && error.message?.includes('does not exist')) {
+        console.warn(`⚠️ Database function 'provision_email_folders' not yet implemented`);
+        console.warn(`⚠️ Folder provisioning will be skipped for now`);
+        return {
+          success: false,
+          error: 'Database function not yet implemented',
+          created: 0,
+          matched: 0,
+          total: 0,
+          labelMap: {}
+        };
+      }
+      throw error;
+    }
+    
+    console.log(`✅ Folder provisioning RPC completed:`, data);
     
     return {
       success: true,
-      skipped: true,
-      reason: 'Folders provisioned during onboarding',
-      created: 0,
-      matched: 0,
-      total: 0,
-      labelMap: {},
-      provider: provider
+      created: data?.created || 0,
+      matched: data?.matched || 0,
+      total: data?.total || 0,
+      labelMap: data?.label_map || {},
+      provider: data?.provider || provider
     };
     
   } catch (error) {
