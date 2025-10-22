@@ -162,15 +162,36 @@ export const injectOnboardingData = async (clientData) => {
                      clientData.business?.type ||
                      'General Services';
   
-  // Normalize to array for schema processing
-  const businessTypes = Array.isArray(businessType) ? businessType : [businessType];
+  // Normalize to array for schema processing and filter out invalid values
+  let businessTypes = Array.isArray(businessType) ? businessType : [businessType];
+  
+  // Filter out undefined, null, and empty string values
+  businessTypes = businessTypes.filter(type => 
+    type && 
+    type !== 'undefined' && 
+    type !== null && 
+    type !== '' && 
+    typeof type === 'string' && 
+    type.trim() !== ''
+  );
+  
+  // If no valid business types found, use fallback
+  if (businessTypes.length === 0) {
+    console.warn('⚠️ No valid business types found in clientData, using fallback: Hot tub & Spa');
+    businessTypes = ['Hot tub & Spa'];
+  }
   
   console.log('🔍 DEBUG: Business types extracted:', {
     businessTypes,
+    businessTypesLength: businessTypes.length,
+    businessTypesValues: businessTypes.map(t => `"${t}" (${typeof t})`),
     source: clientData.businessTypes ? 'clientData.businessTypes' :
             clientData.business_types ? 'clientData.business_types' :
             clientData.business?.business_types ? 'business.business_types' :
-            clientData.business?.types ? 'business.types' : 'fallback'
+            clientData.business?.types ? 'business.types' : 'fallback',
+    rawBusinessType: businessType,
+    rawBusinessTypeType: typeof businessType,
+    rawBusinessTypeIsArray: Array.isArray(businessType)
   });
   
   // Detect provider from clientData
@@ -364,16 +385,14 @@ export const injectOnboardingData = async (clientData) => {
   let behaviorConfig = null;
   let behaviorPlaceholders = {};
   try {
-    // Filter out any undefined values from businessTypes array before passing
-    const validBusinessTypes = businessTypes.filter(type => type && type !== 'undefined' && type !== null);
-    
+    // businessTypes is already filtered and validated above
     console.log('🔍 DEBUG: Calling extractBehaviorConfigForN8n with:', {
-      validBusinessTypes,
+      businessTypes,
       businessInfoTypes: businessInfo.businessTypes,
       hasVoiceProfile: !!clientData.voiceProfile
     });
     
-    behaviorConfig = extractBehaviorConfigForN8n(validBusinessTypes, businessInfo, clientData.voiceProfile);
+    behaviorConfig = extractBehaviorConfigForN8n(businessTypes, businessInfo, clientData.voiceProfile);
     behaviorPlaceholders = generateBehaviorPlaceholders(behaviorConfig);
     console.log('✅ Behavior config extracted from Layer 2 (behaviorSchemas + voice training)');
     if (clientData.voiceProfile?.learning_count > 0) {
