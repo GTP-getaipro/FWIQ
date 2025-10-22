@@ -1182,22 +1182,21 @@ return {
    */
   async storeWorkflowRecord(userId, workflow, workflowData, isSimulation = false) {
     try {
-      // Check if workflow already exists for this user
+      // Check if workflow already exists for this user (use client_id which is the actual column name)
       const { data: existingWorkflow, error: checkError } = await supabase
         .from('workflows')
         .select('id, n8n_workflow_id, version')
-        .eq('user_id', userId)
+        .eq('client_id', userId)
         .eq('name', workflow.name)
         .single();
 
       let workflowRecord = {
-        client_id: userId, // Use client_id for compatibility
-        user_id: userId,   // Also store user_id for future compatibility
+        client_id: userId, // Use client_id as per the workflows table schema
         n8n_workflow_id: workflow.id,
         name: workflow.name,
         version: workflow.version || 1,
         status: isSimulation ? 'simulated' : 'active',
-        workflow_data: workflowData,
+        config: workflowData, // Use 'config' instead of 'workflow_data' as per schema
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -1226,7 +1225,7 @@ return {
             n8n_workflow_id: workflow.id,
             version: (existingWorkflow.version || 1) + 1,
             status: isSimulation ? 'simulated' : 'active',
-            workflow_data: workflowData,
+            config: workflowData, // Use 'config' instead of 'workflow_data'
             updated_at: new Date().toISOString(),
             ...(workflowRecord.deployment_status && { deployment_status: isSimulation ? 'simulated' : 'deployed' })
           })
@@ -1276,11 +1275,11 @@ return {
             console.warn('⚠️ Workflow with this n8n_workflow_id already exists, updating existing record...');
             
             // Find and update the existing workflow with this n8n_workflow_id
-            const { data: existingByN8nId, error: findError } = await supabase
+            const { data: existingByN8nId, error: findError} = await supabase
               .from('workflows')
               .select('id, version')
               .eq('n8n_workflow_id', workflow.id)
-              .eq('user_id', userId)
+              .eq('client_id', userId) // Use client_id instead of user_id
               .single();
             
             if (findError || !existingByN8nId) {
@@ -1294,7 +1293,7 @@ return {
               .update({
                 version: (existingByN8nId.version || 1) + 1,
                 status: isSimulation ? 'simulated' : 'active',
-                workflow_data: workflowData,
+                config: workflowData, // Use 'config' instead of 'workflow_data'
                 updated_at: new Date().toISOString(),
                 ...(workflowRecord.deployment_status && { deployment_status: isSimulation ? 'simulated' : 'deployed' })
               })
@@ -1568,7 +1567,7 @@ return {
       const { data: existingWorkflow, error: fetchError } = await supabase
         .from('workflows')
         .select('id, n8n_workflow_id, status, version')
-        .eq('user_id', userId)
+        .eq('client_id', userId) // Use client_id instead of user_id
         .eq('status', 'active')
         .order('created_at', { ascending: false })
         .limit(1)
