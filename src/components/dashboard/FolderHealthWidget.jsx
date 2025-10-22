@@ -20,20 +20,61 @@ const FolderHealthWidget = ({ userId, provider, onRefreshNeeded }) => {
 
   const checkFolderHealth = async () => {
     setIsChecking(true);
+    console.log('🔍 Starting folder health check...', { userId, provider, timestamp: new Date().toISOString() });
     try {
+      if (!userId) {
+        throw new Error('User ID is required');
+      }
+      
       const health = await getFolderHealthSummary(userId, provider);
+      console.log('✅ Health check result:', {
+        healthy: health.healthy,
+        healthPercentage: health.healthPercentage,
+        totalFolders: health.totalFolders,
+        missingCount: health.missingCount,
+        provider: health.provider,
+        error: health.error
+      });
+      
       setFolderHealth(health);
       
-      if (!health.healthy && health.missingCount > 0) {
+      if (health.error) {
+        console.error('⚠️ Health check returned with error:', health.error);
+        toast({
+          variant: 'destructive',
+          title: 'Health Check Issue',
+          description: health.error,
+          duration: 7000
+        });
+      } else if (!health.healthy && health.missingCount > 0) {
         console.warn(`⚠️ ${health.missingCount} folders are missing:`, health.missingFolders);
       }
     } catch (error) {
       console.error('❌ Failed to check folder health:', error);
+      console.error('❌ Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        userId,
+        provider
+      });
+      
+      // Set error state so widget can display something
+      setFolderHealth({
+        healthy: false,
+        healthPercentage: 0,
+        totalFolders: 0,
+        missingCount: 0,
+        missingFolders: [],
+        provider: provider || 'unknown',
+        error: error.message || 'Unknown error occurred'
+      });
+      
       toast({
         variant: 'destructive',
         title: 'Health Check Failed',
-        description: 'Could not check folder status. Please try again.',
-        duration: 5000
+        description: `Could not check folder status: ${error.message}`,
+        duration: 7000
       });
     } finally {
       setIsChecking(false);

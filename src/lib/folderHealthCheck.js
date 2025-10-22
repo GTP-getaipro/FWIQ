@@ -381,22 +381,38 @@ export async function checkFolderHealth(userId, provider = null) {
  * @returns {Promise<Object>} Simplified health summary
  */
 export async function getFolderHealthSummary(userId, provider = null) {
-  const health = await checkFolderHealth(userId, provider);
-  
-  return {
-    healthy: health.allFoldersPresent,
-    healthPercentage: health.healthPercentage || 0,
-    totalFolders: health.totalExpected,
-    missingCount: health.missingFolders?.length || 0,
-    missingFolders: health.missingFolders?.slice(0, 5).map(f => f.name) || [], // First 5 only
-    provider: health.provider,
-    lastChecked: health.checkedAt,
-    error: health.error,
-    // Additional debugging info
-    businessLabelsCount: health.businessLabelsCount,
-    actualFoldersCount: health.actualFoldersCount,
-    // NEW: Classifier coverage information
-    classifierCoverage: health.classifierCoverage ? {
+  try {
+    console.log(`🔍 getFolderHealthSummary called with userId: ${userId}, provider: ${provider}`);
+    
+    if (!userId) {
+      console.error('❌ userId is required but was not provided');
+      throw new Error('User ID is required');
+    }
+    
+    const health = await checkFolderHealth(userId, provider);
+    
+    console.log('📊 checkFolderHealth returned:', {
+      success: health.success,
+      allFoldersPresent: health.allFoldersPresent,
+      totalExpected: health.totalExpected,
+      provider: health.provider,
+      hasError: !!health.error
+    });
+    
+    return {
+      healthy: health.allFoldersPresent || false,
+      healthPercentage: health.healthPercentage || 0,
+      totalFolders: health.totalExpected || 0,
+      missingCount: health.missingFolders?.length || 0,
+      missingFolders: health.missingFolders?.slice(0, 5).map(f => f.name) || [], // First 5 only
+      provider: health.provider || provider || 'unknown',
+      lastChecked: health.checkedAt || new Date().toISOString(),
+      error: health.error || null,
+      // Additional debugging info
+      businessLabelsCount: health.businessLabelsCount || 0,
+      actualFoldersCount: health.actualFoldersCount || 0,
+      // NEW: Classifier coverage information
+      classifierCoverage: health.classifierCoverage ? {
       healthy: health.classifierCoverage.isHealthy,
       coveragePercentage: health.classifierCoverage.coveragePercentage,
       totalFolders: health.classifierCoverage.totalFolders,
@@ -406,6 +422,22 @@ export async function getFolderHealthSummary(userId, provider = null) {
       warnings: health.classifierCoverage.warnings || []
     } : null
   };
+  } catch (error) {
+    console.error('❌ getFolderHealthSummary error:', error);
+    return {
+      healthy: false,
+      healthPercentage: 0,
+      totalFolders: 0,
+      missingCount: 0,
+      missingFolders: [],
+      provider: provider || 'unknown',
+      lastChecked: new Date().toISOString(),
+      error: error.message || 'Failed to check folder health',
+      businessLabelsCount: 0,
+      actualFoldersCount: 0,
+      classifierCoverage: null
+    };
+  }
 }
 
 /**
