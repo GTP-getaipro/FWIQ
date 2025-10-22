@@ -36,8 +36,10 @@ import { supabase } from '@/lib/customSupabaseClient';
 import { n8nWorkflowActivationManager } from '@/lib/n8nWorkflowActivationManager';
 import { useToast } from '@/components/ui/use-toast';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import OutlookIcon from '@/components/OutlookIcon';
+import FolderHealthWidget from './FolderHealthWidget';
 
 // Gmail Icon Component (matching onboarding page)
 const GmailIcon = () => (
@@ -137,6 +139,7 @@ const CustomDropdown = ({ value, onChange, options, placeholder = "Select..." })
 const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFilter, setTimeFilter, setShowFolderIds, showFolderIds, workflowVersion }) => {
   const { toast } = useToast();
   const { isDarkMode, toggleTheme } = useTheme();
+  const navigate = useNavigate();
   
   // Determine email provider from integrations
   const getEmailProvider = () => {
@@ -767,6 +770,14 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
             </div>
           </div>
         </motion.div>
+      )}
+
+      {/* Folder Health Widget */}
+      {profile?.id && (
+        <FolderHealthWidget 
+          userId={profile.id}
+          onRefreshNeeded={() => navigate('/onboarding/deploy')}
+        />
       )}
 
       {/* Key Metrics */}
