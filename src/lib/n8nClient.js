@@ -124,7 +124,17 @@ export class N8nClient {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Failed to deactivate workflow: ${response.status} ${errorText}`);
+        let errorMessage = `Failed to deactivate workflow: ${response.status}`;
+        
+        if (response.status === 404) {
+          errorMessage = `Workflow not found in n8n (ID: ${workflowId}) - may have been manually deleted`;
+        } else if (response.status === 400) {
+          errorMessage = `Workflow is already inactive (ID: ${workflowId})`;
+        } else {
+          errorMessage += ` ${errorText}`;
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();

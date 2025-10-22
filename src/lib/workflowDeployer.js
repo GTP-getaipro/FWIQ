@@ -1599,11 +1599,25 @@ return {
       if (oldWorkflowId) {
         console.log('⏸️ Step 2: Deactivating and archiving old workflow...');
         try {
-          // Deactivate in n8n first
-          await this.apiClient.deactivateWorkflow(oldWorkflowId);
-          console.log('✅ Workflow deactivated in n8n');
+          // First check if workflow exists in n8n
+          console.log('🔍 Checking if workflow exists in n8n...');
+          try {
+            await this.apiClient.getWorkflow(oldWorkflowId);
+            console.log('✅ Workflow found in n8n, proceeding with deactivation');
+            
+            // Deactivate in n8n
+            await this.apiClient.deactivateWorkflow(oldWorkflowId);
+            console.log('✅ Workflow deactivated in n8n');
+          } catch (n8nError) {
+            if (n8nError.message.includes('404') || n8nError.message.includes('Not Found')) {
+              console.log('ℹ️ Workflow not found in n8n (likely already deleted), skipping deactivation');
+            } else {
+              console.warn('⚠️ Error checking/deactivating workflow in n8n:', n8nError.message);
+            }
+          }
           
-          // Archive in database
+          // Archive in database regardless of n8n status
+          console.log('📁 Archiving workflow in database...');
           const { error: archiveError } = await supabase
             .from('workflows')
             .update({ 
