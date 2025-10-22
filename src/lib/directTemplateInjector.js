@@ -106,7 +106,12 @@ class DirectTemplateInjector {
    */
   async extractAIConfig(clientData) {
     try {
-      const businessTypes = clientData.business?.businessTypes || ['general'];
+      const businessTypes = clientData.business?.businessTypes || 
+                           clientData.business?.types || 
+                           clientData.business?.business_types || 
+                           (clientData.business?.type ? [clientData.business.type] : null) ||
+                           (clientData.business?.business_type ? [clientData.business.business_type] : null) ||
+                           ['general'];
       const businessInfo = {
         name: clientData.business?.name,
         phone: clientData.business?.phone,
@@ -170,7 +175,12 @@ class DirectTemplateInjector {
    */
   async extractBehaviorConfig(clientData) {
     try {
-      const businessTypes = clientData.business?.businessTypes || ['general'];
+      const businessTypes = clientData.business?.businessTypes || 
+                           clientData.business?.types || 
+                           clientData.business?.business_types || 
+                           (clientData.business?.type ? [clientData.business.type] : null) ||
+                           (clientData.business?.business_type ? [clientData.business.business_type] : null) ||
+                           ['general'];
       const businessInfo = {
         name: clientData.business?.name,
         phone: clientData.business?.phone,
