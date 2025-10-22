@@ -386,7 +386,8 @@ export const buildProductionClassifier = (aiConfig, labelConfig, businessInfo, m
       primaryBusinessType,
       businessInfo,
       managers || [],
-      suppliers || []
+      suppliers || [],
+      actualLabels || null  // Pass actual label IDs for debugging documentation
     );
     
     console.log('✅ EnhancedDynamicClassifierGenerator instantiated successfully');

@@ -344,17 +344,19 @@ const BUSINESS_TERTIARY_CUSTOMIZATIONS = {
 
 
 export class EnhancedDynamicClassifierGenerator {
-  constructor(businessType, businessInfo, managers = [], suppliers = []) {
+  constructor(businessType, businessInfo, managers = [], suppliers = [], actualLabels = null) {
     this.businessType = businessType;
     this.businessInfo = businessInfo;
     this.managers = managers;
     this.suppliers = suppliers;
+    this.actualLabels = actualLabels || {}; // Store actual label IDs for debugging
   }
   
   generateClassifierSystemMessage() {
     const categoryStructure = this.generateCategoryStructure();
     const businessRules = this.generateBusinessRules();
     const tertiaryRules = this.generateTertiaryRules();
+    const labelIdInfo = this.generateLabelIdDocumentation();
     
     return `You are an expert email processing and routing system for "${this.businessInfo.name}".
 
@@ -387,6 +389,8 @@ ${categoryStructure}
 ${tertiaryRules}
 
 ${businessRules}
+
+${labelIdInfo}
 
 ### JSON Output Format:
 Return ONLY the following JSON structure. Do not add any other text or explanations.
@@ -1215,6 +1219,65 @@ Return ONLY the following JSON structure. Do not add any other text or explanati
     };
     
     return tertiary;
+  }
+  
+  /**
+   * Generate label ID documentation section
+   * Shows actual folder IDs for debugging purposes
+   * NOTE: This is for documentation only - the workflow uses a separate Label Mapping node
+   */
+  generateLabelIdDocumentation() {
+    // Only include if actualLabels were provided
+    if (!this.actualLabels || Object.keys(this.actualLabels).length === 0) {
+      return ''; // No label IDs available
+    }
+    
+    let documentation = '\n### Folder Structure (For Reference Only):\n\n';
+    documentation += 'NOTE: After you classify the email, the workflow will automatically map your category names to the correct folder IDs below.\n';
+    documentation += 'You should ONLY return category names in your JSON response, NOT folder IDs.\n\n';
+    
+    // Group labels by primary category
+    const labelsByCategory = {};
+    
+    Object.entries(this.actualLabels).forEach(([labelName, labelData]) => {
+      const labelId = labelData?.id || labelData; // Handle both {id: "..."} and "..." formats
+      
+      if (!labelId) return;
+      
+      // Parse label name to determine category
+      const parts = labelName.split('/');
+      const primaryCategory = parts[0];
+      
+      if (!labelsByCategory[primaryCategory]) {
+        labelsByCategory[primaryCategory] = [];
+      }
+      
+      labelsByCategory[primaryCategory].push({
+        name: labelName,
+        id: labelId,
+        depth: parts.length
+      });
+    });
+    
+    // Generate documentation for each category
+    Object.entries(labelsByCategory).forEach(([category, labels]) => {
+      // Sort by depth (primary → secondary → tertiary)
+      labels.sort((a, b) => a.depth - b.depth);
+      
+      documentation += `**${category}**:\n`;
+      
+      labels.forEach(label => {
+        const indent = '  '.repeat(label.depth - 1);
+        const shortId = label.id.length > 15 ? label.id.substring(0, 12) + '...' : label.id;
+        documentation += `${indent}- ${label.name} → ${shortId}\n`;
+      });
+      
+      documentation += '\n';
+    });
+    
+    documentation += 'Remember: Return category names only (e.g., "BANKING", not "Label_123"). The workflow handles ID mapping automatically.\n';
+    
+    return documentation;
   }
 }
 
