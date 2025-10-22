@@ -5,7 +5,7 @@ import { getFolderHealthSummary } from '@/lib/folderHealthCheck';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 
-const FolderHealthWidget = ({ userId, onRefreshNeeded }) => {
+const FolderHealthWidget = ({ userId, provider, onRefreshNeeded }) => {
   const [folderHealth, setFolderHealth] = useState(null);
   const [isChecking, setIsChecking] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
@@ -21,7 +21,7 @@ const FolderHealthWidget = ({ userId, onRefreshNeeded }) => {
   const checkFolderHealth = async () => {
     setIsChecking(true);
     try {
-      const health = await getFolderHealthSummary(userId);
+      const health = await getFolderHealthSummary(userId, provider);
       setFolderHealth(health);
       
       if (!health.healthy && health.missingCount > 0) {

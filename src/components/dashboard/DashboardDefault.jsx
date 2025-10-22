@@ -1102,6 +1102,7 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
       {profile?.id && (
         <FolderHealthWidget 
           userId={profile.id}
+          provider={emailProvider}
           onRefreshNeeded={() => navigate('/onboarding/team-setup')}
         />
       )}
