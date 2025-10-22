@@ -278,13 +278,21 @@ export const injectOnboardingData = async (clientData) => {
   let aiPlaceholders = {};
   
   try {
+    // Filter out undefined values from businessTypes before processing
+    const validBusinessTypes = businessTypes.filter(type => type && type !== 'undefined' && type !== null);
+    
+    console.log('🔍 DEBUG: Valid business types for AI/Label config:', {
+      original: businessTypes,
+      filtered: validBusinessTypes
+    });
+    
     // Step 1: Extract AI config from Layer 1
-    aiConfig = extractAIConfigForN8n(businessTypes, businessInfo);
+    aiConfig = extractAIConfigForN8n(validBusinessTypes, businessInfo);
     
     // Step 2: Load Label config from Layer 3 with dynamic team data (ENHANCED!)
     try {
       labelConfig = await loadLabelSchemaForBusinessTypes(
-        businessTypes, 
+        validBusinessTypes, 
         clientData.managers || [], 
         clientData.suppliers || []
       );
@@ -356,7 +364,16 @@ export const injectOnboardingData = async (clientData) => {
   let behaviorConfig = null;
   let behaviorPlaceholders = {};
   try {
-    behaviorConfig = extractBehaviorConfigForN8n(businessTypes, businessInfo, clientData.voiceProfile);
+    // Filter out any undefined values from businessTypes array before passing
+    const validBusinessTypes = businessTypes.filter(type => type && type !== 'undefined' && type !== null);
+    
+    console.log('🔍 DEBUG: Calling extractBehaviorConfigForN8n with:', {
+      validBusinessTypes,
+      businessInfoTypes: businessInfo.businessTypes,
+      hasVoiceProfile: !!clientData.voiceProfile
+    });
+    
+    behaviorConfig = extractBehaviorConfigForN8n(validBusinessTypes, businessInfo, clientData.voiceProfile);
     behaviorPlaceholders = generateBehaviorPlaceholders(behaviorConfig);
     console.log('✅ Behavior config extracted from Layer 2 (behaviorSchemas + voice training)');
     if (clientData.voiceProfile?.learning_count > 0) {
