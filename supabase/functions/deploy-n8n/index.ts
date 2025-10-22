@@ -213,6 +213,93 @@ Return JSON format:
 }
 
 /**
+ * Validate folder health after provisioning
+ * Checks that critical folders exist before workflow activation
+ */
+async function validateFolderHealth(
+  userId: string,
+  provider: string,
+  businessTypes: string[]
+) {
+  try {
+    console.log(`🔍 validateFolderHealth called for user: ${userId}`);
+    console.log(`📧 Provider: ${provider}`);
+    console.log(`📋 Business types: ${businessTypes.join(', ')}`);
+    
+    // Define critical folders that must exist
+    const criticalCategories = ['BANKING', 'SALES', 'SUPPORT', 'URGENT', 'MISC'];
+    
+    // Get all folders from business_labels table
+    const { data: businessLabels, error } = await supabaseAdmin
+      .from('business_labels')
+      .select('label_name, label_id, is_deleted')
+      .eq('business_profile_id', userId)
+      .eq('is_deleted', false);
+    
+    if (error) {
+      console.error(`❌ Error fetching business labels:`, error);
+      return {
+        success: false,
+        error: error.message,
+        healthPercentage: 0,
+        allFoldersPresent: false
+      };
+    }
+    
+    const existingFolders = businessLabels || [];
+    const folderNames = existingFolders.map(f => f.label_name);
+    const folderNamesSet = new Set(folderNames);
+    
+    console.log(`📊 Found ${existingFolders.length} folders in database`);
+    
+    // Check for critical folders
+    const missingCriticalFolders = criticalCategories.filter(cat => !folderNamesSet.has(cat));
+    const foundCriticalFolders = criticalCategories.filter(cat => folderNamesSet.has(cat));
+    
+    // Calculate health percentage (based on expected folders for business type)
+    // For simplicity, we'll use a baseline of 20 expected folders per business type
+    const expectedFolderCount = 20 + (businessTypes.length - 1) * 5; // More folders for multi-business
+    const healthPercentage = Math.min(100, Math.round((existingFolders.length / expectedFolderCount) * 100));
+    
+    const allCriticalPresent = missingCriticalFolders.length === 0;
+    const allFoldersPresent = existingFolders.length >= expectedFolderCount;
+    
+    console.log(`📊 Folder health assessment:`);
+    console.log(`   - Critical folders: ${foundCriticalFolders.length}/${criticalCategories.length}`);
+    console.log(`   - Total folders: ${existingFolders.length}/${expectedFolderCount}`);
+    console.log(`   - Health: ${healthPercentage}%`);
+    console.log(`   - All critical present: ${allCriticalPresent}`);
+    
+    return {
+      success: true,
+      healthPercentage,
+      allFoldersPresent,
+      allCriticalPresent,
+      totalExpected: expectedFolderCount,
+      totalFound: existingFolders.length,
+      criticalFolders: {
+        expected: criticalCategories.length,
+        found: foundCriticalFolders.length,
+        missing: missingCriticalFolders
+      },
+      missingCriticalFolders,
+      missingFolders: [], // Could calculate if we had expected folder list
+      folderNames: folderNames.slice(0, 10) // First 10 for logging
+    };
+    
+  } catch (error) {
+    console.error(`❌ Error in validateFolderHealth:`, error);
+    return {
+      success: false,
+      error: error.message || 'Unknown error',
+      healthPercentage: 0,
+      allFoldersPresent: false,
+      allCriticalPresent: false
+    };
+  }
+}
+
+/**
  * Provision email folders/labels for Gmail or Outlook
  * Simplified version for Deno Edge Function - delegates to database function
  */
@@ -1358,6 +1445,35 @@ async function handler(req) {
         if (provisioningResult.labelMap && Object.keys(provisioningResult.labelMap).length > 0) {
           profile.email_labels = provisioningResult.labelMap;
           console.log(`📊 Updated email_labels with ${Object.keys(provisioningResult.labelMap).length} folder mappings`);
+        }
+        
+        // ✅ NEW: Validate folder health after provisioning
+        console.log('🔍 Validating folder health after provisioning...');
+        const folderHealthResult = await validateFolderHealth(userId, provider, businessTypes);
+        
+        if (folderHealthResult.success) {
+          console.log(`✅ Folder health check passed:`);
+          console.log(`   - Health: ${folderHealthResult.healthPercentage}%`);
+          console.log(`   - Expected: ${folderHealthResult.totalExpected} folders`);
+          console.log(`   - Found: ${folderHealthResult.totalFound} folders`);
+          
+          // Check if critical folders are missing
+          if (folderHealthResult.missingCriticalFolders && folderHealthResult.missingCriticalFolders.length > 0) {
+            console.warn(`⚠️ Missing ${folderHealthResult.missingCriticalFolders.length} critical folders:`, folderHealthResult.missingCriticalFolders);
+            
+            // If health is too low, fail deployment
+            if (folderHealthResult.healthPercentage < 70) {
+              throw new Error(`Cannot deploy: Only ${folderHealthResult.healthPercentage}% of folders exist. Missing critical folders: ${folderHealthResult.missingCriticalFolders.join(', ')}`);
+            }
+          }
+          
+          if (!folderHealthResult.allFoldersPresent && folderHealthResult.missingFolders.length > 0) {
+            console.warn(`⚠️ ${folderHealthResult.missingFolders.length} non-critical folders missing:`, folderHealthResult.missingFolders.slice(0, 5));
+            console.warn(`⚠️ Deployment will continue, but some email routing may not work until folders are created`);
+          }
+        } else {
+          console.warn(`⚠️ Folder health check failed: ${folderHealthResult.error || 'Unknown error'}`);
+          console.warn(`⚠️ Continuing with deployment - manual folder verification recommended`);
         }
       } else {
         console.warn(`⚠️ Folder provisioning failed: ${provisioningResult.error || 'Unknown error'}`);
