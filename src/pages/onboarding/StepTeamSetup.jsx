@@ -13,7 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import { useOnboardingData } from '@/lib/onboardingDataAggregator';
 import { provisionLabelSchemaFor } from '@/lib/labelProvisionService';
 import { emailVoiceAnalyzer } from '@/lib/emailVoiceAnalyzer';
-import { teamReconfigurationManager } from '@/lib/teamReconfigurationManager';
+import { TeamReconfigurationManager } from '@/lib/teamReconfigurationManager';
 
 const MAX_MANAGERS = 5;
 const MAX_SUPPLIERS = 10;
@@ -191,7 +191,8 @@ const StepTeamSetup = () => {
           suppliers: finalSuppliers
         };
 
-        // Handle team reconfiguration
+        // Handle team reconfiguration with proper userId
+        const teamReconfigurationManager = new TeamReconfigurationManager(user.id);
         const reconfigResult = await teamReconfigurationManager.handleTeamReconfiguration(
           currentTeam,
           newTeam

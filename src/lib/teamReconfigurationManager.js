@@ -746,4 +746,5 @@ export class TeamReconfigurationManager {
   }
 }
 
-export const teamReconfigurationManager = new TeamReconfigurationManager();
+// Export the class for proper instantiation with userId
+// export const teamReconfigurationManager = new TeamReconfigurationManager();
