@@ -60,7 +60,20 @@ async function getActualLabelMapping(userId, provider = 'gmail') {
     
     labels.forEach(label => {
       const labelName = label.label_name;
-      const labelId = label.label_id;
+      let labelId = label.label_id;
+      
+      // Ensure labelId is a string, not an object
+      if (typeof labelId === 'object' && labelId !== null) {
+        // If it's an object, extract the 'id' field
+        labelId = labelId.id || labelId.label_id || labelId;
+        console.log(`⚠️ Extracted label ID from object: ${labelId}`);
+      }
+      
+      // Ensure we have a valid label ID string
+      if (typeof labelId !== 'string' || !labelId) {
+        console.warn(`⚠️ Invalid label ID for ${labelName}:`, labelId);
+        return; // Skip this label
+      }
       
       // Map common category names to actual label IDs
       if (labelName.includes('Sales') || labelName === 'SALES') {
@@ -221,6 +234,15 @@ if (item.tertiary_category && labelMap[item.tertiary_category]) {
 
 // Return the original data plus the array of label IDs
 $json.labelsToApply = Array.from(labelsToApply);
+
+// Debug logging
+console.log('🔍 Label mapping debug:', {
+  primaryCategory: item.primary_category,
+  secondaryCategory: item.secondary_category,
+  tertiaryCategory: item.tertiary_category,
+  labelsToApply: Array.from(labelsToApply),
+  labelMapKeys: Object.keys(labelMap)
+});
 
 // If no labels found, use INBOX as fallback for Gmail
 if (labelsToApply.size === 0) {

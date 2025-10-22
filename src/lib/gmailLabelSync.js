@@ -710,12 +710,8 @@ function buildLabelMap(labels) {
   
   labels.forEach(label => {
     if (label.type === 'user' && !label.id.startsWith('CATEGORY_')) {
-      labelMap[label.name] = {
-        id: label.id,
-        name: label.name,
-        type: 'user',
-        created: new Date().toISOString()
-      };
+      // Store just the label ID string, not the full object
+      labelMap[label.name] = label.id;
     }
   });
   
