@@ -138,9 +138,13 @@ function calculateExpectedCategories(businessInfo) {
  * @returns {boolean} True if folder is classifiable
  */
 function isFolderClassifiable(folderName, expectedCategories) {
+  // Normalize folder name (remove spaces and special chars for comparison)
+  const normalizedFolderName = folderName.toLowerCase().replace(/[\s-_]/g, '');
+  
   // Check if folder matches any primary category
   for (const primaryCategory of CLASSIFIER_CATEGORIES) {
-    if (folderName.toLowerCase().includes(primaryCategory.toLowerCase())) {
+    const normalizedCategory = primaryCategory.toLowerCase().replace(/[\s-_]/g, '');
+    if (normalizedFolderName.includes(normalizedCategory) || normalizedCategory.includes(normalizedFolderName)) {
       return true;
     }
   }
@@ -148,7 +152,8 @@ function isFolderClassifiable(folderName, expectedCategories) {
   // Check if folder matches any secondary category
   for (const [primaryCategory, secondaryCategories] of Object.entries(expectedCategories)) {
     for (const secondaryCategory of secondaryCategories) {
-      if (folderName.toLowerCase().includes(secondaryCategory.toLowerCase())) {
+      const normalizedSecondary = secondaryCategory.toLowerCase().replace(/[\s-_]/g, '');
+      if (normalizedFolderName.includes(normalizedSecondary) || normalizedSecondary.includes(normalizedFolderName)) {
         return true;
       }
     }
@@ -158,7 +163,8 @@ function isFolderClassifiable(folderName, expectedCategories) {
   for (const [primaryCategory, tertiaryMap] of Object.entries(CLASSIFIER_TERTIARY_CATEGORIES)) {
     for (const [secondaryCategory, tertiaryCategories] of Object.entries(tertiaryMap)) {
       for (const tertiaryCategory of tertiaryCategories) {
-        if (folderName.toLowerCase().includes(tertiaryCategory.toLowerCase())) {
+        const normalizedTertiary = tertiaryCategory.toLowerCase().replace(/[\s-_]/g, '');
+        if (normalizedFolderName.includes(normalizedTertiary) || normalizedTertiary.includes(normalizedFolderName)) {
           return true;
         }
       }
