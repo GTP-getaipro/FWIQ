@@ -395,7 +395,7 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
       // Update calculator results with live data
       setCalculatorResults(prev => ({
         ...prev,
-        emailsPerDay: avgEmailsPerDay > 0 ? avgEmailsPerDay : 25 // Default to 25 if no data
+        emailsPerDay: avgEmailsPerDay // Use actual data only, no defaults
       }));
       
       setIsInitialLoad(false);
@@ -651,10 +651,12 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
             </div>
             <div>
               <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                Projected Annual Savings
+                {calculatorResults.emailsPerDay > 0 ? 'Projected Annual Savings' : 'Potential Annual Savings'}
               </h3>
               <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
-                Based on your current email automation performance
+                {calculatorResults.emailsPerDay > 0 
+                  ? 'Based on your current email automation performance'
+                  : 'Start processing emails to see your actual savings'}
               </p>
           </div>
           </div>
@@ -664,9 +666,14 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
               <div className="text-base sm:text-lg lg:text-xl font-semibold text-gray-800 dark:text-gray-200">
                 {calculatorResults.emailsPerDay > 0 
                   ? `${calculatorResults.emailsPerDay.toFixed(1)} emails/day` 
-                  : 'No data available'
+                  : '0 emails/day'
                 }
               </div>
+              {calculatorResults.emailsPerDay === 0 && (
+                <div className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                  Waiting for emails...
+                </div>
+              )}
             </div>
             <div className="text-center sm:text-left">
               <div className="text-sm sm:text-base text-gray-600 dark:text-gray-300 mb-1">Time Saved</div>
