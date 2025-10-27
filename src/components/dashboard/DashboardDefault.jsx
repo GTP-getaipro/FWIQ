@@ -715,9 +715,11 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
             <div className="text-center sm:text-left">
               <div className="text-sm sm:text-base text-gray-600 dark:text-gray-300 mb-1">Processing Rate</div>
               <div className="text-base sm:text-lg lg:text-xl font-semibold text-gray-800 dark:text-gray-200">
-                {calculatorResults.emailsPerDay > 0 
-                  ? `${calculatorResults.emailsPerDay.toFixed(1)} emails/day` 
-                  : '0 emails/day'
+                {calculatorResults.emailsPerDay === 0 
+                  ? '0 emails/week'
+                  : calculatorResults.emailsPerDay < 1
+                  ? `${(calculatorResults.emailsPerDay * 7).toFixed(0)} emails/week`
+                  : `${calculatorResults.emailsPerDay.toFixed(1)} emails/day`
                 }
               </div>
               {calculatorResults.emailsPerDay === 0 && (
