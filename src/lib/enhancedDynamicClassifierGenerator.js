@@ -972,9 +972,9 @@ Return ONLY the following JSON structure. Do not add any other text or explanati
           description: "Orders or inquiries about spa parts, chemicals, and supplies",
           keywords: ["parts", "chemicals", "filter", "order", "price", "stock", "supply", "purchase", "spa chemicals", "hot tub parts"]
         },
-        "SpaRepair": {
-          description: "Spa equipment repair and troubleshooting",
-          keywords: ["repair", "troubleshoot", "jets", "heater", "pump", "filter", "broken", "not working", "error"]
+        "TechnicalSupport": {
+          description: "Spa equipment repair, troubleshooting, and technical assistance",
+          keywords: ["repair", "troubleshoot", "jets", "heater", "pump", "filter", "broken", "not working", "error", "technical", "issue", "problem"]
         }
       },
       "Pools": {
