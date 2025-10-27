@@ -432,8 +432,8 @@ export const injectOnboardingData = async (clientData) => {
       }
       
       // Basic validation - check if it looks like a valid label ID
-      const isValidGmailId = labelId.startsWith('Label_') && labelId.length > 10;
-      const isValidOutlookId = labelId.startsWith('AAMkAD') && labelId.length > 20;
+      const isValidGmailId = labelId.startsWith('Label_') && labelId.length >= 7; // Label_ + at least 1 digit
+      const isValidOutlookId = labelId.startsWith('AAMkAD') && labelId.length >= 10; // Outlook IDs are typically much longer
       
       if (isValidGmailId || isValidOutlookId) {
         validLabels[labelName] = labelData;
