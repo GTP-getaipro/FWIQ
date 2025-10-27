@@ -92,9 +92,13 @@ const StepBusinessInformation = () => {
     phoneProviderName: '', // FIX: Add missing field
     phoneProviderEmails: '', // FIX: Add missing field
     businessHours: {
-      mon_fri: '09:00-18:00',
-      sat: '10:00-16:00',
-      sun: 'Closed'
+      monday: { open: '09:00', close: '17:00', closed: false },
+      tuesday: { open: '10:00', close: '17:00', closed: false },
+      wednesday: { open: '09:00', close: '17:00', closed: false },
+      thursday: { open: '09:00', close: '17:00', closed: false },
+      friday: { open: '09:00', close: '17:00', closed: false },
+      saturday: { open: '10:00', close: '16:00', closed: false },
+      sunday: { open: '10:00', close: '16:00', closed: false }
     }
   }, validationRules);
 
@@ -1424,23 +1428,98 @@ const StepBusinessInformation = () => {
                 </div>
               </div>
               
-              <div className="md:col-span-2">
-                <Label>Business Hours</Label>
-                <p className="text-xs text-gray-500 mb-2">Your operating hours for customer reference and AI scheduling</p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+              <div className="md:col-span-2 space-y-3">
+                <div className="flex items-center justify-between">
                   <div>
-                    <Label className="text-xs">Mon-Fri</Label>
-                    <Input name="businessHours.mon_fri" value={values.businessHours.mon_fri} onChange={(e) => setValues(v => ({...v, businessHours: {...v.businessHours, mon_fri: e.target.value}}))} placeholder="8:00 AM - 5:00 PM" />
+                    <Label>Business Hours</Label>
+                    <p className="text-xs text-gray-500">Your operating hours for customer reference and AI scheduling</p>
                   </div>
-                  <div>
-                    <Label className="text-xs">Saturday</Label>
-                    <Input name="businessHours.sat" value={values.businessHours.sat} onChange={(e) => setValues(v => ({...v, businessHours: {...v.businessHours, sat: e.target.value}}))} placeholder="9:00 AM - 3:00 PM" />
-                  </div>
-                  <div>
-                    <Label className="text-xs">Sunday</Label>
-                    <Input name="businessHours.sun" value={values.businessHours.sun} onChange={(e) => setValues(v => ({...v, businessHours: {...v.businessHours, sun: e.target.value}}))} placeholder="Closed" />
-                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const firstWeekday = values.businessHours.monday;
+                      if (firstWeekday && !firstWeekday.closed) {
+                        setValues(v => ({
+                          ...v,
+                          businessHours: {
+                            ...v.businessHours,
+                            tuesday: { ...firstWeekday },
+                            wednesday: { ...firstWeekday },
+                            thursday: { ...firstWeekday },
+                            friday: { ...firstWeekday }
+                          }
+                        }));
+                        toast({ title: 'Hours copied', description: 'Monday hours copied to Tue-Fri' });
+                      }
+                    }}
+                    className="text-xs"
+                  >
+                    Copy Mon → Tue-Fri
+                  </Button>
                 </div>
+                
+                <div className="grid grid-cols-1 gap-3 border border-gray-200 rounded-lg p-4">
+                  {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => (
+                    <div key={day} className="flex items-center gap-3 pb-2 border-b border-gray-100 last:border-0">
+                      <div className="w-24 font-medium text-sm capitalize">{day}</div>
+                      
+                      <div className="flex items-center gap-2 flex-1">
+                        <Input
+                          type="time"
+                          value={values.businessHours[day]?.open || ''}
+                          onChange={(e) => setValues(v => ({
+                            ...v,
+                            businessHours: {
+                              ...v.businessHours,
+                              [day]: { ...v.businessHours[day], open: e.target.value }
+                            }
+                          }))}
+                          disabled={values.businessHours[day]?.closed}
+                          className="w-32 text-sm"
+                          placeholder="09:00"
+                        />
+                        <span className="text-gray-500">to</span>
+                        <Input
+                          type="time"
+                          value={values.businessHours[day]?.close || ''}
+                          onChange={(e) => setValues(v => ({
+                            ...v,
+                            businessHours: {
+                              ...v.businessHours,
+                              [day]: { ...v.businessHours[day], close: e.target.value }
+                            }
+                          }))}
+                          disabled={values.businessHours[day]?.closed}
+                          className="w-32 text-sm"
+                          placeholder="17:00"
+                        />
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={values.businessHours[day]?.closed || false}
+                          onChange={(e) => setValues(v => ({
+                            ...v,
+                            businessHours: {
+                              ...v.businessHours,
+                              [day]: { ...v.businessHours[day], closed: e.target.checked }
+                            }
+                          }))}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          id={`${day}-closed`}
+                        />
+                        <Label htmlFor={`${day}-closed`} className="text-sm text-gray-600 cursor-pointer">
+                          Closed
+                        </Label>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <p className="text-xs text-gray-500 italic">💡 Tip: Use 24-hour format (e.g., 09:00, 17:00) or 12-hour (9:00 AM, 5:00 PM)</p>
               </div>
               
               <div className="md:col-span-2">
