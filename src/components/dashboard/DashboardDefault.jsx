@@ -89,14 +89,14 @@ const CustomDropdown = ({ value, onChange, options, placeholder = "Select..." })
     <div className="relative custom-dropdown">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between w-full px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 min-w-[120px]"
+        className="flex items-center justify-between w-full px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 transition-colors duration-200 min-w-[120px]"
       >
         <span className="flex items-center">
-          <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+          <Calendar className="h-4 w-4 mr-2 text-gray-500 dark:text-gray-400" />
           {selectedOption?.label || placeholder}
         </span>
         <ChevronDown 
-          className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${
+          className={`h-4 w-4 text-gray-500 dark:text-gray-400 transition-transform duration-200 ${
             isOpen ? 'rotate-180' : ''
           }`} 
         />
@@ -109,7 +109,7 @@ const CustomDropdown = ({ value, onChange, options, placeholder = "Select..." })
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.15 }}
-            className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden"
+            className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg z-50 overflow-hidden backdrop-blur-sm"
           >
             {options.map((option, index) => (
               <button
@@ -117,14 +117,14 @@ const CustomDropdown = ({ value, onChange, options, placeholder = "Select..." })
                 onClick={() => handleSelect(option)}
                 className={`w-full px-4 py-2.5 text-left text-sm transition-colors duration-150 ${
                   option.value === value
-                    ? 'bg-blue-50 text-blue-700 font-medium'
-                    : 'text-gray-700 hover:bg-gray-50'
+                    ? 'bg-blue-50 dark:bg-blue-800/60 text-blue-700 dark:text-blue-100 font-medium'
+                    : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600'
                 } ${index === 0 ? 'rounded-t-lg' : ''} ${
                   index === options.length - 1 ? 'rounded-b-lg' : ''
                 }`}
               >
                 <div className="flex items-center">
-                  <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+                  <Calendar className="h-4 w-4 mr-2 text-gray-400 dark:text-gray-500" />
                   {option.label}
                 </div>
               </button>
