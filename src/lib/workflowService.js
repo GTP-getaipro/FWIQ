@@ -69,7 +69,7 @@ export class WorkflowService {
       let query = supabase
         .from('workflows')
         .select('*')
-        .eq('client_id', clientId);
+        .eq('user_id', clientId);  // ✅ FIXED: Use user_id
 
       // Apply filters
       if (options.status) {
