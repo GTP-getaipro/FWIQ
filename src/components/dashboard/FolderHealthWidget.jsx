@@ -105,10 +105,8 @@ const FolderHealthWidget = ({ userId, provider, onRefreshNeeded }) => {
         duration: 3000
       });
       
-      // Import sync function
-      const { syncGmailLabelsWithDatabase } = await import('@/lib/gmailLabelSync');
-      
       // Sync folders from Gmail/Outlook to database
+      const { syncGmailLabelsWithDatabase } = await import('@/lib/gmailLabelSync');
       const result = await syncGmailLabelsWithDatabase(userId, provider, userId);
       
       if (result.success || result.totalLabels > 0) {

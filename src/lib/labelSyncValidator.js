@@ -1698,7 +1698,6 @@ export const getFolderIdsForN8n = async (userId) => {
   try {
     // CRITICAL: Check if we need to sync labels first
     console.log('🔄 Checking if label sync is needed...');
-    const { needsLabelSync, syncGmailLabelsWithDatabase } = await import('@/lib/gmailLabelSync.js');
     const needsSync = await needsLabelSync(userId);
     
     if (needsSync) {
@@ -1721,7 +1720,6 @@ export const getFolderIdsForN8n = async (userId) => {
         if (integrationData.n8n_credential_id && integrationData.provider === 'gmail' && typeof gapi !== 'undefined' && gapi.client && gapi.client.gmail) {
           console.log('🔍 Verifying labels exist in Gmail and creating missing ones...');
           try {
-            const { verifyAndCreateGmailLabels } = await import('@/lib/gmailLabelSync.js');
             const verificationResult = await verifyAndCreateGmailLabels(
               integrationData.n8n_credential_id,
               {}, // Empty schema - will use database expected labels
