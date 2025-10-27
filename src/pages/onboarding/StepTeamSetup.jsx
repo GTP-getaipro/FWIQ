@@ -155,7 +155,7 @@ const StepTeamSetup = () => {
 
     setIsLoading(true);
 
-    const finalManagers = managers.filter(m => m.name.trim() !== '' && m.email.trim() !== '');
+    const finalManagers = managers.filter(m => m.name.trim() !== '');
     const finalSuppliers = suppliers
       .filter(s => s.name.trim() !== '' && s.domains.trim() !== '')
       .map(s => ({
