@@ -689,9 +689,22 @@ Return ONLY the following JSON structure. Do not add any other text or explanati
     const managerSecondary = {};
     
     this.managers.forEach(manager => {
+      // ✨ ENHANCED: Include manager email in keywords for better routing
+      const keywords = [
+        manager.name.toLowerCase(), 
+        "manager", 
+        "assigned"
+      ];
+      
+      // Add email to keywords if available
+      if (manager.email) {
+        keywords.push(manager.email.toLowerCase());
+      }
+      
       managerSecondary[manager.name] = {
-        description: `Mail explicitly for ${manager.name}`,
-        keywords: [manager.name.toLowerCase(), "manager", "assigned"]
+        description: `Mail explicitly for ${manager.name}${manager.email ? ` (${manager.email})` : ''}`,
+        keywords: keywords.filter(Boolean),
+        email: manager.email // ✨ Store for classifier reference
       };
     });
     
@@ -707,9 +720,24 @@ Return ONLY the following JSON structure. Do not add any other text or explanati
     const supplierSecondary = {};
     
     this.suppliers.forEach(supplier => {
+      // ✨ ENHANCED: Extract domain from email if available
+      const domain = supplier.domain || (supplier.email ? '@' + supplier.email.split('@')[1] : null);
+      const keywords = [
+        supplier.name.toLowerCase(), 
+        "supplier", 
+        "vendor"
+      ];
+      
+      // Add domain to keywords if available
+      if (domain) {
+        keywords.push(domain);
+        keywords.push(domain.replace('@', '')); // Also add without @
+      }
+      
       supplierSecondary[supplier.name] = {
-        description: `Emails from ${supplier.name}`,
-        keywords: [supplier.name.toLowerCase(), "supplier", "vendor", supplier.emailDomain || ""]
+        description: `Emails from ${supplier.name}${domain ? ` (${domain})` : ''}`,
+        keywords: keywords.filter(Boolean),
+        domain: domain // ✨ Store for classifier reference
       };
     });
     

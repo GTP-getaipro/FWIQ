@@ -249,8 +249,11 @@ const StepTeamSetup = () => {
       console.log('👥 Managers:', finalManagers);
       console.log('🏢 Suppliers:', finalSuppliers);
       
-      // Run provisioning asynchronously without blocking the UI
-      provisionLabelSchemaFor(user.id, businessType)
+      // ✅ FULL PROVISIONING: Inject manager/supplier subfolders now that team is set up
+      provisionLabelSchemaFor(user.id, businessType, {
+        skeletonOnly: false,
+        injectTeamFolders: true  // Inject dynamic team folders
+      })
         .then(async (provisioningResult) => {
           console.log('📊 Background provisioning result:', provisioningResult);
           

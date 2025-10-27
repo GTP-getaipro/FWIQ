@@ -20,6 +20,15 @@ import { checkFolderHealth } from './folderHealthCheck.js';
  * @param {string[]} businessTypes - Selected business types
  * @returns {Promise<Object>} Provisioning result with validation
  */
+/**
+ * Automatically provision folders when business type changes (Step 3)
+ * Creates SKELETON only - core business folders without dynamic team folders
+ * Team folders (managers/suppliers) are added later in Step 4 after user enters them
+ * 
+ * @param {string} userId - User ID
+ * @param {Array<string>} businessTypes - Array of business types
+ * @returns {Promise<Object>} - Provisioning result
+ */
 export async function autoProvisionOnBusinessTypeChange(userId, businessTypes) {
   console.log('📁 AUTO-PROVISIONING: Business type changed', {
     userId,
@@ -47,7 +56,7 @@ export async function autoProvisionOnBusinessTypeChange(userId, businessTypes) {
       };
     }
 
-    // Check if managers/suppliers are set up
+    // ✅ FIXED: Check if managers/suppliers exist to determine provisioning mode
     const { data: profile } = await supabase
       .from('profiles')
       .select('managers, suppliers')
@@ -57,18 +66,29 @@ export async function autoProvisionOnBusinessTypeChange(userId, businessTypes) {
     const hasTeam = (profile?.managers?.length > 0) || (profile?.suppliers?.length > 0);
 
     if (!hasTeam) {
-      console.log('ℹ️ No team members yet - folders will be created after team setup');
+      // ✅ CREATE SKELETON: Core business folders only (no team folders yet)
+      console.log('🏗️ No team members yet - creating SKELETON (core folders only)');
+      console.log('📋 Team folders will be injected after Team Setup (Step 4)');
+      
+      const provisioningResult = await provisionLabelSchemaFor(userId, businessTypes, {
+        skeletonOnly: true,
+        injectTeamFolders: false
+      });
+      
       return {
-        success: false,
-        skipped: true,
-        reason: 'No team members configured',
-        message: 'Folders will be created after you set up your team'
+        ...provisioningResult,
+        skipped: false,
+        skeletonCreated: true,
+        message: `Created ${provisioningResult.labelsCreated || 0} core business folders (skeleton)`
       };
     }
 
-    // Provision folders
-    console.log('🚀 Starting automatic folder provisioning...');
-    const provisioningResult = await provisionLabelSchemaFor(userId, businessTypes);
+    // ✅ FULL PROVISIONING: Team members exist, create everything including team folders
+    console.log('🚀 Starting full folder provisioning with team members...');
+    const provisioningResult = await provisionLabelSchemaFor(userId, businessTypes, {
+      skeletonOnly: false,
+      injectTeamFolders: true
+    });
 
     if (!provisioningResult.success) {
       return {

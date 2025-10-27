@@ -93,9 +93,13 @@ function replaceDynamicVariables(schema, managers = [], suppliers = []) {
  * 
  * @param {string} userId - User ID
  * @param {string|array} businessType - Business type(s) (e.g., 'Pools & Spas' or ['Electrician', 'Plumber'])
+ * @param {Object} options - Provisioning options
+ * @param {boolean} options.skeletonOnly - If true, only create core folders without dynamic team folders (for Step 3)
+ * @param {boolean} options.injectTeamFolders - If true, inject manager/supplier subfolders (for Step 4)
  * @returns {Promise<Object>} - Result with labelMap and success status
  */
-export async function provisionLabelSchemaFor(userId, businessType) {
+export async function provisionLabelSchemaFor(userId, businessType, options = {}) {
+  const { skeletonOnly = false, injectTeamFolders = true } = options;
   const businessTypes = Array.isArray(businessType) ? businessType : [businessType];
   console.log(`🚀 Provisioning labels for ${businessTypes.length} business type(s):`, businessTypes);
   
@@ -157,15 +161,30 @@ export async function provisionLabelSchemaFor(userId, businessType) {
     if (!businessProfile?.id || profileError) {
       console.log('📋 No business profile found, creating one...');
       
+      // ✨ ENHANCED: Include metadata for classifier use
+      const supplierMetadata = suppliers.map(s => ({
+        name: s.name,
+        email: s.email || null,
+        domain: s.email ? '@' + s.email.split('@')[1] : null
+      }));
+
+      const managerMetadata = managers.map(m => ({
+        name: m.name,
+        email: m.email || null
+      }));
+
       const { data: newProfile, error: createError } = await supabase
         .from('business_profiles')
         .insert({
           user_id: userId,
           business_types: finalBusinessTypes,
           primary_business_type: finalBusinessTypes[0],
-          managers: managers,
-          suppliers: suppliers,
-          client_config: {}
+          managers: managerMetadata,
+          suppliers: supplierMetadata,
+          client_config: {
+            supplierDomains: supplierMetadata.filter(s => s.domain).map(s => s.domain),
+            managerEmails: managerMetadata.filter(m => m.email).map(m => m.email)
+          }
         })
         .select('id')
         .single();
@@ -294,10 +313,21 @@ export async function provisionLabelSchemaFor(userId, businessType) {
     // Convert schema to standard labels format (use enhanced version for comprehensive schemas)
     const standardLabels = convertComprehensiveSchemaToStandardLabels(schema, provisioningOrder);
     
-    // ✨ NEW: Add dynamic supplier and manager folders
-    console.log('🔄 Step 1.5: Adding dynamic team folders...');
-    const enhancedStandardLabels = await addDynamicTeamFolders(standardLabels, userId);
-    console.log(`🔄 Enhanced schema with team folders:`, enhancedStandardLabels);
+    // ✨ CONDITIONAL: Add dynamic supplier and manager folders (only if requested)
+    let enhancedStandardLabels = standardLabels;
+    
+    if (skeletonOnly) {
+      // Step 3: Skeleton provisioning - core folders only, no dynamic team folders
+      console.log('🏗️ SKELETON MODE: Creating core business folders only (no team folders yet)');
+      console.log('📋 Core folders to create:', Object.keys(standardLabels));
+    } else if (injectTeamFolders) {
+      // Step 4: Full provisioning - inject manager/supplier subfolders
+      console.log('🔄 Step 1.5: Adding dynamic team folders...');
+      enhancedStandardLabels = await addDynamicTeamFolders(standardLabels, userId);
+      console.log(`🔄 Enhanced schema with team folders:`, enhancedStandardLabels);
+    } else {
+      console.log('📋 Using standard schema without dynamic team folders');
+    }
 
     // ✨ NEW: Check if all required folders are already present
     console.log('🔍 Step 1.75: Checking if folder provisioning is needed...');
@@ -520,25 +550,19 @@ async function addDynamicTeamFolders(standardLabels, userId) {
         .map(supplier => supplier.name.trim());
       
       if (supplierNames.length > 0) {
-        // Override SUPPLIERS folder with dynamic supplier names
+        // ✅ FIXED: Add suppliers as SUBFOLDERS under SUPPLIERS (not top-level)
         if (enhancedLabels['SUPPLIERS']) {
           enhancedLabels['SUPPLIERS'].sub = supplierNames;
           enhancedLabels['SUPPLIERS'].dynamic = true;
-          console.log(`✅ Updated SUPPLIERS folder with ${supplierNames.length} suppliers: ${supplierNames.join(', ')}`);
+          // ✨ NEW: Attach supplier metadata for classifier use
+          enhancedLabels['SUPPLIERS'].supplierData = profile.suppliers.map(s => ({
+            name: s.name,
+            email: s.email || null,
+            domain: s.email ? '@' + s.email.split('@')[1] : null
+          }));
+          console.log(`✅ Updated SUPPLIERS folder with ${supplierNames.length} subfolders: ${supplierNames.join(', ')}`);
+          console.log(`📧 Supplier domains for classifier:`, enhancedLabels['SUPPLIERS'].supplierData);
         }
-
-        // ✨ NEW: Create top-level supplier folders
-        console.log(`🔄 Adding ${supplierNames.length} top-level supplier folders:`, supplierNames);
-        supplierNames.forEach(supplierName => {
-          console.log(`🔄 Processing supplier folder: ${supplierName}`);
-          enhancedLabels[supplierName] = {
-            sub: [],
-            color: labelColors['SUPPLIERS'], // Use same color as SUPPLIERS category (null for Outlook)
-            dynamic: true,
-            type: 'supplier'
-          };
-          console.log(`✅ Added top-level supplier folder: ${supplierName}`);
-        });
       } else {
         console.log(`⚠️ No valid supplier names found - using default SUPPLIERS structure`);
       }
@@ -554,28 +578,21 @@ async function addDynamicTeamFolders(standardLabels, userId) {
         .map(manager => manager.name.trim());
       
       if (managerNames.length > 0) {
-        // Override MANAGER folder with Unassigned + dynamic manager names only
+        // ✅ FIXED: Add managers as SUBFOLDERS under MANAGER (not top-level)
         if (enhancedLabels['MANAGER']) {
           enhancedLabels['MANAGER'].sub = [
             "Unassigned",
             ...managerNames
           ];
           enhancedLabels['MANAGER'].dynamic = true;
-          console.log(`✅ Updated MANAGER folder with Unassigned + ${managerNames.length} managers: ${managerNames.join(', ')}`);
+          // ✨ NEW: Attach manager metadata for classifier use
+          enhancedLabels['MANAGER'].managerData = profile.managers.map(m => ({
+            name: m.name,
+            email: m.email || null
+          }));
+          console.log(`✅ Updated MANAGER folder with Unassigned + ${managerNames.length} manager subfolders: ${managerNames.join(', ')}`);
+          console.log(`👥 Manager data for classifier:`, enhancedLabels['MANAGER'].managerData);
         }
-
-        // ✨ NEW: Create top-level manager folders
-        console.log(`🔄 Adding ${managerNames.length} top-level manager folders:`, managerNames);
-        managerNames.forEach(managerName => {
-          console.log(`🔄 Processing manager folder: ${managerName}`);
-          enhancedLabels[managerName] = {
-            sub: [],
-            color: labelColors['MANAGER'], // Use same color as MANAGER category (null for Outlook)
-            dynamic: true,
-            type: 'manager'
-          };
-          console.log(`✅ Added top-level manager folder: ${managerName}`);
-        });
       } else {
         console.log(`⚠️ No valid manager names found - MANAGER folder will have Unassigned only`);
         if (enhancedLabels['MANAGER']) {
