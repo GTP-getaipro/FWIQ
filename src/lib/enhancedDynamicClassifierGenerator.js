@@ -960,21 +960,21 @@ Return ONLY the following JSON structure. Do not add any other text or explanati
   getBusinessSpecificSupportCategories() {
     const supportCategories = {
       "Hot tub & Spa": {
-        "WaterCare": {
-          description: "Spa water care and chemical balance questions",
-          keywords: ["water", "care", "chemicals", "balance", "ph", "maintenance", "treatment"]
+        "AppointmentScheduling": {
+          description: "Service appointment requests, installation scheduling, and maintenance visit bookings",
+          keywords: ["schedule", "book", "appointment", "reschedule", "cancel", "visit", "maintenance", "time", "date", "confirm", "availability", "service"]
         },
-        "Winterization": {
-          description: "Spa winterization and seasonal maintenance",
-          keywords: ["winterization", "winter", "seasonal", "maintenance", "closing", "preparation"]
-        },
-        "PartsAndChemicals": {
-          description: "Orders or inquiries about spa parts, chemicals, and supplies",
-          keywords: ["parts", "chemicals", "filter", "order", "price", "stock", "supply", "purchase", "spa chemicals", "hot tub parts"]
+        "General": {
+          description: "General customer questions, water care, winterization, and non-technical assistance",
+          keywords: ["general", "inquiry", "question", "help", "water", "care", "chemicals", "balance", "ph", "treatment", "winterization", "winter", "seasonal", "closing", "preparation"]
         },
         "TechnicalSupport": {
           description: "Spa equipment repair, troubleshooting, and technical assistance",
-          keywords: ["repair", "troubleshoot", "jets", "heater", "pump", "filter", "broken", "not working", "error", "technical", "issue", "problem"]
+          keywords: ["repair", "troubleshoot", "jets", "heater", "pump", "filter", "broken", "not working", "error", "technical", "issue", "problem", "leak", "leaking"]
+        },
+        "PartsAndChemicals": {
+          description: "Orders or inquiries about spa parts, chemicals, and supplies",
+          keywords: ["parts", "chemicals", "filter", "order", "price", "stock", "supply", "purchase", "spa chemicals", "hot tub parts", "buy", "need"]
         }
       },
       "Pools": {
