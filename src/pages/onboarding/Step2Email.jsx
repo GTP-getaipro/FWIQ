@@ -382,6 +382,10 @@ const Step2Email = () => {
             // Clear the fallback timeout since we completed
             clearTimeout(fallbackTimeout);
             
+            // Clear OAuth session storage since connection succeeded
+            sessionStorage.removeItem('oauth_connecting_provider');
+            sessionStorage.removeItem('oauth_connection_timestamp');
+            
             // Clear status after 5 seconds
             setTimeout(() => {
               setOauthStatus(null);
@@ -410,6 +414,10 @@ const Step2Email = () => {
         // Clear the fallback timeout since we completed
         clearTimeout(fallbackTimeout);
         
+        // Clear OAuth session storage since we're done
+        sessionStorage.removeItem('oauth_connecting_provider');
+        sessionStorage.removeItem('oauth_connection_timestamp');
+        
         toast({
           variant: 'default',
           title: 'Email Connected',
@@ -437,9 +445,84 @@ const Step2Email = () => {
       } else {
         // Normal load - fetch connections
         fetchConnections();
+        
+        // Clean up any stale OAuth state from previous session if not completing OAuth
+        const connectingProvider = sessionStorage.getItem('oauth_connecting_provider');
+        if (connectingProvider) {
+          console.log(`🧹 Cleaning up stale OAuth state for ${connectingProvider}`);
+          sessionStorage.removeItem('oauth_connecting_provider');
+          sessionStorage.removeItem('oauth_connection_timestamp');
+          // Ensure loading state is reset
+          setLoading((prev) => ({ ...prev, [connectingProvider]: false }));
+        }
       }
     }
   }, [user, session, fetchConnections, handleOAuthCompletion]);
+
+  // Reset loading state when user returns to page (e.g., after canceling OAuth)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const oauthComplete = urlParams.get('oauth_complete');
+        
+        // If no OAuth success parameter and we have a connecting provider
+        if (!oauthComplete) {
+          const connectingProvider = sessionStorage.getItem('oauth_connecting_provider');
+          const timestamp = sessionStorage.getItem('oauth_connection_timestamp');
+          
+          if (connectingProvider && timestamp) {
+            const elapsed = Date.now() - parseInt(timestamp);
+            
+            // If more than 5 seconds have passed and no OAuth completion, reset the state
+            if (elapsed > 5000) {
+              console.log(`🔄 User returned to page after ${elapsed}ms, resetting ${connectingProvider} loading state`);
+              setLoading((prev) => ({ ...prev, [connectingProvider]: false }));
+              sessionStorage.removeItem('oauth_connecting_provider');
+              sessionStorage.removeItem('oauth_connection_timestamp');
+              
+              // Refresh connections to get accurate state
+              fetchConnections();
+            }
+          }
+        }
+      }
+    };
+
+    const handleWindowFocus = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const oauthComplete = urlParams.get('oauth_complete');
+      
+      // If no OAuth success and user comes back to the window
+      if (!oauthComplete) {
+        const connectingProvider = sessionStorage.getItem('oauth_connecting_provider');
+        const timestamp = sessionStorage.getItem('oauth_connection_timestamp');
+        
+        if (connectingProvider && timestamp) {
+          const elapsed = Date.now() - parseInt(timestamp);
+          
+          // If more than 3 seconds have passed, likely the user cancelled
+          if (elapsed > 3000) {
+            console.log(`🔄 Window focused after ${elapsed}ms, user may have cancelled OAuth for ${connectingProvider}`);
+            setLoading((prev) => ({ ...prev, [connectingProvider]: false }));
+            sessionStorage.removeItem('oauth_connecting_provider');
+            sessionStorage.removeItem('oauth_connection_timestamp');
+            
+            // Refresh to check actual connection status
+            fetchConnections();
+          }
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleWindowFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, [fetchConnections]);
 
   // Debug state changes
   useEffect(() => {
@@ -459,6 +542,10 @@ const Step2Email = () => {
   const handleConnect = async (provider) => {
     setLoading((prev) => ({ ...prev, [provider]: true }));
     
+    // Store which provider is connecting in sessionStorage
+    sessionStorage.setItem('oauth_connecting_provider', provider);
+    sessionStorage.setItem('oauth_connection_timestamp', Date.now().toString());
+    
     try {
       // Use Supabase OAuth instead of custom service
       const result = await signInWithOAuth(provider, {
@@ -468,6 +555,21 @@ const Step2Email = () => {
       // signInWithOAuth doesn't return a value, it handles the OAuth flow internally
       // If we get here without an error, the OAuth flow was initiated successfully
       
+      // Set a timeout to reset loading state if OAuth doesn't complete
+      // This handles cases where user cancels or closes the OAuth popup
+      setTimeout(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const oauthComplete = urlParams.get('oauth_complete');
+        
+        // If OAuth didn't complete and we're still on this page, reset loading
+        if (!oauthComplete) {
+          console.log(`⚠️ OAuth timeout reached for ${provider}, resetting loading state`);
+          setLoading((prev) => ({ ...prev, [provider]: false }));
+          sessionStorage.removeItem('oauth_connecting_provider');
+          sessionStorage.removeItem('oauth_connection_timestamp');
+        }
+      }, 30000); // 30 second timeout
+      
     } catch (error) {
       console.error('OAuth connection failed:', error);
       toast({
@@ -476,6 +578,8 @@ const Step2Email = () => {
         description: error.message || 'Failed to connect email provider.',
       });
       setLoading((prev) => ({ ...prev, [provider]: false }));
+      sessionStorage.removeItem('oauth_connecting_provider');
+      sessionStorage.removeItem('oauth_connection_timestamp');
     }
   };
 

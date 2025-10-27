@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm Reauthentication - FloWorx</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f3f4f6;
+            line-height: 1.6;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+        }
+        .header {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .logo {
+            font-size: 32px;
+            font-weight: bold;
+            color: #ffffff;
+            margin: 0;
+            letter-spacing: 1px;
+        }
+        .content {
+            padding: 40px 30px;
+            color: #374151;
+        }
+        .content h1 {
+            color: #1f2937;
+            font-size: 24px;
+            margin: 0 0 20px 0;
+            font-weight: 600;
+        }
+        .content p {
+            margin: 0 0 20px 0;
+            font-size: 16px;
+            color: #4b5563;
+        }
+        .token-container {
+            text-align: center;
+            margin: 35px 0;
+            padding: 30px;
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-radius: 12px;
+            border: 2px solid #2563eb;
+        }
+        .token-label {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #1e40af;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        .token-code {
+            font-size: 48px;
+            font-weight: 700;
+            color: #1e3a8a;
+            font-family: 'Courier New', Courier, monospace;
+            letter-spacing: 8px;
+            margin: 15px 0;
+            user-select: all;
+            -webkit-user-select: all;
+            -moz-user-select: all;
+        }
+        .copy-instruction {
+            font-size: 13px;
+            color: #4b5563;
+            margin-top: 15px;
+            font-style: italic;
+        }
+        .info-box {
+            background-color: #eff6ff;
+            border-left: 4px solid #2563eb;
+            padding: 16px 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+        .info-box p {
+            margin: 0;
+            font-size: 14px;
+            color: #1e40af;
+        }
+        .warning-box {
+            background-color: #fef2f2;
+            border-left: 4px solid #dc2626;
+            padding: 16px 20px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+        .warning-box p {
+            margin: 0;
+            font-size: 14px;
+            color: #991b1b;
+        }
+        .steps {
+            background-color: #f9fafb;
+            padding: 20px 25px;
+            border-radius: 8px;
+            margin: 25px 0;
+        }
+        .steps h3 {
+            color: #1f2937;
+            font-size: 16px;
+            margin: 0 0 15px 0;
+            font-weight: 600;
+        }
+        .steps ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .steps li {
+            color: #4b5563;
+            font-size: 14px;
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+        .footer {
+            background-color: #f9fafb;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #e5e7eb;
+        }
+        .footer p {
+            margin: 8px 0;
+            font-size: 14px;
+            color: #6b7280;
+        }
+        .footer a {
+            color: #2563eb;
+            text-decoration: none;
+        }
+        .divider {
+            height: 1px;
+            background-color: #e5e7eb;
+            margin: 30px 0;
+        }
+        @media only screen and (max-width: 600px) {
+            .content {
+                padding: 30px 20px;
+            }
+            .content h1 {
+                font-size: 22px;
+            }
+            .token-code {
+                font-size: 36px;
+                letter-spacing: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table class="email-container" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    
+                    <!-- Header -->
+                    <tr>
+                        <td class="header" style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 40px 20px; text-align: center;">
+                            <h1 class="logo" style="font-size: 32px; font-weight: bold; color: #ffffff; margin: 0; letter-spacing: 1px;">FloWorx</h1>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td class="content" style="padding: 40px 30px;">
+                            <h1 style="color: #1f2937; font-size: 24px; margin: 0 0 20px 0; font-weight: 600;">Verify Your Identity 🔐</h1>
+                            
+                            <p style="margin: 0 0 20px 0; font-size: 16px; color: #4b5563;">
+                                We need to confirm it's really you. Please enter the verification code below to complete your reauthentication.
+                            </p>
+                            
+                            <!-- Token Display -->
+                            <div class="token-container" style="text-align: center; margin: 35px 0; padding: 30px; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-radius: 12px; border: 2px solid #2563eb;">
+                                <div class="token-label" style="font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #1e40af; font-weight: 600; margin-bottom: 15px;">
+                                    YOUR VERIFICATION CODE
+                                </div>
+                                <div class="token-code" style="font-size: 48px; font-weight: 700; color: #1e3a8a; font-family: 'Courier New', Courier, monospace; letter-spacing: 8px; margin: 15px 0;">
+                                    {{ .Token }}
+                                </div>
+                                <div class="copy-instruction" style="font-size: 13px; color: #4b5563; margin-top: 15px; font-style: italic;">
+                                    Click to select and copy this code
+                                </div>
+                            </div>
+                            
+                            <!-- Info Box -->
+                            <div class="info-box" style="background-color: #eff6ff; border-left: 4px solid #2563eb; padding: 16px 20px; margin: 25px 0; border-radius: 4px;">
+                                <p style="margin: 0; font-size: 14px; color: #1e40af;">
+                                    ⏰ <strong>Quick Action Required:</strong> This verification code will expire in 10 minutes for your security.
+                                </p>
+                            </div>
+                            
+                            <!-- Steps -->
+                            <div class="steps" style="background-color: #f9fafb; padding: 20px 25px; border-radius: 8px; margin: 25px 0;">
+                                <h3 style="color: #1f2937; font-size: 16px; margin: 0 0 15px 0; font-weight: 600;">How to use this code:</h3>
+                                <ol style="margin: 0; padding-left: 20px;">
+                                    <li style="color: #4b5563; font-size: 14px; margin: 10px 0;">Return to the FloWorx page where you initiated reauthentication</li>
+                                    <li style="color: #4b5563; font-size: 14px; margin: 10px 0;">Enter the verification code shown above</li>
+                                    <li style="color: #4b5563; font-size: 14px; margin: 10px 0;">Click "Verify" to complete the process</li>
+                                </ol>
+                            </div>
+                            
+                            <div class="divider" style="height: 1px; background-color: #e5e7eb; margin: 30px 0;"></div>
+                            
+                            <!-- Warning Box -->
+                            <div class="warning-box" style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 16px 20px; margin: 25px 0; border-radius: 4px;">
+                                <p style="margin: 0; font-size: 14px; color: #991b1b;">
+                                    ⚠️ <strong>Security Alert:</strong> If you didn't request this verification code, please ignore this email and contact our security team immediately. Someone may be trying to access your account.
+                                </p>
+                            </div>
+                            
+                            <p style="margin: 20px 0 0 0; font-size: 14px; color: #6b7280;">
+                                Need help? Contact our support team at <a href="mailto:support@floworx.com" style="color: #2563eb;">support@floworx.com</a>
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td class="footer" style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                            <p style="margin: 8px 0; font-size: 14px; color: #6b7280;">
+                                <strong>FloWorx</strong> - Intelligent Email Workflow Automation
+                            </p>
+                            <p style="margin: 8px 0; font-size: 14px; color: #6b7280;">
+                                Need help? <a href="mailto:support@floworx.com" style="color: #2563eb; text-decoration: none;">Contact Support</a>
+                            </p>
+                            <p style="margin: 20px 0 8px 0; font-size: 12px; color: #9ca3af;">
+                                © 2024 FloWorx. All rights reserved.
+                            </p>
+                            <p style="margin: 8px 0; font-size: 12px; color: #9ca3af;">
+                                This is an automated security message, please do not reply to this email.
+                            </p>
+                        </td>
+                    </tr>
+                    
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+
