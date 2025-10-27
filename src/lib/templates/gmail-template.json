@@ -581,11 +581,6 @@
         ],
         [
           {
-            "node": "Calculate Performance Metrics",
-            "type": "main",
-            "index": 0
-          },
-          {
             "node": "Generate Label Mappings",
             "type": "main",
             "index": 0
