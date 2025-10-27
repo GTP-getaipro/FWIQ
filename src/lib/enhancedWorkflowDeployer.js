@@ -437,7 +437,7 @@ export class EnhancedWorkflowDeployer {
   async storeWorkflowRecord(userId, deploymentResult, workflowData) {
     try {
       const workflowRecord = {
-        client_id: userId,
+        user_id: userId,
         n8n_workflow_id: deploymentResult.id,
         workflow_name: workflowData.name || 'FloWorx Automation',
         status: 'active',
