@@ -711,26 +711,7 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
               </p>
           </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-            <div className="text-center sm:text-left">
-              <div className="text-sm sm:text-base text-gray-600 dark:text-gray-300 mb-1">Processing Rate</div>
-              <div className="text-base sm:text-lg lg:text-xl font-semibold text-gray-800 dark:text-gray-200">
-                {calculatorResults.emailsPerDay === 0 
-                  ? '0 emails'
-                  : calculatorResults.emailsPerDay < 1
-                  ? `${emailStats.emailsProcessedLast7Days} in ${timeFilter === '7d' ? '7' : timeFilter === '30d' ? '30' : timeFilter === '90d' ? '90' : '365'} days`
-                  : `${calculatorResults.emailsPerDay.toFixed(1)}/day`
-                }
-              </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                {calculatorResults.emailsPerDay === 0 
-                  ? 'Waiting for emails...'
-                  : calculatorResults.emailsPerDay < 1
-                  ? `About ${(calculatorResults.emailsPerDay * 7).toFixed(0)}/week or ${calculatorResults.emailsPerDay.toFixed(1)}/day`
-                  : `About ${(calculatorResults.emailsPerDay * 7).toFixed(0)}/week`
-                }
-              </div>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
             <div className="text-center sm:text-left">
               <div className="text-sm sm:text-base text-gray-600 dark:text-gray-300 mb-1">Time Saved</div>
               <div className={`text-base sm:text-lg lg:text-xl font-semibold ${
