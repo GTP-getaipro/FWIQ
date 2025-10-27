@@ -835,7 +835,6 @@ const StepBusinessInformation = () => {
                     <li><strong>Routes emails correctly</strong> - Identifies internal vs external emails, urgent requests, and service provider notifications</li>
                     <li><strong>Responds with your voice</strong> - Uses your business name, contact info, and service details in AI responses</li>
                     <li><strong>Provides accurate information</strong> - Shares correct pricing, service areas, and business hours with customers</li>
-                    <li><strong>Handles escalations properly</strong> - Knows who to contact and when based on your business rules</li>
                   </ul>
                   <p className="mt-3 font-medium">All information is secure and only used to improve your email automation system.</p>
                 </div>
