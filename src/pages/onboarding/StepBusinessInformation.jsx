@@ -1683,7 +1683,7 @@ const StepBusinessInformation = () => {
                           className={`p-4 border rounded-lg cursor-pointer transition-colors ${
                             isSelected 
                               ? 'border-blue-500 bg-blue-50' 
-                              : 'border-gray-200 hover:border-gray-300'
+                              : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                           }`}
                           onClick={() => toggleServiceSelection(service)}
                         >
@@ -1691,8 +1691,12 @@ const StepBusinessInformation = () => {
                             <input
                               type="checkbox"
                               checked={isSelected}
-                              onChange={() => toggleServiceSelection(service)}
-                              className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                toggleServiceSelection(service);
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              className="mt-1 h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
                             />
                             <div className="flex-1">
                               <div className="flex items-center justify-between mb-2">
