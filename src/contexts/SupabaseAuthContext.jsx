@@ -353,29 +353,8 @@ export const AuthProvider = ({ children }) => {
           description: error.message || "Something went wrong",
         });
       } else if (data.user) {
-        // Create profile immediately after successful signup
-        try {
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: data.user.id,
-              email: data.user.email,
-              onboarding_step: 'email_integration',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            });
-
-          if (profileError) {
-            console.error('Failed to create user profile during signup:', profileError);
-            // Don't show error to user as the signup was successful
-            // Profile will be created on first login as fallback
-          } else {
-            console.log('✅ User profile created successfully during signup');
-          }
-        } catch (profileError) {
-          console.error('Error creating profile during signup:', profileError);
-          // Profile will be created on first login as fallback
-        }
+        // Profile will be created automatically by database trigger after email verification
+        console.log('✅ User registered successfully. Profile will be created after email verification.');
       }
 
       return { data, error };
