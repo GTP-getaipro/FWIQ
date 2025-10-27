@@ -317,19 +317,19 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
       console.log('📅 Date range:', periodStart, 'to', dayjs().toISOString());
       console.log('📊 Time filter:', timeFilter, 'days back:', daysBack);
       
-      // Get all emails in the period (both processed and unprocessed)
+      // Get all emails in the period
       const { data: allEmails, error: allEmailsError } = await supabase
         .from('email_logs')
-        .select('created_at, processed_at')
+        .select('created_at, message_id')
         .gte('created_at', periodStart)
         .eq('user_id', profile.id);
 
-      // Get processed emails in the period
-      const { data: processedEmails, error: processedEmailsError } = await supabase
+      // NOTE: N8N workflow doesn't update processed_at, so we count all logged emails
+      // In production, all logged emails go through the n8n workflow for processing
+      const { data: processedEmails, error: processedEmailsError} = await supabase
         .from('email_logs')
-        .select('created_at, processed_at')
+        .select('created_at, message_id')
         .gte('created_at', periodStart)
-        .not('processed_at', 'is', null)
         .eq('user_id', profile.id);
 
       // Get comparison period data for percentage change
