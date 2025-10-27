@@ -3,6 +3,7 @@ import { microsoftGraphErrorHandler, createMicrosoftGraphRetryWrapper } from './
 import { retryService } from './retryService.js';
 import { supabase } from './customSupabaseClient.js';
 import { validateTokensForLabels } from './oauthTokenManager.js';
+import { needsLabelSync, syncGmailLabelsWithDatabase, verifyAndCreateGmailLabels } from './gmailLabelSync.js';
 
 // Ordered folder structure from top to bottom
 const standardLabels = {
