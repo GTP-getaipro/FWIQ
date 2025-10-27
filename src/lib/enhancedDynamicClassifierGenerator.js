@@ -960,21 +960,21 @@ Return ONLY the following JSON structure. Do not add any other text or explanati
   getBusinessSpecificSupportCategories() {
     const supportCategories = {
       "Hot tub & Spa": {
-        "AppointmentScheduling": {
-          description: "Service appointment requests, installation scheduling, and maintenance visit bookings",
-          keywords: ["schedule", "book", "appointment", "reschedule", "cancel", "visit", "maintenance", "time", "date", "confirm", "availability", "service"]
+        "WaterCare": {
+          description: "Spa water care and chemical balance questions",
+          keywords: ["water", "care", "chemicals", "balance", "ph", "maintenance", "treatment"]
         },
-        "General": {
-          description: "General customer questions, water care, winterization, and non-technical assistance",
-          keywords: ["general", "inquiry", "question", "help", "water", "care", "chemicals", "balance", "ph", "treatment", "winterization", "winter", "seasonal", "closing", "preparation"]
-        },
-        "TechnicalSupport": {
-          description: "Spa equipment repair, troubleshooting, and technical assistance",
-          keywords: ["repair", "troubleshoot", "jets", "heater", "pump", "filter", "broken", "not working", "error", "technical", "issue", "problem", "leak", "leaking"]
+        "Winterization": {
+          description: "Spa winterization and seasonal maintenance",
+          keywords: ["winterization", "winter", "seasonal", "maintenance", "closing", "preparation"]
         },
         "PartsAndChemicals": {
           description: "Orders or inquiries about spa parts, chemicals, and supplies",
-          keywords: ["parts", "chemicals", "filter", "order", "price", "stock", "supply", "purchase", "spa chemicals", "hot tub parts", "buy", "need"]
+          keywords: ["parts", "chemicals", "filter", "order", "price", "stock", "supply", "purchase", "spa chemicals", "hot tub parts"]
+        },
+        "SpaRepair": {
+          description: "Spa equipment repair and troubleshooting",
+          keywords: ["repair", "troubleshoot", "jets", "heater", "pump", "filter", "broken", "not working", "error"]
         }
       },
       "Pools": {
@@ -996,129 +996,141 @@ Return ONLY the following JSON structure. Do not add any other text or explanati
         }
       },
       "Electrician": {
-        "CodeCompliance": {
-          description: "Electrical code questions and compliance issues",
-          keywords: ["code", "compliance", "permit", "inspection", "electrical code", "safety"]
+        "AppointmentScheduling": {
+          description: "Service appointment requests and electrical work scheduling",
+          keywords: ["schedule", "book", "appointment", "reschedule", "cancel", "visit", "time", "date", "confirm", "availability"]
         },
-        "PanelUpgrades": {
-          description: "Electrical panel upgrades and service upgrades",
-          keywords: ["panel", "upgrade", "service", "breaker", "electrical panel", "main"]
+        "EstimateFollowUp": {
+          description: "Estimate follow-up and quote discussions",
+          keywords: ["estimate", "follow-up", "quote", "pricing", "proposal", "bid", "cost"]
         },
-        "PartsAndSupplies": {
-          description: "Orders or inquiries about electrical parts, supplies, and materials",
-          keywords: ["parts", "supplies", "materials", "order", "price", "stock", "supply", "purchase", "electrical parts", "wire", "outlets"]
+        "TechnicalSupport": {
+          description: "Electrical system repair, troubleshooting, panel upgrades, and code compliance",
+          keywords: ["repair", "troubleshoot", "outlet", "switch", "breaker", "wiring", "circuit", "broken", "not working", "panel", "upgrade", "code", "compliance", "permit"]
         },
-        "ElectricalRepair": {
-          description: "Electrical system repair and troubleshooting",
-          keywords: ["repair", "troubleshoot", "outlet", "switch", "breaker", "wiring", "circuit", "broken", "not working"]
+        "General": {
+          description: "General electrical questions and basic inquiries",
+          keywords: ["general", "inquiry", "question", "help", "information", "consultation", "advice"]
         }
       },
       "HVAC": {
-        "IndoorAirQuality": {
-          description: "Indoor air quality testing and improvement",
-          keywords: ["air quality", "indoor air", "testing", "allergies", "ventilation", "filtration"]
-        },
-        "DuctCleaning": {
-          description: "Duct cleaning and maintenance services",
-          keywords: ["duct", "cleaning", "maintenance", "air ducts", "ventilation", "air flow"]
-        },
-        "PartsAndSupplies": {
-          description: "Orders or inquiries about HVAC parts, supplies, and materials",
-          keywords: ["parts", "supplies", "materials", "order", "price", "stock", "supply", "purchase", "hvac parts", "filters", "thermostats"]
-        },
-        "HVACRepair": {
+        "TechnicalSupport": {
           description: "HVAC system repair and troubleshooting",
-          keywords: ["repair", "troubleshoot", "furnace", "air conditioning", "heat pump", "thermostat", "broken", "not working"]
+          keywords: ["repair", "troubleshoot", "furnace", "air conditioning", "heat pump", "thermostat", "broken", "not working", "technical", "issue"]
+        },
+        "PartsAndFilters": {
+          description: "Orders or inquiries about HVAC parts, filters, and supplies",
+          keywords: ["parts", "supplies", "materials", "filters", "order", "price", "stock", "supply", "purchase", "hvac parts", "thermostats", "buy", "need"]
+        },
+        "AppointmentScheduling": {
+          description: "Service appointment requests and HVAC maintenance scheduling",
+          keywords: ["schedule", "book", "appointment", "reschedule", "cancel", "visit", "maintenance", "time", "date", "confirm", "availability"]
+        },
+        "GeneralInquiries": {
+          description: "General HVAC questions, air quality, duct cleaning, and basic inquiries",
+          keywords: ["general", "inquiry", "question", "help", "air quality", "indoor air", "testing", "ventilation", "duct", "cleaning", "consultation"]
         }
       },
       "Plumber": {
-        "FixtureInstallation": {
-          description: "Plumbing fixture installation and replacement",
-          keywords: ["fixture", "installation", "replacement", "faucet", "toilet"]
+        "AppointmentScheduling": {
+          description: "Service appointment requests and plumbing work scheduling",
+          keywords: ["schedule", "book", "appointment", "reschedule", "cancel", "visit", "time", "date", "confirm", "availability"]
         },
-        "PipeInspection": {
-          description: "Pipe inspection and maintenance services",
-          keywords: ["pipe", "inspection", "maintenance", "camera", "diagnostic"]
+        "General": {
+          description: "General plumbing questions, fixture installation, pipe inspection, and basic inquiries",
+          keywords: ["general", "inquiry", "question", "help", "fixture", "installation", "pipe", "inspection", "consultation", "advice"]
         },
-        "PartsAndSupplies": {
-          description: "Orders or inquiries about plumbing parts, supplies, and materials",
-          keywords: ["parts", "supplies", "materials", "order", "price", "stock", "supply", "purchase", "plumbing parts", "pipes", "fittings"]
-        },
-        "PlumbingRepair": {
+        "TechnicalSupport": {
           description: "Plumbing system repair and troubleshooting",
-          keywords: ["repair", "troubleshoot", "leak", "clog", "drain", "pipe", "faucet", "toilet", "broken", "not working"]
+          keywords: ["repair", "troubleshoot", "leak", "clog", "drain", "pipe", "faucet", "toilet", "broken", "not working", "technical", "issue"]
         }
       },
       "Roofing": {
-        "RoofInspection": {
-          description: "Roof inspection and assessment services",
-          keywords: ["inspection", "assessment", "roof", "check", "evaluation"]
+        "Scheduling": {
+          description: "Service appointment requests and roofing work scheduling",
+          keywords: ["schedule", "scheduling", "book", "appointment", "reschedule", "cancel", "visit", "time", "date", "confirm", "availability"]
         },
-        "GutterCleaning": {
-          description: "Gutter cleaning and maintenance services",
-          keywords: ["gutter", "cleaning", "maintenance", "drainage", "cleaning"]
+        "WarrantyRepairs": {
+          description: "Roof warranty claims and warranty-related repairs",
+          keywords: ["warranty", "warranty repair", "claim", "defect", "covered", "guarantee"]
         },
-        "PartsAndSupplies": {
-          description: "Orders or inquiries about roofing parts, supplies, and materials",
-          keywords: ["parts", "supplies", "materials", "order", "price", "stock", "supply", "purchase", "roofing materials", "shingles", "gutters"]
+        "LeakConcerns": {
+          description: "Roof leak issues and water damage concerns",
+          keywords: ["leak", "leaking", "water damage", "drip", "moisture", "seepage", "leak concern"]
         },
-        "RoofRepair": {
-          description: "Roof repair and maintenance services",
-          keywords: ["repair", "maintenance", "leak", "damage", "patch", "shingles", "gutter", "broken", "not working"]
+        "CustomerQuestions": {
+          description: "General roofing questions and customer inquiries",
+          keywords: ["question", "inquiry", "help", "information", "advice", "consultation", "inspection", "gutter"]
+        },
+        "PostInstallSupport": {
+          description: "Post-installation support and follow-up",
+          keywords: ["post-install", "after installation", "follow-up", "completed job", "maintenance", "care instructions"]
         }
       },
       "Painting": {
-        "ColorConsultation": {
-          description: "Color consultation and paint selection",
-          keywords: ["color", "consultation", "selection", "advice", "recommendation"]
+        "Scheduling": {
+          description: "Service appointment requests and painting work scheduling",
+          keywords: ["schedule", "scheduling", "book", "appointment", "reschedule", "cancel", "visit", "time", "date", "confirm", "availability"]
         },
-        "SurfacePrep": {
-          description: "Surface preparation and paint preparation",
-          keywords: ["surface", "prep", "preparation", "sanding", "priming"]
+        "GeneralInquiries": {
+          description: "General painting questions, color consultation, and basic inquiries",
+          keywords: ["general", "inquiry", "question", "help", "color", "consultation", "selection", "advice", "recommendation", "information"]
         },
-        "PartsAndSupplies": {
-          description: "Orders or inquiries about painting supplies, materials, and equipment",
-          keywords: ["supplies", "materials", "equipment", "order", "price", "stock", "supply", "purchase", "paint", "brushes", "rollers"]
+        "PaintWarrantyIssues": {
+          description: "Paint warranty issues and defect claims",
+          keywords: ["warranty", "defect", "claim", "guarantee", "peeling", "cracking", "fading", "stain", "problem", "issue"]
         },
-        "PaintIssues": {
-          description: "Paint problems and touch-up services",
-          keywords: ["touch-up", "repair", "peeling", "cracking", "fading", "stain", "problem", "issue"]
+        "ColorAdjustments": {
+          description: "Color adjustments and paint corrections",
+          keywords: ["color adjustment", "touch-up", "correction", "retouch", "fix color", "wrong color", "adjustment"]
+        },
+        "PostJobSupport": {
+          description: "Post-job support and painting maintenance",
+          keywords: ["post-job", "after painting", "maintenance", "care", "follow-up", "completed", "surface prep"]
         }
       },
       "Flooring": {
-        "FloorRepair": {
-          description: "Floor repair and restoration services",
-          keywords: ["repair", "fix", "damage", "restoration", "refinishing"]
+        "Scheduling": {
+          description: "Service appointment requests and flooring work scheduling",
+          keywords: ["schedule", "scheduling", "book", "appointment", "reschedule", "cancel", "visit", "time", "date", "confirm", "availability"]
         },
-        "MaterialSelection": {
-          description: "Flooring material consultation and selection",
-          keywords: ["material", "selection", "consultation", "advice", "recommendation"]
+        "ProductQuestions": {
+          description: "Flooring material questions and product inquiries",
+          keywords: ["material", "selection", "consultation", "advice", "recommendation", "product", "question", "inquiry", "type", "options"]
         },
-        "PartsAndSupplies": {
-          description: "Orders or inquiries about flooring materials, supplies, and tools",
-          keywords: ["materials", "supplies", "tools", "order", "price", "stock", "supply", "purchase", "flooring materials", "adhesives", "tools"]
+        "WarrantySupport": {
+          description: "Flooring warranty issues and defect claims",
+          keywords: ["warranty", "defect", "claim", "guarantee", "warping", "squeaking", "problem", "issue"]
         },
-        "FlooringIssues": {
-          description: "Flooring problems and maintenance",
-          keywords: ["problem", "issue", "damage", "warping", "squeaking", "stain", "scratch", "maintenance"]
+        "CustomerService": {
+          description: "General customer service and flooring assistance",
+          keywords: ["customer service", "help", "assistance", "general", "inquiry", "question", "support"]
+        },
+        "General": {
+          description: "General flooring questions, maintenance, and basic inquiries",
+          keywords: ["general", "inquiry", "question", "help", "maintenance", "care", "repair", "fix", "damage", "restoration", "stain", "scratch"]
         }
       },
       "Landscaping": {
-        "GardenDesign": {
-          description: "Garden design and landscaping consultation",
-          keywords: ["design", "garden", "landscaping", "consultation", "planning"]
+        "Scheduling": {
+          description: "Service appointment requests and landscaping work scheduling",
+          keywords: ["schedule", "scheduling", "book", "appointment", "reschedule", "cancel", "visit", "time", "date", "confirm", "availability"]
         },
-        "Irrigation": {
-          description: "Irrigation system installation and maintenance",
-          keywords: ["irrigation", "sprinkler", "watering", "system", "maintenance"]
+        "GeneralInquiries": {
+          description: "General landscaping questions, garden design, and basic inquiries",
+          keywords: ["general", "inquiry", "question", "help", "design", "garden", "landscaping", "consultation", "planning", "advice"]
         },
-        "PartsAndSupplies": {
-          description: "Orders or inquiries about landscaping supplies, plants, and equipment",
-          keywords: ["supplies", "plants", "equipment", "order", "price", "stock", "supply", "purchase", "landscaping supplies", "seeds", "tools"]
+        "BillingQuestions": {
+          description: "Billing and payment inquiries",
+          keywords: ["billing", "payment", "invoice", "charge", "cost", "price", "estimate", "bill", "pay"]
         },
-        "LandscapeMaintenance": {
-          description: "Landscape maintenance and care issues",
-          keywords: ["maintenance", "care", "problem", "issue", "disease", "pest", "watering", "pruning"]
+        "ServiceComplaints": {
+          description: "Service complaints and quality concerns",
+          keywords: ["complaint", "issue", "problem", "concern", "unsatisfied", "disappointed", "poor quality", "not happy"]
+        },
+        "WarrantyIssues": {
+          description: "Landscape warranty issues and plant guarantees",
+          keywords: ["warranty", "guarantee", "dead plants", "plant replacement", "irrigation", "system", "leak", "timer", "disease", "pest"]
         }
       },
       "General Construction": {
