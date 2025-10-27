@@ -366,7 +366,7 @@
     {
       "parameters": {
         "sessionIdType": "customKey",
-        "sessionKey": "={{ $('Prepare Email Data').item.json.threadId }}",
+        "sessionKey": "={{ $('Prepare Email Data').first().json.threadId }}",
         "contextWindowLength": 10
       },
       "id": "conversation-memory",
