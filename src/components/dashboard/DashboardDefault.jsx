@@ -726,8 +726,8 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
                 {calculatorResults.emailsPerDay === 0 
                   ? 'Waiting for emails...'
                   : calculatorResults.emailsPerDay < 1
-                  ? `~${(calculatorResults.emailsPerDay * 7).toFixed(1)}/week, ~${calculatorResults.emailsPerDay.toFixed(1)}/day`
-                  : `~${(calculatorResults.emailsPerDay * 7).toFixed(0)}/week`
+                  ? `About ${(calculatorResults.emailsPerDay * 7).toFixed(0)}/week or ${calculatorResults.emailsPerDay.toFixed(1)}/day`
+                  : `About ${(calculatorResults.emailsPerDay * 7).toFixed(0)}/week`
                 }
               </div>
             </div>
