@@ -220,56 +220,22 @@ export async function checkFolderHealth(userId, provider = null) {
 
     console.log(`📧 Provider: ${provider}`);
 
-    // Get expected folders from business_labels table (INTEGRATED with provisioning system)
-    const { data: businessLabels, error: labelsError } = await supabase
-      .from('business_labels')
-      .select('*')
-      .eq('business_profile_id', userId)
-      .eq('is_deleted', false);
-
-    if (labelsError) {
-      console.error('❌ Error fetching business labels:', labelsError);
-      return {
-        success: false,
-        error: 'Could not fetch expected folders from database',
-        provider,
-        totalExpected: 0,
-        totalFound: 0,
-        missingFolders: [],
-        allFoldersPresent: false
-      };
-    }
-
-    const expectedFolders = businessLabels || [];
-    console.log(`📁 Expected folders from business_labels: ${expectedFolders.length}`);
-
-    if (expectedFolders.length === 0) {
-      return {
-        success: true,
-        message: 'No folders configured yet',
-        provider,
-        totalExpected: 0,
-        totalFound: 0,
-        missingFolders: [],
-        allFoldersPresent: true
-      };
-    }
-
-    // Get valid access token
+    // Get valid access token FIRST - to check actual Gmail/Outlook state
     const accessToken = await getValidAccessToken(userId, provider);
     if (!accessToken) {
       return {
         success: false,
         error: 'Could not get valid access token',
         provider,
-        totalExpected: expectedFolders.length,
+        totalExpected: 0,
         totalFound: 0,
-        missingFolders: expectedFolders.map(f => f.label_name),
-        allFoldersPresent: false
+        missingFolders: [],
+        allFoldersPresent: false,
+        needsSync: false
       };
     }
 
-    // Fetch actual folders from provider using direct API calls
+    // Fetch actual folders from Gmail/Outlook FIRST
     let actualFolders = [];
     if (provider === 'gmail') {
       actualFolders = await fetchCurrentGmailLabels(accessToken);
@@ -277,7 +243,88 @@ export async function checkFolderHealth(userId, provider = null) {
       actualFolders = await fetchCurrentOutlookFolders(accessToken);
     }
 
-    console.log(`📬 Actual folders found: ${actualFolders.length}`);
+    console.log(`📬 Actual folders in ${provider}: ${actualFolders.length}`);
+
+    // Get expected folders from profiles.email_labels (primary source)
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('email_labels')
+      .eq('id', userId)
+      .single();
+
+    if (profileError) {
+      console.error('❌ Error fetching profile:', profileError);
+      // If we can't get profile but have actual folders, return state showing sync needed
+      if (actualFolders.length > 0) {
+        return {
+          success: true,
+          provider,
+          totalExpected: 0,
+          totalFound: actualFolders.length,
+          actualFoldersCount: actualFolders.length,
+          healthPercentage: 0,
+          missingFolders: [],
+          allFoldersPresent: false,
+          needsSync: true,
+          message: `Found ${actualFolders.length} folders in ${provider} but database is not synced`,
+          checkedAt: new Date().toISOString()
+        };
+      }
+      return {
+        success: false,
+        error: 'Could not fetch profile',
+        provider,
+        totalExpected: 0,
+        totalFound: 0,
+        missingFolders: [],
+        allFoldersPresent: false,
+        needsSync: false
+      };
+    }
+
+    const emailLabels = profile?.email_labels || {};
+    const expectedFolders = Object.entries(emailLabels).map(([name, data]) => ({
+      label_name: name,
+      label_id: data.id || data,
+      synced_at: data.synced_at || null
+    }));
+
+    console.log(`📁 Expected folders from database: ${expectedFolders.length}`);
+    console.log(`📬 Actual folders in ${provider}: ${actualFolders.length}`);
+
+    // SPECIAL CASE: Database is empty but Gmail/Outlook has folders
+    if (expectedFolders.length === 0 && actualFolders.length > 0) {
+      console.log(`⚠️ Database empty but ${provider} has ${actualFolders.length} folders - NEEDS SYNC`);
+      return {
+        success: true,
+        provider,
+        totalExpected: 0,
+        totalFound: actualFolders.length,
+        actualFoldersCount: actualFolders.length,
+        healthPercentage: 0,
+        missingFolders: [],
+        allFoldersPresent: false,
+        needsSync: true,
+        message: `Found ${actualFolders.length} folders in ${provider} but not synced to database`,
+        checkedAt: new Date().toISOString()
+      };
+    }
+
+    // SPECIAL CASE: Both are empty
+    if (expectedFolders.length === 0 && actualFolders.length === 0) {
+      return {
+        success: true,
+        message: 'No folders configured yet',
+        provider,
+        totalExpected: 0,
+        totalFound: 0,
+        actualFoldersCount: 0,
+        missingFolders: [],
+        allFoldersPresent: true,
+        needsSync: false,
+        checkedAt: new Date().toISOString()
+      };
+    }
 
     // Get business information for classifier coverage validation
     const { data: businessProfile } = await supabase
@@ -345,6 +392,7 @@ export async function checkFolderHealth(userId, provider = null) {
       missingFolders,
       foundFolders,
       allFoldersPresent,
+      needsSync: false,
       checkedAt: new Date().toISOString(),
       // Additional info for debugging
       businessLabelsCount: expectedFolders.length,
@@ -534,5 +582,171 @@ async function fetchOutlookFoldersRecursive(accessToken, parentId = null) {
     console.error('❌ Error fetching Outlook folders recursively:', error);
     return [];
   }
+}
+
+/**
+ * Create missing folders for user
+ * Only creates the specific folders that are missing (surgical fix)
+ * @param {string} userId - User ID
+ * @param {string} provider - Email provider ('gmail' or 'outlook')
+ * @param {Array<string>} missingFolderNames - Array of folder names to create
+ * @returns {Promise<Object>} Result with created folders
+ */
+export async function createMissingFolders(userId, provider, missingFolderNames) {
+  console.log('🔧 Creating missing folders...', {
+    userId,
+    provider,
+    missingCount: missingFolderNames.length,
+    folders: missingFolderNames
+  });
+  
+  try {
+    if (!userId || !provider || !missingFolderNames || missingFolderNames.length === 0) {
+      return {
+        success: true,
+        created: [],
+        message: 'No folders to create'
+      };
+    }
+    
+    // Get valid access token
+    const accessToken = await getValidAccessToken(userId, provider);
+    if (!accessToken) {
+      throw new Error('No valid access token available');
+    }
+    
+    // Get current email_labels from profile to update
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('email_labels')
+      .eq('id', userId)
+      .single();
+    
+    if (profileError) {
+      throw new Error(`Failed to load profile: ${profileError.message}`);
+    }
+    
+    const currentLabels = profile?.email_labels || {};
+    const createdFolders = [];
+    const errors = [];
+    
+    // Create each missing folder
+    for (const folderName of missingFolderNames) {
+      try {
+        console.log(`📁 Creating folder: ${folderName}`);
+        
+        let folderId;
+        if (provider === 'gmail') {
+          folderId = await createGmailLabel(accessToken, folderName);
+        } else if (provider === 'outlook') {
+          folderId = await createOutlookFolder(accessToken, folderName);
+        } else {
+          throw new Error(`Unsupported provider: ${provider}`);
+        }
+        
+        if (folderId) {
+          // Add to label map
+          currentLabels[folderName] = {
+            id: folderId,
+            name: folderName
+          };
+          
+          createdFolders.push({ name: folderName, id: folderId });
+          console.log(`✅ Created folder: ${folderName} (${folderId})`);
+        }
+      } catch (error) {
+        console.error(`❌ Failed to create folder ${folderName}:`, error);
+        errors.push({ folder: folderName, error: error.message });
+      }
+    }
+    
+    // Update profile with new folders
+    if (createdFolders.length > 0) {
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ 
+          email_labels: currentLabels,
+          label_provisioning_status: 'completed',
+          label_provisioning_date: new Date().toISOString()
+        })
+        .eq('id', userId);
+      
+      if (updateError) {
+        console.error('❌ Failed to update profile with new folders:', updateError);
+        throw new Error(`Failed to save folders: ${updateError.message}`);
+      }
+    }
+    
+    return {
+      success: true,
+      created: createdFolders,
+      errors: errors,
+      message: `Successfully created ${createdFolders.length} of ${missingFolderNames.length} folders`
+    };
+    
+  } catch (error) {
+    console.error('❌ createMissingFolders failed:', error);
+    return {
+      success: false,
+      created: [],
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Create a Gmail label
+ * @param {string} accessToken - Gmail access token
+ * @param {string} labelName - Label name to create
+ * @returns {Promise<string>} Created label ID
+ */
+async function createGmailLabel(accessToken, labelName) {
+  const response = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/labels', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      name: labelName,
+      labelListVisibility: 'labelShow',
+      messageListVisibility: 'show'
+    })
+  });
+  
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Gmail API error: ${response.status} - ${error}`);
+  }
+  
+  const data = await response.json();
+  return data.id;
+}
+
+/**
+ * Create an Outlook folder
+ * @param {string} accessToken - Outlook access token
+ * @param {string} folderName - Folder name to create
+ * @returns {Promise<string>} Created folder ID
+ */
+async function createOutlookFolder(accessToken, folderName) {
+  const response = await fetch('https://graph.microsoft.com/v1.0/me/mailFolders', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      displayName: folderName
+    })
+  });
+  
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Microsoft Graph API error: ${response.status} - ${error}`);
+  }
+  
+  const data = await response.json();
+  return data.id;
 }
 
