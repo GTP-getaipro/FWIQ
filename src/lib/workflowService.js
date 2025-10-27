@@ -135,7 +135,7 @@ export class WorkflowService {
       const { data: existingWorkflow } = await supabase
         .from('workflows')
         .select('version')
-        .eq('client_id', clientId)
+        .eq('user_id', clientId)  // ✅ FIXED: Use user_id
         .eq('name', request.name)
         .order('version', { ascending: false })
         .limit(1)
@@ -337,7 +337,7 @@ export class WorkflowService {
       const { data: currentWorkflow } = await supabase
         .from('workflows')
         .select('*')
-        .eq('client_id', clientId)
+        .eq('user_id', clientId)  // ✅ FIXED: Use user_id
         .eq('name', workflowName)
         .eq('status', 'active')
         .order('version', { ascending: false })

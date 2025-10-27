@@ -96,7 +96,7 @@ export class TemplateVersionManager {
       const { data: workflow } = await supabase
         .from('workflows')
         .select('template_version, template_id')
-        .eq('client_id', userId)
+        .eq('user_id', userId)  // ✅ FIXED: Use user_id
         .eq('status', 'active')
         .order('version', { ascending: false })
         .limit(1)

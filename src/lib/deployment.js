@@ -59,7 +59,7 @@ export const deployAutomation = async (userId, setDeploymentStatus) => {
     const { data: existingWorkflow, error: fetchError } = await supabase
       .from('workflows')
       .select('id, version, n8n_workflow_id')
-      .eq('client_id', userId)
+      .eq('user_id', userId)  // ✅ FIXED: Use user_id instead of client_id
       .eq('status', 'active')
       .order('version', { ascending: false })
       .limit(1)
