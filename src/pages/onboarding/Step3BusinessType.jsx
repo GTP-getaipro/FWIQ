@@ -330,14 +330,22 @@ const Step3BusinessType = () => {
       });
       
       // Store analysis start status
-      await supabase
-        .from('communication_styles')
-        .upsert({
-          user_id: userId,
-          analysis_status: 'in_progress',
-          analysis_started_at: new Date().toISOString(),
-          last_updated: new Date().toISOString()
-        }, { onConflict: 'user_id' });
+      // ⚠️ DEFENSIVE: Gracefully handle if migration not applied yet
+      try {
+        await supabase
+          .from('communication_styles')
+          .upsert({
+            user_id: userId,
+            analysis_status: 'in_progress',
+            analysis_started_at: new Date().toISOString(),
+            last_updated: new Date().toISOString()
+          }, { onConflict: 'user_id' });
+      } catch (statusError) {
+        console.warn('⚠️ Could not update voice analysis status:', statusError.message);
+        console.warn('💡 This is likely due to pending database migration: 20250122_enhance_communication_styles_for_voice_training.sql');
+        // Continue without blocking - voice analysis can run later
+        // The analysis itself will handle missing table columns gracefully
+      }
       
       // Run analysis in background with timeout protection
       const analysisPromise = emailVoiceAnalyzer.analyzeEmailVoice(userId, businessType);
@@ -355,18 +363,20 @@ const Step3BusinessType = () => {
         });
         
         // Update status to show it was skipped
-        await supabase
-          .from('communication_styles')
-          .upsert({
-            user_id: userId,
-            analysis_status: 'skipped',
-            analysis_completed_at: new Date().toISOString(),
-            skip_reason: analysis.reason,
-            style_profile: {
-              voice: {
-                empathyLevel: 0.7,
-                formalityLevel: 0.8,
-                directnessLevel: 0.8
+        // ⚠️ DEFENSIVE: Gracefully handle if migration not applied yet
+        try {
+          await supabase
+            .from('communication_styles')
+            .upsert({
+              user_id: userId,
+              analysis_status: 'skipped',
+              analysis_completed_at: new Date().toISOString(),
+              skip_reason: analysis.reason,
+              style_profile: {
+                voice: {
+                  empathyLevel: 0.7,
+                  formalityLevel: 0.8,
+                  directnessLevel: 0.8
               },
               tone: 'professional',
               formality: 'balanced',
@@ -375,6 +385,9 @@ const Step3BusinessType = () => {
             learning_count: 0,
             last_updated: new Date().toISOString()
           }, { onConflict: 'user_id' });
+        } catch (dbError) {
+          console.warn('⚠️ Could not update skipped status:', dbError.message);
+        }
           
       } else {
       console.log('✅ Voice analysis completed successfully:', {
@@ -388,14 +401,19 @@ const Step3BusinessType = () => {
       });
         
         // Update status to show successful completion
-        await supabase
-          .from('communication_styles')
-          .update({
-            analysis_status: 'completed',
-            analysis_completed_at: new Date().toISOString(),
-            last_updated: new Date().toISOString()
-          })
-          .eq('user_id', userId);
+        // ⚠️ DEFENSIVE: Gracefully handle if migration not applied yet
+        try {
+          await supabase
+            .from('communication_styles')
+            .update({
+              analysis_status: 'completed',
+              analysis_completed_at: new Date().toISOString(),
+              last_updated: new Date().toISOString()
+            })
+            .eq('user_id', userId);
+        } catch (dbError) {
+          console.warn('⚠️ Could not update completed status:', dbError.message);
+        }
         
         // Voice learning completed silently in background - no user notification needed
       }

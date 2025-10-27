@@ -146,15 +146,37 @@ export async function provisionLabelSchemaFor(userId, businessType) {
 
     console.log(`📧 Found ${integrations.provider} integration for user ${userId}`);
     
-    // Get business profile ID first (needed for sync)
-    const { data: businessProfile } = await supabase
+    // Get or create business profile (needed for sync)
+    let { data: businessProfile, error: profileError } = await supabase
       .from('business_profiles')
       .select('id')
       .eq('user_id', userId)
       .single();
 
-    if (!businessProfile?.id) {
-      throw new Error('No business profile found for user');
+    // If no business profile exists, create one automatically
+    if (!businessProfile?.id || profileError) {
+      console.log('📋 No business profile found, creating one...');
+      
+      const { data: newProfile, error: createError } = await supabase
+        .from('business_profiles')
+        .insert({
+          user_id: userId,
+          business_types: finalBusinessTypes,
+          primary_business_type: finalBusinessTypes[0],
+          managers: managers,
+          suppliers: suppliers,
+          client_config: {}
+        })
+        .select('id')
+        .single();
+
+      if (createError) {
+        console.error('❌ Failed to create business profile:', createError);
+        throw new Error(`Failed to create business profile: ${createError.message}`);
+      }
+
+      businessProfile = newProfile;
+      console.log(`✅ Created business profile: ${businessProfile.id}`);
     }
 
     const businessProfileId = businessProfile.id;
