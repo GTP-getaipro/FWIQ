@@ -1,13 +1,16 @@
-Force rebuild trigger - timestamp: 2025-10-27T12:20:00Z
+Force rebuild trigger - timestamp: 2025-10-27T17:10:00Z
 
 This file forces Coolify to rebuild the frontend with all code fixes included.
 
-Code fixes that need to be in the bundle:
-- 761e484: Dynamic folder hierarchy fix (CRITICAL)
-- b48e563: OAuth token handoff fix
-- 30eeb3c: Business profile auto-creation + defensive error handling
+CRITICAL FIXES NEEDED IN BUNDLE:
+- c828262: Replace dynamic imports with static imports (gmailLabelSync)
+- 047469e: Standardize performance_metrics to use user_id column
+- 729c400: Fix Calculate Performance Metrics node reference
+- e28f5b5: Fix label validation (>= 7 chars instead of > 10)
+- 6eef7ea: Fix Conversation Memory .first() reference
+- e1a0b08: Fix Can AI Reply node reference
 
-The bundled JavaScript (index-DEQhItf5.js) must include these fixes.
+The bundled JavaScript (index-CFqyyB46.js) is using OLD code with dynamic imports.
 
-Remove this file after successful rebuild verification.
+REBUILD REQUIRED to apply static import fixes!
 
