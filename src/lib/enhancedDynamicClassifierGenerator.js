@@ -1014,21 +1014,21 @@ Return ONLY the following JSON structure. Do not add any other text or explanati
         }
       },
       "HVAC": {
-        "TechnicalSupport": {
-          description: "HVAC system repair, troubleshooting, and technical assistance",
-          keywords: ["repair", "troubleshoot", "furnace", "air conditioning", "heat pump", "thermostat", "broken", "not working", "technical", "issue", "problem", "fix", "service"]
+        "IndoorAirQuality": {
+          description: "Indoor air quality testing and improvement",
+          keywords: ["air quality", "indoor air", "testing", "allergies", "ventilation", "filtration"]
         },
-        "PartsAndFilters": {
-          description: "Orders or inquiries about HVAC parts, filters, and supplies",
-          keywords: ["parts", "filters", "supplies", "materials", "order", "price", "stock", "supply", "purchase", "hvac parts", "thermostats", "buy", "need", "filter replacement", "air filter"]
+        "DuctCleaning": {
+          description: "Duct cleaning and maintenance services",
+          keywords: ["duct", "cleaning", "maintenance", "air ducts", "ventilation", "air flow"]
         },
-        "AppointmentScheduling": {
-          description: "Service appointment requests, tune-ups, and HVAC maintenance scheduling",
-          keywords: ["schedule", "book", "appointment", "reschedule", "cancel", "visit", "maintenance", "tune-up", "time", "date", "confirm", "availability", "service call"]
+        "PartsAndSupplies": {
+          description: "Orders or inquiries about HVAC parts, supplies, and materials",
+          keywords: ["parts", "supplies", "materials", "order", "price", "stock", "supply", "purchase", "hvac parts", "filters", "thermostats"]
         },
-        "GeneralInquiries": {
-          description: "General HVAC questions, air quality, duct cleaning, and basic inquiries",
-          keywords: ["general", "inquiry", "question", "help", "air quality", "indoor air", "testing", "ventilation", "duct", "cleaning", "consultation", "advice", "information", "how to"]
+        "HVACRepair": {
+          description: "HVAC system repair and troubleshooting",
+          keywords: ["repair", "troubleshoot", "furnace", "air conditioning", "heat pump", "thermostat", "broken", "not working"]
         }
       },
       "Plumber": {
