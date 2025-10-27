@@ -317,10 +317,10 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
       console.log('📅 Date range:', periodStart, 'to', dayjs().toISOString());
       console.log('📊 Time filter:', timeFilter, 'days back:', daysBack);
       
-      // Get all emails in the period
+      // Get all emails in the period with classification details
       const { data: allEmails, error: allEmailsError } = await supabase
         .from('email_logs')
-        .select('created_at, message_id')
+        .select('created_at, message_id, classification_result')
         .gte('created_at', periodStart)
         .eq('user_id', profile.id);
 
@@ -328,7 +328,7 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
       // In production, all logged emails go through the n8n workflow for processing
       const { data: processedEmails, error: processedEmailsError} = await supabase
         .from('email_logs')
-        .select('created_at, message_id')
+        .select('created_at, message_id, classification_result')
         .gte('created_at', periodStart)
         .eq('user_id', profile.id);
 
@@ -357,6 +357,27 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
       const emailsProcessedInPeriod = processedEmails?.length || 0;
       const emailsProcessedInComparisonPeriod = comparisonEmails?.length || 0;
       
+      // 🔍 NEW: Separate emails by type (labeled only vs labeled + draft)
+      let labeledOnlyCount = 0;
+      let labeledAndDraftedCount = 0;
+      
+      processedEmails?.forEach(email => {
+        const classification = email.classification_result;
+        const aiCanReply = classification?.ai_can_reply || false;
+        
+        if (aiCanReply) {
+          labeledAndDraftedCount++;
+        } else {
+          labeledOnlyCount++;
+        }
+      });
+      
+      console.log('📊 Email breakdown:', {
+        total: emailsProcessedInPeriod,
+        labeledOnly: labeledOnlyCount,
+        labeledAndDrafted: labeledAndDraftedCount
+      });
+      
       // Calculate average emails per day
       const avgEmailsPerDay = emailsInPeriod > 0 ? Math.round((emailsInPeriod / daysBack) * 10) / 10 : 0;
       
@@ -365,10 +386,17 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
         ? Math.round(((emailsProcessedInPeriod - emailsProcessedInComparisonPeriod) / emailsProcessedInComparisonPeriod) * 100)
         : 0;
 
-      // Calculate actual time and cost saved from processed emails
+      // 🎯 NEW: Calculate actual time and cost saved with different math for each type
       const { classificationTime, responseTime, hourlyRate, aiAccuracy } = calculatorInputs;
-      const totalTimePerEmail = classificationTime + responseTime; // minutes
-      const actualTimeSavedHours = (emailsProcessedInPeriod * totalTimePerEmail * (aiAccuracy / 100)) / 60;
+      
+      // Labeled only: classification time only (3 min)
+      const labeledOnlyTimeMinutes = labeledOnlyCount * classificationTime * (aiAccuracy / 100);
+      
+      // Labeled + Drafted: classification + response time (3 + 8 = 11 min)
+      const labeledAndDraftedTimeMinutes = labeledAndDraftedCount * (classificationTime + responseTime) * (aiAccuracy / 100);
+      
+      // Total time saved in hours
+      const actualTimeSavedHours = (labeledOnlyTimeMinutes + labeledAndDraftedTimeMinutes) / 60;
       const actualCostSaved = actualTimeSavedHours * hourlyRate;
       
       console.log('📈 Calculated metrics:', {
@@ -418,26 +446,30 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
     const { classificationTime, responseTime, hourlyRate, aiAccuracy } = calculatorInputs;
     const { emailsPerDay } = calculatorResults;
     
-    // Total time per email (classification + response) in minutes
-    const totalTimePerEmail = classificationTime + responseTime;
-    
     // Calculate annual projections based on current email volume
     const emailsPerYear = emailsPerDay * 22 * 12; // 22 working days per month, 12 months
     
-    // Time without AI (manual processing)
-    const totalTimeWithoutAI = emailsPerYear * totalTimePerEmail; // minutes
+    // 🎯 UPDATED: Assume percentage split based on historical data
+    // In production, ~30% of emails get AI replies, 70% are labeled only
+    // This can be adjusted based on actual ai_can_reply rate from email_logs
+    const replyRate = 0.30; // 30% of emails get drafted replies
+    const labelOnlyRate = 0.70; // 70% are labeled only
     
-    // Time with AI (AI handles the work, but we still need to review)
-    const totalTimeWithAI = emailsPerYear * totalTimePerEmail * (1 - aiAccuracy / 100); // minutes
+    const emailsWithRepliesPerYear = emailsPerYear * replyRate;
+    const emailsLabeledOnlyPerYear = emailsPerYear * labelOnlyRate;
     
-    // Time saved in minutes, then convert to hours
-    const timeSavedMinutes = totalTimeWithoutAI - totalTimeWithAI;
+    // Time saved for labeled-only emails (classification only)
+    const labeledOnlyTimeSaved = emailsLabeledOnlyPerYear * classificationTime * (aiAccuracy / 100);
+    
+    // Time saved for labeled + drafted emails (classification + response)
+    const labeledAndDraftedTimeSaved = emailsWithRepliesPerYear * (classificationTime + responseTime) * (aiAccuracy / 100);
+    
+    // Total time saved in minutes, then convert to hours
+    const timeSavedMinutes = labeledOnlyTimeSaved + labeledAndDraftedTimeSaved;
     const timeSavedHours = timeSavedMinutes / 60;
     
     // Cost calculations
-    const costWithoutAI = (totalTimeWithoutAI / 60) * hourlyRate; // hours * rate
-    const costWithAI = (totalTimeWithAI / 60) * hourlyRate; // hours * rate
-    const costSaved = costWithoutAI - costWithAI;
+    const costSaved = timeSavedHours * hourlyRate;
     
     // Efficiency gain is the AI accuracy percentage
     const efficiencyGain = Math.round(aiAccuracy);
@@ -445,6 +477,16 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
     // Store precise values for intermediate calculations
     const timeSavedPrecise = timeSavedHours;
     const costSavedPrecise = costSaved;
+    
+    console.log('💰 Projected savings calculation:', {
+      emailsPerDay,
+      emailsPerYear,
+      replyRate: `${(replyRate * 100)}%`,
+      emailsWithReplies: Math.round(emailsWithRepliesPerYear),
+      emailsLabeledOnly: Math.round(emailsLabeledOnlyPerYear),
+      timeSavedHours: Math.round(timeSavedHours),
+      costSaved: Math.round(costSaved)
+    });
     
     setCalculatorResults(prev => ({
       ...prev,
