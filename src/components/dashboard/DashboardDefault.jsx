@@ -1125,13 +1125,17 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
                 <div className="space-y-4">
                   <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                     <p className="text-sm text-gray-600 dark:text-gray-300">
-                      Based on <span className="font-semibold text-blue-600 dark:text-blue-400">{calculatorResults.emailsPerDay.toFixed(1)} emails per day</span> {calculatorResults.emailsPerDay === 25 ? '(default - no data yet)' : '(live data)'}
+                      Based on <span className="font-semibold text-blue-600 dark:text-blue-400">{calculatorResults.emailsPerDay.toFixed(1)} emails per day</span> {calculatorResults.emailsPerDay === 0 ? '(waiting for data)' : '(live data)'}
                 </p>
               </div>
                   <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
-                      <span className="font-semibold text-green-600 dark:text-green-400">{calculatorInputs.classificationTime + calculatorInputs.responseTime} minutes</span> total per email
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                      <span className="font-semibold text-green-600 dark:text-green-400">Email Type Split:</span>
                     </p>
+                    <div className="text-xs space-y-1 text-gray-500 dark:text-gray-400">
+                      <div>• <span className="text-blue-600 dark:text-blue-400">70% labeled only</span> ({calculatorInputs.classificationTime} min)</div>
+                      <div>• <span className="text-purple-600 dark:text-purple-400">30% labeled + drafted</span> ({calculatorInputs.classificationTime + calculatorInputs.responseTime} min)</div>
+                    </div>
             </div>
                   <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                     <p className="text-sm text-gray-600 dark:text-gray-300">
