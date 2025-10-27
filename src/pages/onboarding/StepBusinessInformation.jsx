@@ -1123,37 +1123,37 @@ const StepBusinessInformation = () => {
               <h2 className="text-xl font-semibold text-gray-800 flex items-center"><Building className="mr-2 h-5 w-5 text-blue-500" /> Business Identity</h2>
               <p className="text-sm text-gray-600 mb-4">This information helps us personalize your AI email system and ensure accurate routing.</p>
           
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
                   <Label htmlFor="businessName">Business Name*</Label>
-                  <p className="text-xs text-gray-500 mb-2">The official name of your business as it appears on invoices and business cards</p>
-                  <Input id="businessName" name="businessName" value={values.businessName} onChange={handleChange} placeholder="The Hot Tub Man Ltd." />
+                  <p className="text-xs text-gray-500">The official name of your business as it appears on invoices and business cards</p>
+                  <Input id="businessName" name="businessName" value={values.businessName} onChange={handleChange} placeholder="The Hot Tub Man Ltd." className="mt-2" />
                   {errors.businessName && <p className="text-red-500 text-sm mt-1">{errors.businessName}</p>}
                 </div>
                 
-                <div>
+                <div className="space-y-2">
                   <Label>Category</Label>
-                  <p className="text-xs text-gray-500 mb-2">Your business type (automatically set from previous step)</p>
-                  <Input value={businessCategory} readOnly className="bg-gray-100" />
+                  <p className="text-xs text-gray-500">Your business type (automatically set from previous step)</p>
+                  <Input value={businessCategory} readOnly className="bg-gray-100 mt-2" />
                 </div>
                 
-                <div className="md:col-span-2">
+                <div className="md:col-span-2 space-y-2">
                   <Label htmlFor="address">Business Address*</Label>
-                  <p className="text-xs text-gray-500 mb-2">Full street address including city, state/province, and postal code</p>
-                  <Textarea id="address" name="address" value={values.address} onChange={handleChange} placeholder="123 Main Street, Red Deer, AB T4N 1A1" />
+                  <p className="text-xs text-gray-500">Full street address including city, state/province, and postal code</p>
+                  <Textarea id="address" name="address" value={values.address} onChange={handleChange} placeholder="123 Main Street, Red Deer, AB T4N 1A1" className="mt-2" />
                   {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
                 </div>
                 
-                <div>
+                <div className="space-y-2">
                   <Label htmlFor="serviceArea">Service Area*</Label>
-                  <p className="text-xs text-gray-500 mb-2">Geographic areas you serve (cities, regions, or radius)</p>
-                  <Input id="serviceArea" name="serviceArea" value={values.serviceArea} onChange={handleChange} placeholder="Red Deer, Sylvan Lake, Leduc" />
+                  <p className="text-xs text-gray-500">Geographic areas you serve (cities, regions, or radius)</p>
+                  <Input id="serviceArea" name="serviceArea" value={values.serviceArea} onChange={handleChange} placeholder="Red Deer, Sylvan Lake, Leduc" className="mt-2" />
                   {errors.serviceArea && <p className="text-red-500 text-sm mt-1">{errors.serviceArea}</p>}
                 </div>
                 
-                <div>
+                <div className="space-y-2">
                   <Label htmlFor="timezone">Timezone*</Label>
-                  <p className="text-xs text-gray-500 mb-2">Your local timezone for scheduling and time-sensitive communications</p>
+                  <p className="text-xs text-gray-500">Your local timezone for scheduling and time-sensitive communications</p>
                   <CustomDropdown
                     id="timezone"
                     name="timezone"
@@ -1162,14 +1162,14 @@ const StepBusinessInformation = () => {
                     options={timezones.map(tz => ({ value: tz, label: tz }))}
                     placeholder="Select Timezone"
                     icon={Clock}
-                    className="w-full"
+                    className="w-full mt-2"
                   />
                   {errors.timezone && <p className="text-red-500 text-sm mt-1">{errors.timezone}</p>}
                 </div>
                 
-                <div>
+                <div className="space-y-2">
                   <Label htmlFor="currency">Currency*</Label>
-                  <p className="text-xs text-gray-500 mb-2">Primary currency for pricing and invoicing</p>
+                  <p className="text-xs text-gray-500">Primary currency for pricing and invoicing</p>
                   <CustomDropdown
                     id="currency"
                     name="currency"
@@ -1182,15 +1182,15 @@ const StepBusinessInformation = () => {
                     ]}
                     placeholder="Select Currency"
                     icon={DollarSign}
-                    className="w-full"
+                    className="w-full mt-2"
                   />
                   {errors.currency && <p className="text-red-500 text-sm mt-1">{errors.currency}</p>}
                 </div>
                 
-                <div>
+                <div className="space-y-2">
                   <Label htmlFor="emailDomain">Business Email Domain*</Label>
-                  <p className="text-xs text-gray-500 mb-2">Your business email domain (without @ symbol). This helps identify internal vs external emails.</p>
-                  <Input id="emailDomain" name="emailDomain" value={values.emailDomain} onChange={handleChange} placeholder="thehottubman.ca" />
+                  <p className="text-xs text-gray-500">Your business email domain (without @ symbol). This helps identify internal vs external emails.</p>
+                  <Input id="emailDomain" name="emailDomain" value={values.emailDomain} onChange={handleChange} placeholder="thehottubman.ca" className="mt-2" />
                   {errors.emailDomain && <p className="text-red-500 text-sm mt-1">{errors.emailDomain}</p>}
                 </div>
               </div>
@@ -1200,56 +1200,56 @@ const StepBusinessInformation = () => {
               <h2 className="text-xl font-semibold text-gray-800 flex items-center"><Phone className="mr-2 h-5 w-5 text-blue-500" /> Contact Info</h2>
               <p className="text-sm text-gray-600 mb-4">Contact information for customer communications and AI email responses.</p>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
                   <Label htmlFor="primaryContactName">Primary Contact Name*</Label>
-                  <p className="text-xs text-gray-500 mb-2">The main person customers will interact with (owner, manager, etc.)</p>
-                  <Input id="primaryContactName" name="primaryContactName" value={values.primaryContactName} onChange={handleChange} placeholder="Adam Smith" />
+                  <p className="text-xs text-gray-500">The main person customers will interact with (owner, manager, etc.)</p>
+                  <Input id="primaryContactName" name="primaryContactName" value={values.primaryContactName} onChange={handleChange} placeholder="Adam Smith" className="mt-2" />
                   {errors.primaryContactName && <p className="text-red-500 text-sm mt-1">{errors.primaryContactName}</p>}
                 </div>
                 
-                <div>
+                <div className="space-y-2">
                   <Label htmlFor="primaryContactRole">Primary Contact Role*</Label>
-                  <p className="text-xs text-gray-500 mb-2">Job title or role (Owner, Manager, Customer Service, etc.)</p>
-                  <Input id="primaryContactRole" name="primaryContactRole" value={values.primaryContactRole} onChange={handleChange} placeholder="Owner" />
+                  <p className="text-xs text-gray-500">Job title or role (Owner, Manager, Customer Service, etc.)</p>
+                  <Input id="primaryContactRole" name="primaryContactRole" value={values.primaryContactRole} onChange={handleChange} placeholder="Owner" className="mt-2" />
                   {errors.primaryContactRole && <p className="text-red-500 text-sm mt-1">{errors.primaryContactRole}</p>}
                 </div>
                 
-                <div className="md:col-span-2">
+                <div className="md:col-span-2 space-y-2">
                   <Label htmlFor="primaryContactEmail">Primary Contact Email*</Label>
-                  <p className="text-xs text-gray-500 mb-2">Main business email address for customer communications</p>
-                  <Input id="primaryContactEmail" name="primaryContactEmail" type="email" value={values.primaryContactEmail} onChange={handleChange} placeholder="adam@thehottubman.ca" />
+                  <p className="text-xs text-gray-500">Main business email address for customer communications</p>
+                  <Input id="primaryContactEmail" name="primaryContactEmail" type="email" value={values.primaryContactEmail} onChange={handleChange} placeholder="adam@thehottubman.ca" className="mt-2" />
                   {errors.primaryContactEmail && <p className="text-red-500 text-sm mt-1">{errors.primaryContactEmail}</p>}
                 </div>
                 
-                <div>
+                <div className="space-y-2">
                   <Label htmlFor="secondaryContactName">Secondary Contact Name</Label>
-                  <p className="text-xs text-gray-500 mb-2">Backup contact person (optional)</p>
-                  <Input id="secondaryContactName" name="secondaryContactName" value={values.secondaryContactName} onChange={handleChange} placeholder="Jane Smith" />
+                  <p className="text-xs text-gray-500">Backup contact person (optional)</p>
+                  <Input id="secondaryContactName" name="secondaryContactName" value={values.secondaryContactName} onChange={handleChange} placeholder="Jane Smith" className="mt-2" />
                 </div>
                 
-                <div>
+                <div className="space-y-2">
                   <Label htmlFor="secondaryContactEmail">Secondary Contact Email</Label>
-                  <p className="text-xs text-gray-500 mb-2">Backup contact email (optional)</p>
-                  <Input id="secondaryContactEmail" name="secondaryContactEmail" type="email" value={values.secondaryContactEmail} onChange={handleChange} placeholder="jane@thehottubman.ca" />
+                  <p className="text-xs text-gray-500">Backup contact email (optional)</p>
+                  <Input id="secondaryContactEmail" name="secondaryContactEmail" type="email" value={values.secondaryContactEmail} onChange={handleChange} placeholder="jane@thehottubman.ca" className="mt-2" />
                 </div>
                 
-                <div>
+                <div className="space-y-2">
                   <Label htmlFor="supportEmail">Support Email</Label>
-                  <p className="text-xs text-gray-500 mb-2">Email for customer support inquiries (optional)</p>
-                  <Input id="supportEmail" name="supportEmail" type="email" value={values.supportEmail} onChange={handleChange} placeholder="support@thehottubman.ca" />
+                  <p className="text-xs text-gray-500">Email for customer support inquiries (optional)</p>
+                  <Input id="supportEmail" name="supportEmail" type="email" value={values.supportEmail} onChange={handleChange} placeholder="support@thehottubman.ca" className="mt-2" />
                 </div>
                 
-                <div>
+                <div className="space-y-2">
                   <Label htmlFor="afterHoursPhone">After Hours Support Line</Label>
-                  <p className="text-xs text-gray-500 mb-2">Phone number for emergency or after-hours support (optional)</p>
-                  <Input id="afterHoursPhone" name="afterHoursPhone" value={values.afterHoursPhone} onChange={handleChange} placeholder="(403) 555-0123" />
+                  <p className="text-xs text-gray-500">Phone number for emergency or after-hours support (optional)</p>
+                  <Input id="afterHoursPhone" name="afterHoursPhone" value={values.afterHoursPhone} onChange={handleChange} placeholder="(403) 555-0123" className="mt-2" />
                 </div>
                 
-                <div className="md:col-span-2">
+                <div className="md:col-span-2 space-y-2">
                   <Label htmlFor="website">Website</Label>
-                  <p className="text-xs text-gray-500 mb-2">Your business website URL (optional)</p>
-                  <Input id="website" name="website" value={values.website} onChange={handleChange} placeholder="https://thehottubman.ca" />
+                  <p className="text-xs text-gray-500">Your business website URL (optional)</p>
+                  <Input id="website" name="website" value={values.website} onChange={handleChange} placeholder="https://thehottubman.ca" className="mt-2" />
                   {errors.website && <p className="text-red-500 text-sm mt-1">{errors.website}</p>}
                 </div>
               </div>
@@ -1390,35 +1390,35 @@ const StepBusinessInformation = () => {
               <h2 className="text-xl font-semibold text-gray-800 flex items-center"><Sliders className="mr-2 h-5 w-5 text-blue-500" /> Business Rules & Integrations</h2>
               <p className="text-sm text-gray-600 mb-4">Configure how your AI email system should handle different types of communications and escalations.</p>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2">
                   <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                     <h3 className="font-semibold text-blue-800 mb-2">🔧 Service Provider Integrations</h3>
                     <p className="text-sm text-blue-700 mb-3">Help the AI identify emails from your service providers for better classification.</p>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
                         <Label>CRM Provider</Label>
-                        <p className="text-xs text-gray-500 mb-2">Name of your CRM system (ServiceTitan, Jobber, etc.)</p>
-                        <Input name="crmProviderName" value={values.crmProviderName} onChange={handleChange} placeholder="ServiceTitan" />
+                        <p className="text-xs text-gray-500">Name of your CRM system (ServiceTitan, Jobber, etc.)</p>
+                        <Input name="crmProviderName" value={values.crmProviderName} onChange={handleChange} placeholder="ServiceTitan" className="mt-2" />
                       </div>
                       
-                      <div>
+                      <div className="space-y-2">
                         <Label>CRM Alert Emails</Label>
-                        <p className="text-xs text-gray-500 mb-2">Email addresses your CRM sends alerts from (comma-separated)</p>
-                        <Input name="crmAlertEmails" value={values.crmAlertEmails} onChange={handleChange} placeholder="alerts@servicetitan.com, noreply@reports.connecteam.com" />
+                        <p className="text-xs text-gray-500">Email addresses your CRM sends alerts from (comma-separated)</p>
+                        <Input name="crmAlertEmails" value={values.crmAlertEmails} onChange={handleChange} placeholder="alerts@servicetitan.com, noreply@reports.connecteam.com" className="mt-2" />
                       </div>
                       
-                      <div>
+                      <div className="space-y-2">
                         <Label>Phone Provider</Label>
-                        <p className="text-xs text-gray-500 mb-2">Name of your phone service provider (RingCentral, etc.)</p>
-                        <Input name="phoneProviderName" value={values.phoneProviderName} onChange={handleChange} placeholder="RingCentral" />
+                        <p className="text-xs text-gray-500">Name of your phone service provider (RingCentral, etc.)</p>
+                        <Input name="phoneProviderName" value={values.phoneProviderName} onChange={handleChange} placeholder="RingCentral" className="mt-2" />
                       </div>
                       
-                      <div>
+                      <div className="space-y-2">
                         <Label>Phone Provider Emails</Label>
-                        <p className="text-xs text-gray-500 mb-2">Email addresses for voicemail/SMS notifications (comma-separated)</p>
-                        <Input name="phoneProviderEmails" value={values.phoneProviderEmails} onChange={handleChange} placeholder="service@ringcentral.com, notify@ringcentral.com" />
+                        <p className="text-xs text-gray-500">Email addresses for voicemail/SMS notifications (comma-separated)</p>
+                        <Input name="phoneProviderEmails" value={values.phoneProviderEmails} onChange={handleChange} placeholder="service@ringcentral.com, notify@ringcentral.com" className="mt-2" />
                       </div>
                     </div>
                   </div>
