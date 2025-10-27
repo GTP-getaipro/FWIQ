@@ -18,7 +18,8 @@ serve(async (req: Request) => {
     const { client_id, category, limit = 3 } = await req.json();
     if (!client_id) return json({ error: 'client_id required' }, 400);
 
-    const { data, error } = await supabase
+    // First, try to get AI-Human comparison examples (learning from edits)
+    const { data: comparisonData, error: comparisonError } = await supabase
       .from('ai_human_comparison')
       .select('ai_draft, human_reply')
       .eq('client_id', client_id)
@@ -27,10 +28,54 @@ serve(async (req: Request) => {
       .order('created_at', { ascending: false })
       .limit(Math.max(1, Math.min(5, limit)));
 
-    if (error) throw error;
-    return json({ examples: data || [] });
+    // If we have comparison examples, return them
+    if (comparisonData && comparisonData.length > 0) {
+      return json({ 
+        examples: comparisonData,
+        source: 'ai_human_comparison' 
+      });
+    }
+
+    // Fallback: Get voice profile and few-shot examples from communication_styles
+    const { data: voiceData, error: voiceError } = await supabase
+      .from('communication_styles')
+      .select('style_profile')
+      .eq('user_id', client_id)
+      .single();
+
+    if (voiceError || !voiceData?.style_profile) {
+      return json({ 
+        examples: [],
+        source: 'none',
+        message: 'No voice training data available yet'
+      });
+    }
+
+    const styleProfile = voiceData.style_profile;
+    const fewShotExamples = styleProfile.fewShotExamples || {};
+    
+    // Normalize category name (e.g., "URGENT" -> "Urgent")
+    const normalizedCategory = category.charAt(0) + category.slice(1).toLowerCase();
+    const categoryExamples = fewShotExamples[normalizedCategory] || [];
+
+    // Convert few-shot examples to format expected by N8N
+    const examples = categoryExamples.slice(0, Math.min(limit, 5)).map(ex => ({
+      ai_draft: '', // Not applicable for onboarding examples
+      human_reply: `Subject: ${ex.subject}\n\n${ex.body}` // Format as email for AI context
+    }));
+
+    return json({ 
+      examples,
+      source: 'onboarding_voice_profile',
+      metrics: styleProfile.voice || {},
+      totalExamples: categoryExamples.length
+    });
   } catch (e) {
-    return json({ error: (e as Error).message, examples: [] }, 200);
+    return json({ 
+      error: (e as Error).message, 
+      examples: [],
+      source: 'error'
+    }, 200);
   }
 });
 
