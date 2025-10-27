@@ -359,11 +359,15 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
       
       // 🔍 NEW: Get actual ai_can_reply data from performance_metrics table
       // Since email_logs doesn't store classification_result, we check performance_metrics
-      const { data: metricsData } = await supabase
+      const { data: metricsData, error: metricsError } = await supabase
         .from('performance_metrics')
         .select('dimensions')
         .gte('metric_date', periodStart.split('T')[0])
         .eq('client_id', profile.id);
+      
+      if (metricsError) {
+        console.error('❌ Error fetching performance metrics:', metricsError);
+      }
       
       let labeledOnlyCount = 0;
       let labeledAndDraftedCount = 0;
