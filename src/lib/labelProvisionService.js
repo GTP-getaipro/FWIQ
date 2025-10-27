@@ -10,6 +10,7 @@ import { getCompleteSchemaForBusiness } from './baseMasterSchema';
 import { mergeBusinessTypeSchemas } from './labelSchemaMerger';
 import { getExistingLabels } from './labelSyncService';
 import { labelColors } from './labelSyncValidator';
+import { syncGmailLabelsWithDatabase } from './gmailLabelSync';
 
 /**
  * Process schema using base master schema with business extensions
@@ -203,7 +204,6 @@ export async function provisionLabelSchemaFor(userId, businessType, options = {}
     
     // CRITICAL: Sync current Gmail label state with database first
     console.log('🔄 Syncing current Gmail label state with database...');
-    const { syncGmailLabelsWithDatabase } = await import('@/lib/gmailLabelSync.js');
     const syncResult = await syncGmailLabelsWithDatabase(userId, integrations.provider, businessProfileId, businessTypes[0]);
     
     if (!syncResult.success) {
