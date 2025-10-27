@@ -9,6 +9,7 @@ import React, {
 } from "react";
 import { supabase } from "@/lib/customSupabaseClient";
 import { useToast } from "@/components/ui/use-toast";
+import logger from "@/utils/logger";
 
 const AuthContext = createContext(undefined);
 
@@ -33,7 +34,7 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      console.log('🔍 Ensuring profile for user:', { id: user.id, email: user.email });
+      logger.debug('🔍 Ensuring profile for user:', { id: user.id, email: user.email });
 
       // Check if profile already exists
       const { data: existingProfile, error: fetchError } = await supabase
@@ -44,7 +45,7 @@ export const AuthProvider = ({ children }) => {
 
       // If profile doesn't exist, create it
       if (fetchError && fetchError.code === 'PGRST116') {
-        console.log('🔄 Creating missing profile for user:', user.email);
+        logger.debug('🔄 Creating missing profile for user:', user.email);
         
         // Try to create profile with upsert to handle race conditions
         const { data: newProfile, error: insertError } = await supabase
@@ -117,7 +118,7 @@ export const AuthProvider = ({ children }) => {
           description: 'Failed to check user profile. Please try refreshing the page.',
         });
       } else if (existingProfile) {
-        console.log('✅ User profile exists:', existingProfile.onboarding_step);
+        logger.debug('✅ User profile exists:', existingProfile.onboarding_step);
       }
     } catch (error) {
       console.error('❌ Error ensuring user profile:', error);
@@ -235,7 +236,7 @@ export const AuthProvider = ({ children }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔐 Auth state change:', { event, hasSession: !!session, hasUser: !!session?.user });
+      logger.debug('🔐 Auth state change:', { event, hasSession: !!session, hasUser: !!session?.user });
       
       // Handle OAuth integration logic
       if (event === "SIGNED_IN" && session?.provider_token) {
@@ -244,8 +245,8 @@ export const AuthProvider = ({ children }) => {
 
       // Ensure user profile exists on sign in
       if (event === "SIGNED_IN" && session?.user) {
-        console.log('🔐 User signed in, ensuring profile exists...');
-        console.log('📊 Session details:', {
+        logger.debug('🔐 User signed in, ensuring profile exists...');
+        logger.debug('📊 Session details:', {
           user_id: session.user?.id,
           email: session.user?.email,
           access_token_length: session.access_token?.length || 0
@@ -268,7 +269,7 @@ export const AuthProvider = ({ children }) => {
             }
             
             if (currentUser && currentUser.id && currentUser.email) {
-              console.log('✅ Valid user found, ensuring profile...');
+              logger.debug('✅ Valid user found, ensuring profile...');
               await ensureUserProfile(currentUser);
             } else {
               console.error('❌ Invalid user after sign in:', currentUser);
@@ -354,7 +355,7 @@ export const AuthProvider = ({ children }) => {
         });
       } else if (data.user) {
         // Profile will be created automatically by database trigger after email verification
-        console.log('✅ User registered successfully. Profile will be created after email verification.');
+        logger.debug('✅ User registered successfully. Profile will be created after email verification.');
       }
 
       return { data, error };
