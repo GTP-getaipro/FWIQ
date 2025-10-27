@@ -600,6 +600,11 @@
             "node": "Apply Gmail Labels",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Calculate Performance Metrics",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
