@@ -227,7 +227,7 @@
           "conditions": [
             {
               "id": "can-reply-condition",
-              "leftValue": "={{ $('Parse AI Classification').item.json.parsed_output.ai_can_reply }}",
+              "leftValue": "={{ $json.ai_can_reply }}",
               "rightValue": "\"true\"",
               "operator": {
                 "type": "boolean",
