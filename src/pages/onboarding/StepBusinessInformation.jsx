@@ -1165,6 +1165,7 @@ const StepBusinessInformation = () => {
                     options={timezones.map(tz => ({ value: tz, label: tz }))}
                     placeholder="Select Timezone"
                     icon={Clock}
+                    searchable={true}
                     className="w-full mt-2"
                   />
                   {errors.timezone && <p className="text-red-500 text-sm mt-1">{errors.timezone}</p>}
