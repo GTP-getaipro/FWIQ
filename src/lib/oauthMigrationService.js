@@ -37,7 +37,7 @@ class OAuthMigrationService {
       const { data: existingMappings, error: mappingError } = await supabase
         .from('client_credentials_map')
         .select('provider')
-        .eq('client_id', userId);
+        .eq('user_id', userId);
 
       if (mappingError) {
         throw new Error(`Failed to check existing mappings: ${mappingError.message}`);
@@ -200,7 +200,7 @@ class OAuthMigrationService {
       await supabase
         .from('client_credentials_map')
         .delete()
-        .eq('client_id', userId)
+        .eq('user_id', userId)
         .eq('provider', provider);
 
       // Redirect to n8n OAuth flow
@@ -277,7 +277,7 @@ class OAuthMigrationService {
       const { data: mapping } = await supabase
         .from('client_credentials_map')
         .select('n8n_credential_id')
-        .eq('client_id', userId)
+        .eq('user_id', userId)
         .eq('provider', provider)
         .single();
 
@@ -289,7 +289,7 @@ class OAuthMigrationService {
         await supabase
           .from('client_credentials_map')
           .delete()
-          .eq('client_id', userId)
+          .eq('user_id', userId)
           .eq('provider', provider);
       }
 

@@ -359,7 +359,7 @@ class EnhancedOAuthService {
       const { data: credentialMap } = await supabase
         .from('client_credentials_map')
         .select('*')
-        .eq('client_id', userId)
+        .eq('user_id', userId)
         .single();
 
       if (!credentialMap) {
@@ -418,7 +418,7 @@ class EnhancedOAuthService {
       const { data: credentialMap } = await supabase
         .from('client_credentials_map')
         .select('*')
-        .eq('client_id', userId);
+        .eq('user_id', userId);
 
       const { data: integrations } = await supabase
         .from('integrations')

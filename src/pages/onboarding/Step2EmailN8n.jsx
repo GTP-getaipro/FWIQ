@@ -57,7 +57,7 @@ const Step2EmailN8n = () => {
       const { data: mappings, error: mappingError } = await supabase
         .from('client_credentials_map')
         .select('provider, n8n_credential_id')
-        .eq('client_id', user.id);
+        .eq('user_id', user.id);
 
       if (mappingError) {
         console.error('Error fetching n8n credential mappings:', mappingError);
@@ -177,7 +177,7 @@ const Step2EmailN8n = () => {
       const { data: mapping } = await supabase
         .from('client_credentials_map')
         .select('n8n_credential_id')
-        .eq('client_id', user.id)
+        .eq('user_id', user.id)
         .eq('provider', provider)
         .single();
 
@@ -189,7 +189,7 @@ const Step2EmailN8n = () => {
         const { error } = await supabase
           .from('client_credentials_map')
           .delete()
-          .eq('client_id', user.id)
+          .eq('user_id', user.id)
           .eq('provider', provider);
 
         if (error) {

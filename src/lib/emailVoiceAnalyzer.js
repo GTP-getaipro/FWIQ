@@ -264,7 +264,7 @@ class EmailVoiceAnalyzer {
       const { data: queueEmails, error: queueError } = await supabase
         .from('email_queue')
         .select('*')
-        .eq('client_id', userId)
+        .eq('user_id', userId)
         .eq('direction', 'outbound') // Only sent emails
         .order('created_at', { ascending: false })
         .limit(50);

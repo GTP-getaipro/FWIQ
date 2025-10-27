@@ -84,7 +84,7 @@ export class CredentialResolver {
       const { data, error } = await supabase
         .from('client_credentials_map')
         .select('*')
-        .eq('client_id', userId)
+        .eq('user_id', userId)
         .eq('provider', provider)
         .eq('status', 'active')
         .order('created_at', { ascending: false })
@@ -321,7 +321,7 @@ export class CredentialResolver {
       const { data, error } = await supabase
         .from('client_credentials_map')
         .select('*')
-        .eq('client_id', userId)
+        .eq('user_id', userId)
         .eq('status', 'active')
         .order('created_at', { ascending: false });
 
@@ -348,7 +348,7 @@ export class CredentialResolver {
       const { error } = await supabase
         .from('client_credentials_map')
         .update({ status: 'inactive', invalidated_at: new Date().toISOString() })
-        .eq('client_id', userId)
+        .eq('user_id', userId)
         .eq('provider', provider)
         .eq('status', 'active');
 

@@ -230,7 +230,7 @@ export class N8nOAuth2FlowService {
       const { data, error } = await supabase
         .from('client_credentials_map')
         .select('provider, n8n_credential_id, business_name, created_at')
-        .eq('client_id', userId);
+        .eq('user_id', userId);
 
       if (error) {
         throw new Error(`Failed to get user credentials: ${error.message}`);

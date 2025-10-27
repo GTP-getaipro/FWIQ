@@ -433,7 +433,7 @@ export class AdvancedBusinessRulesEngine extends BusinessRulesEngine {
       const { data: logs, error } = await supabase
         .from('email_logs')
         .select('escalation_rules_triggered')
-        .eq('client_id', userId)
+        .eq('user_id', userId)
         .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()); // Last 30 days
       
       if (error) throw error;

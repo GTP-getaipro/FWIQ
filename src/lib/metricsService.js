@@ -235,7 +235,7 @@ export class MetricsService {
       const { data: performance, error } = await supabase
         .from('performance_metrics')
         .select('category, response_time_seconds, created_at')
-        .eq('client_id', this.userId)
+        .eq('user_id', this.userId)
         .gte('created_at', dateFilter.toISOString());
 
       if (error) throw error;

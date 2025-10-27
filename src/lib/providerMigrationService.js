@@ -399,7 +399,7 @@ export class ProviderMigrationService {
       const { data: credentials } = await supabase
         .from('client_credentials_map')
         .select('*')
-        .eq('client_id', this.userId)
+        .eq('user_id', this.userId)
         .eq('provider', provider);
 
       if (credentials) {
@@ -628,13 +628,13 @@ export class ProviderMigrationService {
       const { data: oldCredentials } = await supabase
         .from('client_credentials_map')
         .select('*')
-        .eq('client_id', this.userId)
+        .eq('user_id', this.userId)
         .eq('provider', fromProvider);
 
       const { data: newCredentials } = await supabase
         .from('client_credentials_map')
         .select('*')
-        .eq('client_id', this.userId)
+        .eq('user_id', this.userId)
         .eq('provider', toProvider);
 
       if (oldCredentials && newCredentials) {

@@ -20,7 +20,7 @@ class ProviderValidationService {
       const { data: mappings, error: mappingError } = await supabase
         .from('client_credentials_map')
         .select('provider, business_name, created_at')
-        .eq('client_id', userId);
+        .eq('user_id', userId);
 
       if (mappingError) {
         console.error('Error checking credential mappings:', mappingError);

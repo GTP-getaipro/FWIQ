@@ -185,7 +185,7 @@ async function processAnalysisJob(jobId, businessId) {
     const { data: credentials } = await supabase
       .from('client_credentials_map')
       .select('provider')
-      .eq('client_id', businessId)
+      .eq('user_id', businessId)
       .eq('provider', 'gmail')
       .single();
 

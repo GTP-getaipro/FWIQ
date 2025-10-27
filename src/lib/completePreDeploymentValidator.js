@@ -589,7 +589,7 @@ export class CompletePreDeploymentValidator {
       const { data, error } = await supabase
         .from('performance_metrics')
         .select('id')
-        .eq('client_id', userId)
+        .eq('user_id', userId)
         .limit(1);
 
       // Don't fail if table doesn't exist - it's optional
