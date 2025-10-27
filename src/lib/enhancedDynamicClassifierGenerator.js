@@ -547,7 +547,11 @@ Return ONLY the following JSON structure. Do not add any other text or explanati
         description: `E-mails from alerts@servicetitan.com. Requests a response by a specific date/time (even without using "urgent") Uses phrases like "as soon as possible", "ASAP", "immediately", "today", "noon". Emails emergency-related, or requiring immediate action.`,
         keywords: ["urgent", "emergency", "ASAP", "as soon as possible", "immediately", "critical", "need help now", "high priority", "right away", "problem", "broken", "not working", "serious issue", "can't wait", "urgent matter", "please respond quickly"],
         examples: this.getBusinessSpecificUrgentExamples(),
-        secondary: this.getBusinessSpecificUrgentSecondary()
+        secondary: {
+          "Urgent": {
+            description: "Emergency-related emails requiring immediate action, escalated service issues, last-minute cancellations, equipment failures"
+          }
+        }
       },
       
       "Misc": {
@@ -681,54 +685,6 @@ Return ONLY the following JSON structure. Do not add any other text or explanati
     return examples[this.businessType] || ["Equipment failure", "Service emergency", "Urgent repair needed"];
   }
   
-  getBusinessSpecificUrgentSecondary() {
-    const urgentCategories = {
-      "Hot tub & Spa": {
-        "EmergencyRepairs": {
-          description: "Urgent repair requests, equipment failures, and breakdown emergencies",
-          keywords: ["emergency", "urgent", "broken", "not working", "won't start", "no power", "error code", "tripping breaker", "won't heat", "failure", "breakdown"]
-        },
-        "LeakEmergencies": {
-          description: "Water leaks, plumbing emergencies, and urgent leak repair requests",
-          keywords: ["leak", "leaking", "water leak", "plumbing emergency", "urgent leak", "water damage", "flooding"]
-        },
-        "PowerOutages": {
-          description: "Electrical failures, power issues, and urgent electrical repair needs",
-          keywords: ["power outage", "electrical failure", "no power", "power issue", "electrical emergency", "breaker", "tripped"]
-        },
-        "Other": {
-          description: "Other urgent matters requiring immediate attention",
-          keywords: ["urgent", "emergency", "ASAP", "as soon as possible", "immediately", "critical", "need help now", "high priority", "right away"]
-        }
-      },
-      "HVAC": {
-        "NoHeat": {
-          description: "Urgent heating failures and no heat emergencies",
-          keywords: ["no heat", "furnace not working", "heating failure", "boiler failure", "gas leak concern", "emergency heating", "cold house", "won't heat"]
-        },
-        "NoCooling": {
-          description: "Urgent cooling failures and AC emergencies",
-          keywords: ["no cooling", "ac not working", "air conditioning failure", "compressor failure", "thermostat malfunction", "emergency cooling", "hot house", "won't cool"]
-        },
-        "CarbonMonoxideAlert": {
-          description: "Carbon monoxide alerts and safety emergencies",
-          keywords: ["carbon monoxide", "co alarm", "co detector", "gas leak", "safety alert", "detector beeping", "gas smell"]
-        },
-        "WaterLeak": {
-          description: "Water leak emergencies from HVAC equipment",
-          keywords: ["water leak", "leaking", "condensate leak", "furnace leak", "ac leak", "water damage", "dripping"]
-        }
-      }
-    };
-    
-    return urgentCategories[this.businessType] || {
-      "Urgent": {
-        description: "Emergency-related emails requiring immediate action",
-        keywords: ["urgent", "emergency", "ASAP", "critical"]
-      }
-    };
-  }
-  
   generateManagerSecondary() {
     const managerSecondary = {};
     
@@ -829,21 +785,17 @@ Return ONLY the following JSON structure. Do not add any other text or explanati
   getBusinessSpecificSalesCategories() {
     const salesCategories = {
       "Hot tub & Spa": {
-        "NewSpaSales": {
-          description: "New hot tub or spa purchase inquiries, showroom visits, and sales opportunities",
-          keywords: ["new spa", "hot tub purchase", "showroom visit", "spa sales", "buy hot tub", "new hot tub", "buying", "purchase", "shopping", "looking for"]
+        "InstallationInquiry": {
+          description: "Inquiries about hot tub/spa installation services",
+          keywords: ["installation", "install", "setup", "delivery", "placement", "site preparation"]
         },
-        "AccessorySales": {
-          description: "Sales of spa covers, steps, chemicals, filters, and other accessories",
-          keywords: ["spa cover", "accessories", "chemicals", "filters", "spa steps", "accessory sales", "cover", "step", "supply"]
+        "ModelSelection": {
+          description: "Questions about specific hot tub/spa models and features",
+          keywords: ["model", "features", "specifications", "size", "capacity", "jets", "heating"]
         },
-        "Consultations": {
-          description: "Sales consultations, product demonstrations, and buyer guidance sessions",
-          keywords: ["consultation", "product demo", "buyer guidance", "sales meeting", "call", "discuss", "chat", "learn more"]
-        },
-        "QuoteRequests": {
-          description: "Pricing requests, quote follow-ups, and sales estimate inquiries",
-          keywords: ["quote", "pricing", "estimate", "cost", "price request", "how much", "price", "budget"]
+        "MaintenancePackage": {
+          description: "Inquiries about maintenance and service packages",
+          keywords: ["maintenance", "service package", "care plan", "winterization", "cleaning"]
         }
       },
       "Pools": {
@@ -1008,21 +960,21 @@ Return ONLY the following JSON structure. Do not add any other text or explanati
   getBusinessSpecificSupportCategories() {
     const supportCategories = {
       "Hot tub & Spa": {
-        "AppointmentScheduling": {
-          description: "Service appointment requests, installation scheduling, and maintenance visit bookings",
-          keywords: ["schedule", "book", "appointment", "reschedule", "cancel", "visit", "maintenance", "time", "date", "confirm", "availability", "service"]
+        "WaterCare": {
+          description: "Spa water care and chemical balance questions",
+          keywords: ["water", "care", "chemicals", "balance", "ph", "maintenance", "treatment"]
         },
-        "General": {
-          description: "General customer questions, water care, winterization, basic support inquiries, and non-technical assistance",
-          keywords: ["general", "inquiry", "question", "help", "water", "care", "chemicals", "balance", "ph", "treatment", "winterization", "winter", "seasonal", "closing", "preparation", "how to", "advice"]
-        },
-        "TechnicalSupport": {
-          description: "Technical issues, spa equipment repair, troubleshooting, error codes, equipment malfunctions, and repair guidance",
-          keywords: ["repair", "troubleshoot", "jets", "heater", "pump", "filter", "broken", "not working", "error", "technical", "issue", "problem", "malfunction", "leak", "leaking", "fix"]
+        "Winterization": {
+          description: "Spa winterization and seasonal maintenance",
+          keywords: ["winterization", "winter", "seasonal", "maintenance", "closing", "preparation"]
         },
         "PartsAndChemicals": {
-          description: "Replacement parts inquiries, chemical supply orders, and filtration system questions",
-          keywords: ["parts", "chemicals", "filter", "order", "price", "stock", "supply", "purchase", "spa chemicals", "hot tub parts", "buy", "need", "cover", "accessories"]
+          description: "Orders or inquiries about spa parts, chemicals, and supplies",
+          keywords: ["parts", "chemicals", "filter", "order", "price", "stock", "supply", "purchase", "spa chemicals", "hot tub parts"]
+        },
+        "SpaRepair": {
+          description: "Spa equipment repair and troubleshooting",
+          keywords: ["repair", "troubleshoot", "jets", "heater", "pump", "filter", "broken", "not working", "error"]
         }
       },
       "Pools": {
@@ -1063,20 +1015,20 @@ Return ONLY the following JSON structure. Do not add any other text or explanati
       },
       "HVAC": {
         "TechnicalSupport": {
-          description: "HVAC system repair and troubleshooting",
-          keywords: ["repair", "troubleshoot", "furnace", "air conditioning", "heat pump", "thermostat", "broken", "not working", "technical", "issue", "problem", "fix"]
+          description: "HVAC system repair, troubleshooting, and technical assistance",
+          keywords: ["repair", "troubleshoot", "furnace", "air conditioning", "heat pump", "thermostat", "broken", "not working", "technical", "issue", "problem", "fix", "service"]
         },
         "PartsAndFilters": {
           description: "Orders or inquiries about HVAC parts, filters, and supplies",
-          keywords: ["parts", "filters", "supplies", "materials", "order", "price", "stock", "supply", "purchase", "hvac parts", "thermostats", "buy", "need", "filter replacement"]
+          keywords: ["parts", "filters", "supplies", "materials", "order", "price", "stock", "supply", "purchase", "hvac parts", "thermostats", "buy", "need", "filter replacement", "air filter"]
         },
         "AppointmentScheduling": {
-          description: "Service appointment requests and HVAC maintenance scheduling",
-          keywords: ["schedule", "book", "appointment", "reschedule", "cancel", "visit", "maintenance", "time", "date", "confirm", "availability", "tune-up"]
+          description: "Service appointment requests, tune-ups, and HVAC maintenance scheduling",
+          keywords: ["schedule", "book", "appointment", "reschedule", "cancel", "visit", "maintenance", "tune-up", "time", "date", "confirm", "availability", "service call"]
         },
         "GeneralInquiries": {
           description: "General HVAC questions, air quality, duct cleaning, and basic inquiries",
-          keywords: ["general", "inquiry", "question", "help", "air quality", "indoor air", "testing", "ventilation", "duct", "cleaning", "consultation", "advice"]
+          keywords: ["general", "inquiry", "question", "help", "air quality", "indoor air", "testing", "ventilation", "duct", "cleaning", "consultation", "advice", "information", "how to"]
         }
       },
       "Plumber": {
