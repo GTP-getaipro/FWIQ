@@ -1,0 +1,13 @@
+Force rebuild trigger - timestamp: 2025-10-27T12:20:00Z
+
+This file forces Coolify to rebuild the frontend with all code fixes included.
+
+Code fixes that need to be in the bundle:
+- 761e484: Dynamic folder hierarchy fix (CRITICAL)
+- b48e563: OAuth token handoff fix
+- 30eeb3c: Business profile auto-creation + defensive error handling
+
+The bundled JavaScript (index-DEQhItf5.js) must include these fixes.
+
+Remove this file after successful rebuild verification.
+
