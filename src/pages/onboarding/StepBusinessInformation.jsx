@@ -999,7 +999,7 @@ const StepBusinessInformation = () => {
                             </div>
                           </div>
                           <p className="text-gray-900 text-lg font-medium">
-                            {serviceAreaValue.includes('Red Deer') ? 'Red Deer, Central Alberta, Edmonton' : serviceAreaValue}
+                            {serviceAreaValue.includes('Example') ? 'Example City, Example Region, Example Metro' : serviceAreaValue}
                           </p>
                         </div>
                         );
@@ -1068,7 +1068,7 @@ const StepBusinessInformation = () => {
                             <h4 className="font-semibold text-gray-800">Service Coverage</h4>
                           </div>
                           <div className="bg-white p-3 rounded border border-orange-100">
-                            <p className="text-orange-800 font-medium">Red Deer, Central Alberta, Edmonton</p>
+                            <p className="text-orange-800 font-medium">Example City, Example Region, Example Metro</p>
                             <p className="text-sm text-orange-600 mt-1">Primary service areas</p>
                           </div>
                         </div>
@@ -1127,7 +1127,7 @@ const StepBusinessInformation = () => {
                 <div className="space-y-2">
                   <Label htmlFor="businessName">Business Name*</Label>
                   <p className="text-xs text-gray-500">The official name of your business as it appears on invoices and business cards</p>
-                  <Input id="businessName" name="businessName" value={values.businessName} onChange={handleChange} placeholder="The Hot Tub Man Ltd." className="mt-2" />
+                  <Input id="businessName" name="businessName" value={values.businessName} onChange={handleChange} placeholder="Example Business LLC" className="mt-2" />
                   {errors.businessName && <p className="text-red-500 text-sm mt-1">{errors.businessName}</p>}
                 </div>
                 
@@ -1140,14 +1140,14 @@ const StepBusinessInformation = () => {
                 <div className="md:col-span-2 space-y-2">
                   <Label htmlFor="address">Business Address*</Label>
                   <p className="text-xs text-gray-500">Full street address including city, state/province, and postal code</p>
-                  <Textarea id="address" name="address" value={values.address} onChange={handleChange} placeholder="123 Main Street, Red Deer, AB T4N 1A1" className="mt-2" />
+                  <Textarea id="address" name="address" value={values.address} onChange={handleChange} placeholder="123 Main Street, Anytown, CA 12345" className="mt-2" />
                   {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
                 </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="serviceArea">Service Area*</Label>
                   <p className="text-xs text-gray-500">Geographic areas you serve (cities, regions, or radius)</p>
-                  <Input id="serviceArea" name="serviceArea" value={values.serviceArea} onChange={handleChange} placeholder="Red Deer, Sylvan Lake, Leduc" className="mt-2" />
+                  <Input id="serviceArea" name="serviceArea" value={values.serviceArea} onChange={handleChange} placeholder="Downtown, Suburbs, Metro Area" className="mt-2" />
                   {errors.serviceArea && <p className="text-red-500 text-sm mt-1">{errors.serviceArea}</p>}
                 </div>
                 
@@ -1190,7 +1190,7 @@ const StepBusinessInformation = () => {
                 <div className="space-y-2">
                   <Label htmlFor="emailDomain">Business Email Domain*</Label>
                   <p className="text-xs text-gray-500">Your business email domain (without @ symbol). This helps identify internal vs external emails.</p>
-                  <Input id="emailDomain" name="emailDomain" value={values.emailDomain} onChange={handleChange} placeholder="thehottubman.ca" className="mt-2" />
+                  <Input id="emailDomain" name="emailDomain" value={values.emailDomain} onChange={handleChange} placeholder="yourbusiness.com" className="mt-2" />
                   {errors.emailDomain && <p className="text-red-500 text-sm mt-1">{errors.emailDomain}</p>}
                 </div>
               </div>
@@ -1204,7 +1204,7 @@ const StepBusinessInformation = () => {
                 <div className="space-y-2">
                   <Label htmlFor="primaryContactName">Primary Contact Name*</Label>
                   <p className="text-xs text-gray-500">The main person customers will interact with (owner, manager, etc.)</p>
-                  <Input id="primaryContactName" name="primaryContactName" value={values.primaryContactName} onChange={handleChange} placeholder="Adam Smith" className="mt-2" />
+                  <Input id="primaryContactName" name="primaryContactName" value={values.primaryContactName} onChange={handleChange} placeholder="John Doe" className="mt-2" />
                   {errors.primaryContactName && <p className="text-red-500 text-sm mt-1">{errors.primaryContactName}</p>}
                 </div>
                 
@@ -1218,26 +1218,26 @@ const StepBusinessInformation = () => {
                 <div className="md:col-span-2 space-y-2">
                   <Label htmlFor="primaryContactEmail">Primary Contact Email*</Label>
                   <p className="text-xs text-gray-500">Main business email address for customer communications</p>
-                  <Input id="primaryContactEmail" name="primaryContactEmail" type="email" value={values.primaryContactEmail} onChange={handleChange} placeholder="adam@thehottubman.ca" className="mt-2" />
+                  <Input id="primaryContactEmail" name="primaryContactEmail" type="email" value={values.primaryContactEmail} onChange={handleChange} placeholder="contact@yourbusiness.com" className="mt-2" />
                   {errors.primaryContactEmail && <p className="text-red-500 text-sm mt-1">{errors.primaryContactEmail}</p>}
                 </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="secondaryContactName">Secondary Contact Name</Label>
                   <p className="text-xs text-gray-500">Backup contact person (optional)</p>
-                  <Input id="secondaryContactName" name="secondaryContactName" value={values.secondaryContactName} onChange={handleChange} placeholder="Jane Smith" className="mt-2" />
+                  <Input id="secondaryContactName" name="secondaryContactName" value={values.secondaryContactName} onChange={handleChange} placeholder="Jane Doe" className="mt-2" />
                 </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="secondaryContactEmail">Secondary Contact Email</Label>
                   <p className="text-xs text-gray-500">Backup contact email (optional)</p>
-                  <Input id="secondaryContactEmail" name="secondaryContactEmail" type="email" value={values.secondaryContactEmail} onChange={handleChange} placeholder="jane@thehottubman.ca" className="mt-2" />
+                  <Input id="secondaryContactEmail" name="secondaryContactEmail" type="email" value={values.secondaryContactEmail} onChange={handleChange} placeholder="support@yourbusiness.com" className="mt-2" />
                 </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="supportEmail">Support Email</Label>
                   <p className="text-xs text-gray-500">Email for customer support inquiries (optional)</p>
-                  <Input id="supportEmail" name="supportEmail" type="email" value={values.supportEmail} onChange={handleChange} placeholder="support@thehottubman.ca" className="mt-2" />
+                  <Input id="supportEmail" name="supportEmail" type="email" value={values.supportEmail} onChange={handleChange} placeholder="help@yourbusiness.com" className="mt-2" />
                 </div>
                 
                 <div className="space-y-2">
@@ -1249,7 +1249,7 @@ const StepBusinessInformation = () => {
                 <div className="md:col-span-2 space-y-2">
                   <Label htmlFor="website">Website</Label>
                   <p className="text-xs text-gray-500">Your business website URL (optional)</p>
-                  <Input id="website" name="website" value={values.website} onChange={handleChange} placeholder="https://thehottubman.ca" className="mt-2" />
+                  <Input id="website" name="website" value={values.website} onChange={handleChange} placeholder="https://yourbusiness.com" className="mt-2" />
                   {errors.website && <p className="text-red-500 text-sm mt-1">{errors.website}</p>}
                 </div>
               </div>
