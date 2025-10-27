@@ -460,7 +460,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({\n  client_id: \"<<<USER_ID>>>\",\n  metric_date: $json.date,\n  metric_name: \"email_processing\",\n  metric_value: $json.emailsProcessed,\n  dimensions: { type: $json.type, timeSavedHours: $json.timeSavedHours, moneySaved: $json.moneySaved, avgMinutesPerEmail: $json.avgMinutesPerEmail, receptionistHourlyRate: $json.receptionistHourlyRate, workflow: 'email-automation' }\n}) }}",
+        "jsonBody": "={{ JSON.stringify({\n  user_id: \"<<<USER_ID>>>\",\n  metric_date: $json.date,\n  metric_name: \"email_processing\",\n  metric_value: $json.emailsProcessed,\n  dimensions: { type: $json.type, timeSavedHours: $json.timeSavedHours, moneySaved: $json.moneySaved, avgMinutesPerEmail: $json.avgMinutesPerEmail, receptionistHourlyRate: $json.receptionistHourlyRate, workflow: 'email-automation' }\n}) }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
