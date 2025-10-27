@@ -547,11 +547,7 @@ Return ONLY the following JSON structure. Do not add any other text or explanati
         description: `E-mails from alerts@servicetitan.com. Requests a response by a specific date/time (even without using "urgent") Uses phrases like "as soon as possible", "ASAP", "immediately", "today", "noon". Emails emergency-related, or requiring immediate action.`,
         keywords: ["urgent", "emergency", "ASAP", "as soon as possible", "immediately", "critical", "need help now", "high priority", "right away", "problem", "broken", "not working", "serious issue", "can't wait", "urgent matter", "please respond quickly"],
         examples: this.getBusinessSpecificUrgentExamples(),
-        secondary: {
-          "Urgent": {
-            description: "Emergency-related emails requiring immediate action, escalated service issues, last-minute cancellations, equipment failures"
-          }
-        }
+        secondary: this.getBusinessSpecificUrgentSecondary()
       },
       
       "Misc": {
@@ -683,6 +679,36 @@ Return ONLY the following JSON structure. Do not add any other text or explanati
       "Plumber": ["Water leak", "Burst pipe", "No water", "Water heater failure"]
     };
     return examples[this.businessType] || ["Equipment failure", "Service emergency", "Urgent repair needed"];
+  }
+  
+  getBusinessSpecificUrgentSecondary() {
+    const urgentCategories = {
+      "Hot tub & Spa": {
+        "EmergencyRepairs": {
+          description: "Urgent repair requests, equipment failures, and breakdown emergencies",
+          keywords: ["emergency", "urgent", "broken", "not working", "won't start", "no power", "error code", "tripping breaker", "won't heat", "failure", "breakdown"]
+        },
+        "LeakEmergencies": {
+          description: "Water leaks, plumbing emergencies, and urgent leak repair requests",
+          keywords: ["leak", "leaking", "water leak", "plumbing emergency", "urgent leak", "water damage", "flooding"]
+        },
+        "PowerOutages": {
+          description: "Electrical failures, power issues, and urgent electrical repair needs",
+          keywords: ["power outage", "electrical failure", "no power", "power issue", "electrical emergency", "breaker", "tripped"]
+        },
+        "Other": {
+          description: "Other urgent matters requiring immediate attention",
+          keywords: ["urgent", "emergency", "ASAP", "as soon as possible", "immediately", "critical", "need help now", "high priority", "right away"]
+        }
+      }
+    };
+    
+    return urgentCategories[this.businessType] || {
+      "Urgent": {
+        description: "Emergency-related emails requiring immediate action",
+        keywords: ["urgent", "emergency", "ASAP", "critical"]
+      }
+    };
   }
   
   generateManagerSecondary() {
