@@ -273,10 +273,36 @@ export const apiClient = {
   request: apiRequest,
   testConnection: async () => {
     try {
-      const response = await apiGet('/api/health');
-      return response.success !== false;
+      // Try to fetch with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
+      const response = await fetch('/api/health', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.log('API connection test failed: {success: false, error: \'Response is not JSON\', timestamp: \'' + new Date().toISOString() + '\'}');
+        return false;
+      }
+      
+      const data = await response.json();
+      return response.ok && data.success !== false;
     } catch (error) {
-      console.warn('API connection test failed:', error);
+      // Silently fail - this is just a health check
+      if (error.name === 'AbortError') {
+        console.log('API connection test failed: {success: false, error: \'Timeout after 5s\', timestamp: \'' + new Date().toISOString() + '\'}');
+      } else {
+        console.log('API connection test failed: {success: false, error: \'' + error.message + '\', timestamp: \'' + new Date().toISOString() + '\'}');
+      }
       return false;
     }
   }
