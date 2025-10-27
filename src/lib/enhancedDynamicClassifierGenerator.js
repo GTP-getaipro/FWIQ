@@ -700,6 +700,24 @@ Return ONLY the following JSON structure. Do not add any other text or explanati
           description: "Other urgent matters requiring immediate attention",
           keywords: ["urgent", "emergency", "ASAP", "as soon as possible", "immediately", "critical", "need help now", "high priority", "right away"]
         }
+      },
+      "HVAC": {
+        "NoHeat": {
+          description: "Urgent heating failures and no heat emergencies",
+          keywords: ["no heat", "furnace not working", "heating failure", "boiler failure", "gas leak concern", "emergency heating", "cold house", "won't heat"]
+        },
+        "NoCooling": {
+          description: "Urgent cooling failures and AC emergencies",
+          keywords: ["no cooling", "ac not working", "air conditioning failure", "compressor failure", "thermostat malfunction", "emergency cooling", "hot house", "won't cool"]
+        },
+        "CarbonMonoxideAlert": {
+          description: "Carbon monoxide alerts and safety emergencies",
+          keywords: ["carbon monoxide", "co alarm", "co detector", "gas leak", "safety alert", "detector beeping", "gas smell"]
+        },
+        "WaterLeak": {
+          description: "Water leak emergencies from HVAC equipment",
+          keywords: ["water leak", "leaking", "condensate leak", "furnace leak", "ac leak", "water damage", "dripping"]
+        }
       }
     };
     
@@ -1044,21 +1062,21 @@ Return ONLY the following JSON structure. Do not add any other text or explanati
         }
       },
       "HVAC": {
-        "IndoorAirQuality": {
-          description: "Indoor air quality testing and improvement",
-          keywords: ["air quality", "indoor air", "testing", "allergies", "ventilation", "filtration"]
-        },
-        "DuctCleaning": {
-          description: "Duct cleaning and maintenance services",
-          keywords: ["duct", "cleaning", "maintenance", "air ducts", "ventilation", "air flow"]
-        },
-        "PartsAndSupplies": {
-          description: "Orders or inquiries about HVAC parts, supplies, and materials",
-          keywords: ["parts", "supplies", "materials", "order", "price", "stock", "supply", "purchase", "hvac parts", "filters", "thermostats"]
-        },
-        "HVACRepair": {
+        "TechnicalSupport": {
           description: "HVAC system repair and troubleshooting",
-          keywords: ["repair", "troubleshoot", "furnace", "air conditioning", "heat pump", "thermostat", "broken", "not working"]
+          keywords: ["repair", "troubleshoot", "furnace", "air conditioning", "heat pump", "thermostat", "broken", "not working", "technical", "issue", "problem", "fix"]
+        },
+        "PartsAndFilters": {
+          description: "Orders or inquiries about HVAC parts, filters, and supplies",
+          keywords: ["parts", "filters", "supplies", "materials", "order", "price", "stock", "supply", "purchase", "hvac parts", "thermostats", "buy", "need", "filter replacement"]
+        },
+        "AppointmentScheduling": {
+          description: "Service appointment requests and HVAC maintenance scheduling",
+          keywords: ["schedule", "book", "appointment", "reschedule", "cancel", "visit", "maintenance", "time", "date", "confirm", "availability", "tune-up"]
+        },
+        "GeneralInquiries": {
+          description: "General HVAC questions, air quality, duct cleaning, and basic inquiries",
+          keywords: ["general", "inquiry", "question", "help", "air quality", "indoor air", "testing", "ventilation", "duct", "cleaning", "consultation", "advice"]
         }
       },
       "Plumber": {
