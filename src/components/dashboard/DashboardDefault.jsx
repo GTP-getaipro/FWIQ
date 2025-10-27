@@ -317,10 +317,10 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
       console.log('📅 Date range:', periodStart, 'to', dayjs().toISOString());
       console.log('📊 Time filter:', timeFilter, 'days back:', daysBack);
       
-      // Get all emails in the period with classification details
+      // Get all emails in the period
       const { data: allEmails, error: allEmailsError } = await supabase
         .from('email_logs')
-        .select('created_at, message_id, classification_result')
+        .select('created_at, message_id')
         .gte('created_at', periodStart)
         .eq('user_id', profile.id);
 
@@ -328,7 +328,7 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
       // In production, all logged emails go through the n8n workflow for processing
       const { data: processedEmails, error: processedEmailsError} = await supabase
         .from('email_logs')
-        .select('created_at, message_id, classification_result')
+        .select('created_at, message_id')
         .gte('created_at', periodStart)
         .eq('user_id', profile.id);
 
@@ -357,17 +357,22 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
       const emailsProcessedInPeriod = processedEmails?.length || 0;
       const emailsProcessedInComparisonPeriod = comparisonEmails?.length || 0;
       
-      // 🔍 NEW: Separate emails by type (labeled only vs labeled + draft)
+      // 🔍 NEW: Get actual ai_can_reply data from performance_metrics table
+      // Since email_logs doesn't store classification_result, we check performance_metrics
+      const { data: metricsData } = await supabase
+        .from('performance_metrics')
+        .select('dimensions')
+        .gte('metric_date', periodStart.split('T')[0])
+        .eq('client_id', profile.id);
+      
       let labeledOnlyCount = 0;
       let labeledAndDraftedCount = 0;
       
-      processedEmails?.forEach(email => {
-        const classification = email.classification_result;
-        const aiCanReply = classification?.ai_can_reply || false;
-        
-        if (aiCanReply) {
+      metricsData?.forEach(metric => {
+        const type = metric.dimensions?.type;
+        if (type === 'Drafting') {
           labeledAndDraftedCount++;
-        } else {
+        } else if (type === 'Labeling') {
           labeledOnlyCount++;
         }
       });
@@ -375,7 +380,8 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
       console.log('📊 Email breakdown:', {
         total: emailsProcessedInPeriod,
         labeledOnly: labeledOnlyCount,
-        labeledAndDrafted: labeledAndDraftedCount
+        labeledAndDrafted: labeledAndDraftedCount,
+        fromMetrics: metricsData?.length || 0
       });
       
       // Calculate average emails per day
