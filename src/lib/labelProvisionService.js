@@ -320,9 +320,22 @@ export async function provisionLabelSchemaFor(userId, businessType, options = {}
       // Step 3: Skeleton provisioning - core folders only, no dynamic team folders
       console.log('🏗️ SKELETON MODE: Creating core business folders only (no team folders yet)');
       console.log('📋 Core folders to create:', Object.keys(standardLabels));
+      
+      // ✨ CRITICAL: Ensure MANAGER and SUPPLIERS have default structure (no dynamic data)
+      if (enhancedStandardLabels['MANAGER']) {
+        enhancedStandardLabels['MANAGER'].sub = ["Unassigned"]; // Only Unassigned
+        delete enhancedStandardLabels['MANAGER'].managerData; // Remove any metadata
+        console.log('📋 MANAGER folder: Unassigned only (team members will be added in Step 4)');
+      }
+      
+      if (enhancedStandardLabels['SUPPLIERS']) {
+        enhancedStandardLabels['SUPPLIERS'].sub = []; // Empty
+        delete enhancedStandardLabels['SUPPLIERS'].supplierData; // Remove any metadata
+        console.log('📋 SUPPLIERS folder: Empty (suppliers will be added in Step 4)');
+      }
     } else if (injectTeamFolders) {
       // Step 4: Full provisioning - inject manager/supplier subfolders
-      console.log('🔄 Step 1.5: Adding dynamic team folders...');
+      console.log('🔄 STEP 4: Adding dynamic team folders NOW (after user saved them)...');
       enhancedStandardLabels = await addDynamicTeamFolders(standardLabels, userId);
       console.log(`🔄 Enhanced schema with team folders:`, enhancedStandardLabels);
     } else {

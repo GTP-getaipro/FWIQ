@@ -56,39 +56,23 @@ export async function autoProvisionOnBusinessTypeChange(userId, businessTypes) {
       };
     }
 
-    // ✅ FIXED: Check if managers/suppliers exist to determine provisioning mode
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('managers, suppliers')
-      .eq('id', userId)
-      .single();
-
-    const hasTeam = (profile?.managers?.length > 0) || (profile?.suppliers?.length > 0);
-
-    if (!hasTeam) {
-      // ✅ CREATE SKELETON: Core business folders only (no team folders yet)
-      console.log('🏗️ No team members yet - creating SKELETON (core folders only)');
-      console.log('📋 Team folders will be injected after Team Setup (Step 4)');
-      
-      const provisioningResult = await provisionLabelSchemaFor(userId, businessTypes, {
-        skeletonOnly: true,
-        injectTeamFolders: false
-      });
-      
-      return {
-        ...provisioningResult,
-        skipped: false,
-        skeletonCreated: true,
-        message: `Created ${provisioningResult.labelsCreated || 0} core business folders (skeleton)`
-      };
-    }
-
-    // ✅ FULL PROVISIONING: Team members exist, create everything including team folders
-    console.log('🚀 Starting full folder provisioning with team members...');
+    // ✅ FIXED: ALWAYS create skeleton only in Step 3
+    // Team folders will be injected later in Step 4 (after user enters/confirms them)
+    console.log('🏗️ STEP 3: Creating SKELETON only (core business folders)');
+    console.log('📋 Manager and supplier folders will be injected in Step 4 after user saves them');
+    
     const provisioningResult = await provisionLabelSchemaFor(userId, businessTypes, {
-      skeletonOnly: false,
-      injectTeamFolders: true
+      skeletonOnly: true,
+      injectTeamFolders: false  // ALWAYS false in Step 3
     });
+    
+    return {
+      ...provisioningResult,
+      skipped: false,
+      skeletonCreated: true,
+      trigger: 'step_3_business_type',
+      message: `Created ${provisioningResult.labelsCreated || 0} core business folders (skeleton - team folders will be added in Step 4)`
+    };
 
     if (!provisioningResult.success) {
       return {

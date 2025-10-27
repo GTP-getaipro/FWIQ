@@ -245,14 +245,15 @@ const StepTeamSetup = () => {
 
     // Start label provisioning in the background (non-blocking)
     if (businessType) {
-      console.log('🚀 Starting background label provisioning for business type:', businessType);
-      console.log('👥 Managers:', finalManagers);
-      console.log('🏢 Suppliers:', finalSuppliers);
+      console.log('🔄 STEP 4: User clicked "Save & Continue" on Team Setup');
+      console.log('📋 NOW injecting dynamic team folders into skeleton...');
+      console.log('👥 Managers to inject:', finalManagers.map(m => m.name));
+      console.log('🏢 Suppliers to inject:', finalSuppliers.map(s => s.name));
       
       // ✅ FULL PROVISIONING: Inject manager/supplier subfolders now that team is set up
       provisionLabelSchemaFor(user.id, businessType, {
         skeletonOnly: false,
-        injectTeamFolders: true  // Inject dynamic team folders
+        injectTeamFolders: true  // Inject dynamic team folders NOW
       })
         .then(async (provisioningResult) => {
           console.log('📊 Background provisioning result:', provisioningResult);
