@@ -543,16 +543,16 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
             <Button
               onClick={toggleTheme}
               size="sm"
-              className="p-2 bg-primary hover:bg-primary/90 text-primary-foreground self-start sm:self-auto"
+              className="p-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white shadow-md transition-all duration-200 self-start sm:self-auto"
             >
               {isDarkMode ? (
-                <Sun className="h-4 w-4 text-yellow-500" />
+                <Sun className="h-4 w-4 text-yellow-400" />
               ) : (
-                <Moon className="h-4 w-4 text-primary-foreground" />
+                <Moon className="h-4 w-4 text-white" />
               )}
             </Button>
-            <div className="bg-white dark:bg-gray-700 rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-sm border border-gray-200 dark:border-gray-600 w-full sm:w-auto">
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Time Period</label>
+            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-md border border-gray-200/50 dark:border-gray-700/50 w-full sm:w-auto">
+              <label className="block text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">Time Period</label>
               <CustomDropdown
                 value={timeFilter}
                 onChange={setTimeFilter}
