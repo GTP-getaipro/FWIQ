@@ -332,13 +332,12 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
         .gte('created_at', periodStart)
         .eq('user_id', profile.id);
 
-      // Get comparison period data for percentage change
+      // Get comparison period data for percentage change  
       const { data: comparisonEmails, error: comparisonError } = await supabase
         .from('email_logs')
-        .select('created_at, processed_at')
+        .select('created_at, message_id')
         .gte('created_at', comparisonStart)
         .lt('created_at', comparisonEnd)
-        .not('processed_at', 'is', null)
         .eq('user_id', profile.id);
 
       console.log('📊 Email logs query results:', { 
