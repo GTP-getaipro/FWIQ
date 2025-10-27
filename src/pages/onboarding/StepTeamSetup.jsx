@@ -22,7 +22,7 @@ const StepTeamSetup = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [managers, setManagers] = useState([{ name: '', email: '' }]);
+  const [managers, setManagers] = useState([{ name: '' }]);
   const [suppliers, setSuppliers] = useState([{ name: '', domains: '' }]);
   const [businessType, setBusinessType] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -60,7 +60,7 @@ const StepTeamSetup = () => {
 
   const addManager = () => {
     if (managers.length < MAX_MANAGERS) {
-      setManagers([...managers, { name: '', email: '' }]);
+      setManagers([...managers, { name: '' }]);
     }
   };
 
@@ -88,15 +88,11 @@ const StepTeamSetup = () => {
     const newErrors = { managers: [], suppliers: [] };
     let isValid = true;
 
-    const filledManagers = managers.filter(m => m.name.trim() !== '' || m.email.trim() !== '');
+    const filledManagers = managers.filter(m => m.name.trim() !== '');
     filledManagers.forEach((manager, index) => {
       const managerErrors = {};
       if (manager.name.trim() === '') {
         managerErrors.name = 'Manager name is required.';
-        isValid = false;
-      }
-      if (!/^\S+@\S+\.\S+$/.test(manager.email)) {
-        managerErrors.email = `Invalid email for manager.`;
         isValid = false;
       }
       newErrors.managers[index] = managerErrors;
@@ -139,7 +135,7 @@ const StepTeamSetup = () => {
 
       // Check for removed managers
       const removedManagers = currentManagers.filter(current => 
-        !newManagers.some(newM => newM.email === current.email)
+        !newManagers.some(newM => newM.name === current.name)
       );
 
       // Check for removed suppliers
@@ -372,8 +368,8 @@ const StepTeamSetup = () => {
             <div>
               <h3 className="font-semibold text-gray-800">Why we need this info:</h3>
               <ul className="list-disc list-inside text-gray-600 text-sm space-y-1 mt-1">
-                <li><b>Managers:</b> To route emails directly to people on your team.</li>
-                <li><b>Suppliers:</b> To classify messages from vendors automatically.</li>
+                <li><b>Managers:</b> To help AI recognize names of people on your team when mentioned in emails.</li>
+                <li><b>Suppliers:</b> To classify messages from vendors automatically based on their email domains.</li>
               </ul>
             </div>
           </div>
@@ -387,12 +383,10 @@ const StepTeamSetup = () => {
                 {managers.map((manager, index) => (
                   <div key={index} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="flex items-center gap-4">
-                      <Input value={manager.name} onChange={(e) => handleManagerChange(index, 'name', e.target.value)} placeholder="Manager Name" className="bg-white border-gray-300 text-gray-800" />
-                      <Input value={manager.email} onChange={(e) => handleManagerChange(index, 'email', e.target.value)} placeholder="manager@email.com" type="email" className="bg-white border-gray-300 text-gray-800" />
+                      <Input value={manager.name} onChange={(e) => handleManagerChange(index, 'name', e.target.value)} placeholder="Manager Name (e.g., John, Sarah, Mike)" className="flex-1 bg-white border-gray-300 text-gray-800" />
                       <Button variant="ghost" size="icon" onClick={() => removeManager(index)} className="text-red-500 hover:bg-red-100"><XCircle className="h-5 w-5" /></Button>
                     </div>
                     {errors.managers[index]?.name && <p className="text-red-500 text-sm mt-1 ml-1">{errors.managers[index].name}</p>}
-                    {errors.managers[index]?.email && <p className="text-red-500 text-sm mt-1 ml-1">{errors.managers[index].email}</p>}
                   </div>
                 ))}
                 {managers.length < MAX_MANAGERS && (
