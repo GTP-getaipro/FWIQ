@@ -359,11 +359,32 @@ const DashboardDefault = ({ profile, integrations, metrics, recentEmails, timeFi
       
       // 🔍 NEW: Get actual ai_can_reply data from performance_metrics table
       // Since email_logs doesn't store classification_result, we check performance_metrics
-      const { data: metricsData, error: metricsError } = await supabase
+      // Try both column names for compatibility (some migrations use user_id, others use client_id)
+      let metricsData = null;
+      let metricsError = null;
+      
+      // First try with client_id
+      const clientIdResult = await supabase
         .from('performance_metrics')
         .select('dimensions')
         .gte('metric_date', periodStart.split('T')[0])
         .eq('client_id', profile.id);
+      
+      if (clientIdResult.error && clientIdResult.error.code === '42703') {
+        // Column doesn't exist, try user_id instead
+        console.log('📊 Trying user_id column instead of client_id...');
+        const userIdResult = await supabase
+          .from('performance_metrics')
+          .select('dimensions')
+          .gte('metric_date', periodStart.split('T')[0])
+          .eq('user_id', profile.id);
+        
+        metricsData = userIdResult.data;
+        metricsError = userIdResult.error;
+      } else {
+        metricsData = clientIdResult.data;
+        metricsError = clientIdResult.error;
+      }
       
       if (metricsError) {
         console.error('❌ Error fetching performance metrics:', metricsError);
