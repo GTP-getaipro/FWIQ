@@ -127,6 +127,7 @@ export async function syncGmailLabelsWithDatabase(userId, provider = 'gmail', bu
     
     let currentLabels = [];
     let syncMethod = 'unknown';
+    let validAccessToken = null; // ✨ NEW: Track the valid access token to return it
     
     // Try to get current labels from provider API
     try {
@@ -158,6 +159,7 @@ export async function syncGmailLabelsWithDatabase(userId, provider = 'gmail', bu
       }
       
       if (accessToken && accessToken !== 'N8N_MANAGED') {
+        validAccessToken = accessToken; // ✨ NEW: Store the valid token
         console.log(`🔄 Fetching current labels using valid access token for ${provider}...`);
         currentLabels = await fetchCurrentLabels(accessToken, provider);
         syncMethod = `${provider}_api_direct`;
@@ -312,6 +314,7 @@ export async function syncGmailLabelsWithDatabase(userId, provider = 'gmail', bu
       manualDeletionDetected: hadLabelsBefore && !hasLabelsNow,
       hadLabelsBefore,
       hasLabelsNow,
+      validAccessToken, // ✨ NEW: Return the refreshed token for use in label creation
       message: `Synced ${currentLabels.length} labels from ${provider} to database${hadLabelsBefore && !hasLabelsNow ? ' (manual deletion detected)' : ''}`
     };
 
@@ -321,7 +324,8 @@ export async function syncGmailLabelsWithDatabase(userId, provider = 'gmail', bu
       success: false,
       error: error.message,
       currentLabels: 0,
-      labelMap: {}
+      labelMap: {},
+      validAccessToken: null // ✨ NEW: Ensure consistent return structure
     };
   }
 }

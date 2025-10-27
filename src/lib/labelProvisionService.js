@@ -194,6 +194,12 @@ export async function provisionLabelSchemaFor(userId, businessType) {
       console.log(`📊 Current label state: ${syncResult.currentLabels} labels found`);
     }
     
+    // ✨ NEW: Use the refreshed access token from sync result (if available)
+    const accessTokenToUse = syncResult.validAccessToken || integrations.access_token;
+    if (syncResult.validAccessToken) {
+      console.log('✅ Using refreshed access token from sync for label creation');
+    }
+    
     // Check if manual deletion was detected - if so, create labels immediately
     if (syncResult.manualDeletionDetected) {
       console.log('⚠️ Manual deletion detected - creating labels immediately instead of waiting for n8n');
@@ -374,9 +380,10 @@ export async function provisionLabelSchemaFor(userId, businessType) {
     }
 
     // Create FolderIntegrationManager instance
+    // ✨ FIXED: Use the refreshed access token from sync
     const manager = new FolderIntegrationManager(
       integrations.provider,
-      integrations.access_token,
+      accessTokenToUse,
       userId
     );
 
