@@ -407,30 +407,6 @@ const StepTeamSetup = () => {
               <h2 className="text-xl font-semibold text-gray-800 flex items-center mb-4">
                 <Briefcase className="mr-2 h-5 w-5 text-blue-500" /> Suppliers (Max {MAX_SUPPLIERS})
               </h2>
-              {businessType && businessPresets[businessType]?.supplierTemplates && (
-                <div className="rounded-md bg-blue-50 border border-blue-200 p-3 text-sm text-gray-700 mb-3">
-                  <div className="flex items-center justify-between">
-                    <span>Add suggested suppliers for {businessType}?</span>
-                    <Button
-                      variant="outline"
-                      className="border-blue-300 text-blue-700"
-                      onClick={() => {
-                        const templates = businessPresets[businessType].supplierTemplates || [];
-                        setSuppliers(prev => {
-                          const existingNames = new Set(prev.map(s => s.name.toLowerCase()));
-                          const toAdd = templates
-                            .filter(t => !existingNames.has((t.name || '').toLowerCase()))
-                            .map(t => ({ name: t.name, domains: (t.domains || []).join(', ') }));
-                          return [...prev, ...toAdd].slice(0, MAX_SUPPLIERS);
-                        });
-                        toast({ title: 'Supplier templates added', description: 'You can edit or remove any entry.' });
-                      }}
-                    >
-                      Add Templates
-                    </Button>
-                  </div>
-                </div>
-              )}
               <div className="space-y-4">
                 {suppliers.map((supplier, index) => (
                   <div key={index} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
