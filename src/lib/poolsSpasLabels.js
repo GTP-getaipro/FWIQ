@@ -141,11 +141,7 @@ export const poolsSpasLabelSchema = {
   // ⭐ Google Reviews & Reputation
   "GOOGLE REVIEW": {
     color: POOLS_SPAS_COLORS.GOOGLE_REVIEW,
-    sub: [
-      "New Reviews",
-      "Review Responses",
-      "Review Requests"
-    ],
+    sub: [],  // ✅ NO SUBFOLDERS - Classifier can only handle GoogleReview as single category
     intent: "ai.review_management",
     critical: false,
     description: "Google reviews, reputation management, and customer feedback",

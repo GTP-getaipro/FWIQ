@@ -91,7 +91,7 @@ Quote Requests - formsub/quote requests related communications for {{BUSINESS_NA
 
 GOOGLE REVIEW:
 Google Business reviews, review notifications, and review response tracking
-secondary_category: [New Reviews, Review Responses]
+secondary_category: [GoogleReview]  // NO SUBFOLDERS - Classifier handles as single category
 New Reviews - New Google review notifications and customer feedback alerts
 Keywords: google review, new review, customer review, review notification
 Review Responses - Business responses to reviews and review reply tracking

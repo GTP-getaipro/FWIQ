@@ -113,11 +113,7 @@ export const poolsSpasSchema = {
       color: UNIVERSAL_COLORS.GOOGLE_REVIEW,
       intent: UNIVERSAL_INTENTS.GOOGLE_REVIEW,
       critical: false,
-      sub: [
-        "New Reviews",
-        "Review Responses",
-        "Review Requests"
-      ],
+      sub: [],  // ✅ NO SUBFOLDERS - Classifier can only handle GoogleReview as single category
       description: "Google reviews, reputation management, and customer feedback",
       n8nEnvVar: "LABEL_GOOGLE_REVIEW"
     },
@@ -311,11 +307,7 @@ export const hvacSchema = {
       color: UNIVERSAL_COLORS.GOOGLE_REVIEW,
       intent: UNIVERSAL_INTENTS.GOOGLE_REVIEW,
       critical: false,
-      sub: [
-        "New Reviews",
-        "Review Responses",
-        "Review Requests"
-      ],
+      sub: [],  // ✅ NO SUBFOLDERS - Classifier can only handle GoogleReview as single category
       description: "Google reviews, reputation management, and customer feedback",
       n8nEnvVar: "LABEL_GOOGLE_REVIEW"
     },
@@ -510,11 +502,7 @@ export const electricianSchema = {
       color: UNIVERSAL_COLORS.GOOGLE_REVIEW,
       intent: UNIVERSAL_INTENTS.GOOGLE_REVIEW,
       critical: false,
-      sub: [
-        "New Reviews",
-        "Review Responses",
-        "Review Requests"
-      ],
+      sub: [],  // ✅ NO SUBFOLDERS - Classifier can only handle GoogleReview as single category
       description: "Google reviews, reputation management, and customer feedback",
       n8nEnvVar: "LABEL_GOOGLE_REVIEW"
     },

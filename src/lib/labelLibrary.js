@@ -55,17 +55,8 @@ export const labelLibrary = {
 
   // GOOGLE REVIEW Category
   'GOOGLE REVIEW': {
-    description: 'Google Business reviews, review notifications, and review response tracking',
-    subcategories: {
-      'New Reviews': {
-        description: 'New Google review notifications and customer feedback alerts',
-        keywords: ['google review', 'new review', 'customer review', 'review notification']
-      },
-      'Review Responses': {
-        description: 'Business responses to reviews and review reply tracking',
-        keywords: ['review response', 'reply to review', 'review management']
-      }
-    }
+    description: 'Google Business reviews, review notifications, and review response tracking. All review-related emails in a single folder (no subcategories - classifier limitation).',
+    subcategories: {}  // ✅ NO SUBCATEGORIES - Classifier can only handle GoogleReview as single category
   },
 
   // MANAGER Category

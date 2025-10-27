@@ -125,17 +125,8 @@ export const baseMasterSchema = {
       name: "GOOGLE REVIEW",
       color: { backgroundColor: "#fad165", textColor: "#000000" },
       intent: "ai.customer_feedback",
-      description: "Google Business reviews, review notifications, and review response tracking",
-      sub: [
-        { 
-          name: "New Reviews",
-          description: "New Google review notifications and customer feedback alerts"
-        },
-        { 
-          name: "Review Responses",
-          description: "Business responses to reviews and review reply tracking"
-        }
-      ]
+      description: "Google Business reviews, review notifications, and review response tracking. All review-related emails go here (no subfolders - classifier handles as single category).",
+      sub: []  // ✅ NO SUBFOLDERS - Classifier can only handle GoogleReview as single category
     },
     {
       name: "MANAGER",
@@ -491,10 +482,7 @@ export const hvacExtension = {
       ]
     },
     GOOGLE_REVIEW: {
-      sub: [
-        { name: "New Reviews" },
-        { name: "Review Responses" }
-      ]
+      sub: []  // ✅ NO SUBFOLDERS - Classifier can only handle GoogleReview as single category
     },
     MANAGER: {
       sub: [
@@ -692,11 +680,7 @@ export const electricianExtension = {
       ]
     },
     GOOGLE_REVIEW: {
-      sub: [
-        { name: "New Reviews" },
-        { name: "Review Responses" },
-        { name: "Review Requests" }
-      ]
+      sub: []  // ✅ NO SUBFOLDERS - Classifier can only handle GoogleReview as single category
     },
     MANAGER: {
       sub: [
