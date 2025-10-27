@@ -1048,7 +1048,7 @@ Body: ${email.body.substring(0, 500)}...
           source: analysis.source || 'email_history_analysis'
         },
         // Add few-shot examples if available
-        fewShotExamples: this.extractFewShotExamples(analysis),
+        fewShotExamples: analysis.fewShotExamples || {},
         // Add signature phrases for consistent style
         signaturePhrases: analysis.commonPhrases || styleProfile.signaturePhrases || [],
         // Add communication patterns
