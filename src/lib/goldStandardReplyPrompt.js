@@ -319,6 +319,8 @@ When replying to ongoing email threads involving complaints, escalations, or rep
 
 {{EXAMPLE_REPLIES}}
 
+<<<TEAM_ROUTING_RULES>>>
+
 ### Few-Shot Learning Examples
 When drafting replies, use these examples as style and tone references:
 

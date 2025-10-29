@@ -370,7 +370,11 @@ When scheduling appointments or customer asks about availability near holidays:
 - Spas page: <https://www.thehottubman.ca/hot-tub-spas>
 - **Service-call booking form:** <https://www.thehottubman.ca/repairs>
 - Treatment packages: <https://www.thehottubman.ca/treatment-packages>
-- Supplies & accessories: <https://www.thehottubman.ca/category/all-products>`;
+- Supplies & accessories: <https://www.thehottubman.ca/category/all-products>
+
+<<<TEAM_ROUTING_RULES>>>
+
+`;
 }
 
 export default {

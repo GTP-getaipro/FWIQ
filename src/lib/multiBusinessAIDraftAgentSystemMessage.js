@@ -262,6 +262,8 @@ Include this when email is urgent/emergency.
 
 When scheduling near holidays: "We'll be closed on [date] for [holiday]. Next available: [date]."
 
+<<<TEAM_ROUTING_RULES>>>
+
 ## Maintain the Required Tone
 - Match reply length and directness to customer tone/message length.
 - Eliminate boilerplate/filler unless it directly helps move the conversation.
