@@ -435,9 +435,9 @@
       "parameters": {
         "resource": "message",
         "operation": "send",
-        "emailType": "text",
-        "toEmail": "={{$json.forwardTo}}",
+        "sendTo": "={{$json.forwardTo}}",
         "subject": "={{$json.forwardSubject}}",
+        "emailType": "text",
         "message": "={{$json.forwardBody}}",
         "options": {}
       },
