@@ -576,9 +576,21 @@ async function fetchOutlookFoldersRecursive(accessToken, parentId = null) {
     const data = await response.json();
     const folders = data.value || [];
 
-    // Recursively fetch child folders
-    let allFolders = [...folders];
-    for (const folder of folders) {
+    // CRITICAL FIX: Filter out Outlook system folders to match Gmail behavior
+    const SYSTEM_FOLDERS = [
+      'inbox', 'drafts', 'sent items', 'deleted items', 
+      'junk email', 'outbox', 'archive', 'notes', 'journal',
+      'envoyés', 'brouillons', 'éléments supprimés',  // French
+      'gesendet', 'entwürfe', 'gelöscht'              // German
+    ];
+    
+    const filteredFolders = folders.filter(f => 
+      !SYSTEM_FOLDERS.includes(f.displayName.toLowerCase())
+    );
+
+    // Recursively fetch child folders (only for non-system folders)
+    let allFolders = [...filteredFolders];
+    for (const folder of filteredFolders) {
       const childFolders = await fetchOutlookFoldersRecursive(accessToken, folder.id);
       allFolders = allFolders.concat(childFolders);
     }

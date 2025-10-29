@@ -4,6 +4,76 @@
 // - Injects client data into workflow template and creates/updates + activates in n8n
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+/**
+ * Refresh OAuth token for a provider
+ * CRITICAL FIX: Ensures valid token before folder provisioning
+ */
+async function refreshOAuthToken(refreshToken: string, provider: string): Promise<any> {
+  let tokenUrl: string;
+  let clientId: string;
+  let clientSecret: string;
+  
+  if (provider === 'gmail') {
+    tokenUrl = 'https://oauth2.googleapis.com/token';
+    clientId = GMAIL_CLIENT_ID;
+    clientSecret = GMAIL_CLIENT_SECRET;
+  } else if (provider === 'outlook' || provider === 'microsoft') {
+    tokenUrl = 'https://login.microsoftonline.com/common/oauth2/v2.0/token';
+    clientId = Deno.env.get('OUTLOOK_CLIENT_ID') || Deno.env.get('MICROSOFT_CLIENT_ID') || '';
+    clientSecret = Deno.env.get('OUTLOOK_CLIENT_SECRET') || Deno.env.get('MICROSOFT_CLIENT_SECRET') || '';
+  } else {
+    throw new Error(`Unsupported provider for token refresh: ${provider}`);
+  }
+  
+  const params = new URLSearchParams();
+  params.append('client_id', clientId);
+  params.append('client_secret', clientSecret);
+  params.append('refresh_token', refreshToken);
+  params.append('grant_type', 'refresh_token');
+  
+  if (provider === 'outlook' || provider === 'microsoft') {
+    params.append('scope', 'Mail.ReadWrite Mail.Send offline_access');
+  }
+  
+  const response = await fetch(tokenUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: params.toString()
+  });
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Token refresh failed: ${response.status} - ${errorText}`);
+  }
+  
+  return await response.json();
+}
+
+/**
+ * Get standardized business types from profile
+ * CRITICAL FIX: Single source of truth for business types
+ */
+function getStandardizedBusinessTypes(profile: any): string[] {
+  const types = profile.business_types;
+  
+  if (!types || !Array.isArray(types) || types.length === 0) {
+    console.warn('⚠️ business_types not found, checking fallback locations...');
+    const fallbackTypes = profile.client_config?.business_types || 
+                          profile.client_config?.business?.business_types ||
+                          [profile.client_config?.business?.business_type];
+    
+    if (!fallbackTypes || (Array.isArray(fallbackTypes) && fallbackTypes.length === 0)) {
+      throw new Error('business_types not found - onboarding incomplete. User must complete business type selection.');
+    }
+    
+    return Array.isArray(fallbackTypes) ? fallbackTypes : [fallbackTypes];
+  }
+  
+  return types;
+}
 // Inline OpenAI key rotation (avoids shared dependency issues)
 let cachedKeys = null;
 let keyCounter = 0;
@@ -1668,7 +1738,9 @@ async function handler(req) {
       // Prefer integration with n8n_credential_id
       const integrationWithCred = activeIntegrations.find((i)=>i.n8n_credential_id);
       integration = integrationWithCred || activeIntegrations[0];
-      provider = integration.provider === 'outlook' || integration.provider === 'microsoft' ? 'outlook' : 'gmail';
+      // CRITICAL FIX: Normalize provider detection (case-insensitive)
+      const normalizedProvider = (integration.provider || '').toLowerCase();
+      provider = ['outlook', 'microsoft'].includes(normalizedProvider) ? 'outlook' : 'gmail';
     }
     console.log(`📧 Detected email provider: ${provider}`);
     console.log(`📧 Selected integration:`, {
@@ -1684,20 +1756,60 @@ async function handler(req) {
     // ✅ NEW: Provision email folders/labels BEFORE workflow deployment
     console.log('📁 Starting folder/label provisioning for email integration...');
     try {
-      const businessTypes = profile.business_types || 
-                            profile.client_config?.business_types || 
-                            profile.client_config?.business?.business_types ||
-                            [profile.client_config?.business?.business_type] ||
-                            ['General Services'];
+      // CRITICAL FIX: Use standardized business types (single source of truth)
+      const businessTypes = getStandardizedBusinessTypes(profile);
       
       console.log(`📋 Provisioning folders for business types: ${businessTypes.join(', ')}`);
       
-      // Call folder provisioning function
+      // CRITICAL FIX: Validate and refresh token before folder provisioning
+      let validAccessToken = integration?.access_token || refreshToken;
+      if (integration?.refresh_token) {
+        try {
+          // Check if token is expired or will expire soon
+          const expiresAt = integration.expires_at ? new Date(integration.expires_at) : null;
+          const now = new Date();
+          const minutesUntilExpiry = expiresAt ? (expiresAt.getTime() - now.getTime()) / (1000 * 60) : 0;
+          
+          // Refresh if expired or expiring within 5 minutes
+          if (!expiresAt || minutesUntilExpiry < 5) {
+            console.log(`🔄 Token expired or expiring soon (${minutesUntilExpiry.toFixed(1)} min), refreshing...`);
+            const refreshed = await refreshOAuthToken(integration.refresh_token, provider);
+            
+            if (refreshed && refreshed.access_token) {
+              validAccessToken = refreshed.access_token;
+              console.log(`✅ Token refreshed successfully for ${provider}`);
+              
+              // Update integration with new token in database
+              const { error: updateError } = await supabaseAdmin
+                .from('integrations')
+                .update({
+                  access_token: refreshed.access_token,
+                  expires_at: refreshed.expires_in 
+                    ? new Date(Date.now() + (refreshed.expires_in * 1000)).toISOString()
+                    : null,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', integration.id);
+              
+              if (updateError) {
+                console.warn('⚠️ Failed to update refreshed token in database:', updateError);
+              }
+            }
+          } else {
+            console.log(`✅ Token still valid for ${minutesUntilExpiry.toFixed(1)} more minutes`);
+          }
+        } catch (tokenError) {
+          console.warn(`⚠️ Token refresh failed, using existing token:`, tokenError.message);
+          // Continue with existing token - if it's expired, API calls will fail gracefully
+        }
+      }
+      
+      // Call folder provisioning function with validated token
       const provisioningResult = await provisionEmailFolders(
         userId, 
         businessTypes, 
         provider,
-        integration?.access_token || refreshToken,
+        validAccessToken,
         profile.managers || [],
         profile.suppliers || []
       );
