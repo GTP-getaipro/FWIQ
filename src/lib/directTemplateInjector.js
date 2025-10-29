@@ -286,6 +286,7 @@ class DirectTemplateInjector {
         // Email labels
         "<<<LABEL_MAP>>>": JSON.stringify(clientData.email_labels || {}),
         "<<<LABEL_MAPPINGS>>>": JSON.stringify(clientData.email_labels || {}),
+        "<<<CALL_TO_ACTION_OPTIONS>>>": callToActionOptions,
         
         // Content
         "<<<SIGNATURE_BLOCK>>>": signatureBlock,
