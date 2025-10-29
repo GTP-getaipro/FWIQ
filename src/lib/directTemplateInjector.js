@@ -502,6 +502,98 @@ class DirectTemplateInjector {
     if (!str) return '';
     return JSON.stringify(str).slice(1, -1);
   }
+
+  /**
+   * Format business hours for AI system message
+   */
+  formatBusinessHoursForAI(businessHours) {
+    if (!businessHours || Object.keys(businessHours).length === 0) {
+      return 'Operating hours not specified';
+    }
+    
+    const daysOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const formatted = [];
+    
+    daysOrder.forEach((day, index) => {
+      const dayData = businessHours[day];
+      if (dayData && !dayData.closed && dayData.open && dayData.close) {
+        formatted.push(`${dayNames[index]}: ${dayData.open} - ${dayData.close}`);
+      } else if (dayData && dayData.closed) {
+        formatted.push(`${dayNames[index]}: Closed`);
+      }
+    });
+    
+    return formatted.length > 0 ? formatted.join('\n') : 'Operating hours not specified';
+  }
+
+  /**
+   * Format service areas for AI system message
+   */
+  formatServiceAreasForAI(businessInfo) {
+    const serviceAreas = businessInfo.serviceAreas || businessInfo.serviceArea;
+    
+    if (Array.isArray(serviceAreas)) {
+      return serviceAreas.join(', ');
+    } else if (typeof serviceAreas === 'string') {
+      return serviceAreas;
+    }
+    
+    return 'Service area not specified';
+  }
+
+  /**
+   * Format holiday exceptions for AI system message
+   */
+  formatHolidayExceptionsForAI(holidays) {
+    if (!holidays || holidays.length === 0) {
+      return 'No upcoming holidays scheduled';
+    }
+    
+    const today = new Date();
+    const upcomingHolidays = holidays
+      .filter(h => {
+        if (!h.date) return false;
+        const holidayDate = new Date(h.date);
+        return holidayDate >= today;
+      })
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .slice(0, 5);
+    
+    if (upcomingHolidays.length === 0) {
+      return 'No upcoming holidays scheduled';
+    }
+    
+    return upcomingHolidays
+      .map(h => `${h.date}: ${h.reason || 'Closed'}`)
+      .join('\n');
+  }
+
+  /**
+   * Format social media links for AI system message
+   */
+  formatSocialMediaLinksForAI(socialLinks) {
+    if (!socialLinks || socialLinks.length === 0) {
+      return '';
+    }
+    
+    const validLinks = socialLinks.filter(link => link && link.trim() !== '');
+    
+    if (validLinks.length === 0) {
+      return '';
+    }
+    
+    return validLinks
+      .map(link => {
+        const url = link.toLowerCase();
+        if (url.includes('facebook')) return `Facebook: ${link}`;
+        if (url.includes('instagram')) return `Instagram: ${link}`;
+        if (url.includes('linkedin')) return `LinkedIn: ${link}`;
+        if (url.includes('twitter') || url.includes('x.com')) return `Twitter/X: ${link}`;
+        return link;
+      })
+      .join('\n');
+  }
 }
 
 export default DirectTemplateInjector;
