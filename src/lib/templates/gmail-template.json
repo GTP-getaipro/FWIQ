@@ -764,28 +764,6 @@
       "main": [
         [
           {
-            "node": "Build Forward Email Body",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Build Forward Email Body": {
-      "main": [
-        [
-          {
-            "node": "IF Manager Has Email",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Format Reply as HTML": {
-      "main": [
-        [
-          {
             "node": "Create Gmail Draft",
             "type": "main",
             "index": 0
