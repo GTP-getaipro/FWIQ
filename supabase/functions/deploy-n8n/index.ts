@@ -232,6 +232,164 @@ function formatSocialMediaLinksForAI(socialLinks: any[]): string {
     })
     .join('\n');
 }
+
+/**
+ * Get role configuration for intelligent routing
+ * CRITICAL ENHANCEMENT: Role-based routing with keywords
+ */
+function getRoleConfiguration(roleId: string) {
+  const configs: Record<string, any> = {
+    'sales_manager': {
+      routes: ['SALES'],
+      keywords: ['price', 'quote', 'buy', 'purchase', 'how much', 'pricing', 'cost', 'new hot tub', 'models'],
+      handles: ['New inquiries', 'Quotes', 'Pricing', 'Product information'],
+      weight: 1.0
+    },
+    'service_manager': {
+      routes: ['SUPPORT', 'URGENT'],
+      keywords: ['repair', 'fix', 'broken', 'appointment', 'schedule', 'emergency', 'not working', 'complaint', 'unhappy'],
+      handles: ['Repairs', 'Appointments', 'Technical support', 'Emergencies', 'Complaints'],
+      weight: 1.2  // Higher priority for service issues
+    },
+    'operations_manager': {
+      routes: ['MANAGER', 'SUPPLIERS'],
+      keywords: ['vendor', 'supplier', 'hiring', 'job application', 'resume', 'internal', 'operations', 'partnership', 'contract'],
+      handles: ['Vendors', 'Suppliers', 'Hiring', 'Internal operations'],
+      weight: 1.0
+    },
+    'support_lead': {
+      routes: ['SUPPORT'],
+      keywords: ['help', 'question', 'how do i', 'parts', 'chemicals', 'advice', 'general inquiry', 'information'],
+      handles: ['General questions', 'Parts orders', 'Product advice', 'How-to help'],
+      weight: 0.8
+    },
+    'owner': {
+      routes: ['MANAGER', 'URGENT'],
+      keywords: ['strategic', 'legal', 'partnership', 'media', 'acquisition', 'franchise', 'lawsuit', 'compliance', 'investment'],
+      handles: ['Strategic decisions', 'Legal matters', 'Partnerships', 'High-priority issues'],
+      weight: 0.9
+    }
+  };
+  
+  return configs[roleId] || null;
+}
+
+/**
+ * Build team routing rules for AI system message
+ * CRITICAL ENHANCEMENT: Intelligent routing with multiple roles support
+ */
+function buildTeamRoutingRules(managers: any[]): string {
+  if (!managers || managers.length === 0) {
+    return 'No team members configured - all emails route to general folders';
+  }
+  
+  const rules = managers.map(mgr => {
+    // Support both old (single role) and new (multiple roles) format
+    const managerRoles = Array.isArray(mgr.roles) 
+      ? mgr.roles 
+      : (mgr.role ? [mgr.role] : []);
+    
+    if (managerRoles.length === 0) {
+      return `**${mgr.name}** - ${mgr.email || 'No email'}\n→ No roles assigned`;
+    }
+    
+    // Get combined routing config for all roles
+    const routingConfig = {
+      categories: [] as string[],
+      keywords: [] as string[],
+      handles: [] as string[]
+    };
+    
+    managerRoles.forEach(roleId => {
+      const roleConfig = getRoleConfiguration(roleId);
+      if (roleConfig) {
+        routingConfig.categories.push(...roleConfig.routes);
+        routingConfig.keywords.push(...roleConfig.keywords);
+        routingConfig.handles.push(...roleConfig.handles);
+      }
+    });
+    
+    // Remove duplicates
+    const uniqueCategories = [...new Set(routingConfig.categories)];
+    const uniqueKeywords = [...new Set(routingConfig.keywords)];
+    const uniqueHandles = [...new Set(routingConfig.handles)];
+    
+    const rolesText = managerRoles.map(r => r.replace(/_/g, ' ')).join(' + ');
+    const forwardingStatus = mgr.email && mgr.email.trim() !== ''
+      ? `✅ Emails forwarded to: ${mgr.email} (includes AI draft when available)`
+      : '❌ No forwarding (no email provided - check main inbox with label filter)';
+    
+    return `
+**${mgr.name}** - ${mgr.email || 'No email'}
+Roles: ${rolesText}
+→ Handles: ${uniqueHandles.join(', ')}
+→ Routes when:
+  • Email mentions "${mgr.name}" or "${mgr.name.split(' ')[0]}"
+  • Email classified as: ${uniqueCategories.join(' or ')}
+  • Email contains keywords: ${uniqueKeywords.slice(0, 8).join(', ')}
+→ Folder: MANAGER/${mgr.name}/
+→ Forwarding: ${forwardingStatus}
+`;
+  }).join('\n');
+  
+  return `
+### Team Structure & Email Routing:
+
+${rules}
+
+### Routing Logic:
+
+**Priority 1: Name Detection (Highest)**
+If customer email mentions a team member name:
+${managers.map(m => `- "${m.name}" or "${m.name.split(' ')[0]}" detected → Route to MANAGER/${m.name}/`).join('\n')}
+
+**Priority 2: MANAGER Category + Content Analysis**
+If email classified as MANAGER but no name mentioned:
+- Analyze email content for role-specific keywords
+- Score each manager based on ALL their roles
+- Route to manager with highest combined keyword match score
+${managers.filter(m => {
+    const roles = Array.isArray(m.roles) ? m.roles : [m.role];
+    return roles.includes('operations_manager');
+  }).map(m => `- Vendor/supplier keywords → ${m.name} (Operations)`).join('\n')}
+${managers.filter(m => {
+    const roles = Array.isArray(m.roles) ? m.roles : [m.role];
+    return roles.includes('service_manager');
+  }).map(m => `- Complaint/escalation keywords → ${m.name} (Service)`).join('\n')}
+${managers.filter(m => {
+    const roles = Array.isArray(m.roles) ? m.roles : [m.role];
+    return roles.includes('owner');
+  }).map(m => `- Strategic/legal keywords → ${m.name} (Owner)`).join('\n')}
+
+**Priority 3: Category + Role Match**
+${managers.filter(m => {
+    const roles = Array.isArray(m.roles) ? m.roles : [m.role];
+    return roles.includes('sales_manager');
+  }).map(m => `- SALES emails → ${m.name} (Sales Manager)`).join('\n')}
+${managers.filter(m => {
+    const roles = Array.isArray(m.roles) ? m.roles : [m.role];
+    return roles.includes('service_manager');
+  }).map(m => `- SUPPORT/URGENT → ${m.name} (Service Manager)`).join('\n')}
+
+**Priority 4: Unassigned (Last Resort)**
+- Only if no managers configured OR no role match found
+
+### Email Forwarding Behavior:
+${managers.filter(m => m.email && m.email.trim() !== '').map(m => 
+  `- **${m.name}**: Emails forwarded to ${m.email} WITH AI draft response (if ai_can_reply = true)`
+).join('\n')}
+${managers.filter(m => !m.email || m.email.trim() === '').map(m => 
+  `- **${m.name}**: Emails labeled only in MANAGER/${m.name}/ (no forwarding, check main inbox)`
+).join('\n')}
+
+**Critical Rule for Forwarding:**
+When forwarding email to manager's personal inbox:
+1. Include AI suggested response at the top (if AI generated one)
+2. Include classification metadata (category, confidence, routing reason)
+3. Include full original customer email below
+4. Provide quick action guidance (approve/edit/reject)
+`;
+}
 // Inline OpenAI key rotation (avoids shared dependency issues)
 let cachedKeys = null;
 let keyCounter = 0;
@@ -1683,6 +1841,9 @@ SIGNATURE: ${signatureBlock}
   const socialMediaText = formatSocialMediaLinksForAI(contact?.socialLinks || []);
   const afterHoursPhone = contact?.phone || contact?.afterHoursPhone || '';
   
+  // CRITICAL ENHANCEMENT: Build team routing rules with role-based intelligence
+  const teamRoutingRules = buildTeamRoutingRules(clientData.managers || []);
+  
   // BASE REPLACEMENTS
   const replacements = {
     // Business info
@@ -1703,6 +1864,7 @@ SIGNATURE: ${signatureBlock}
     '<<<AFTER_HOURS_PHONE>>>': afterHoursPhone,
     '<<<UPCOMING_HOLIDAYS>>>': holidaysText,
     '<<<SOCIAL_MEDIA_LINKS>>>': socialMediaText,
+    '<<<TEAM_ROUTING_RULES>>>': teamRoutingRules,
     // Credentials
     '<<<CLIENT_GMAIL_CRED_ID>>>': integrations.gmail?.credentialId || '',
     '<<<CLIENT_OUTLOOK_CRED_ID>>>': integrations.outlook?.credentialId || '',
