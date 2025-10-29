@@ -390,6 +390,64 @@
     },
     {
       "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Build email body for manager forwarding with AI draft\nconst manager = $json.matched_manager || {};\nconst managerEmail = manager?.email;\nconst aiCanReply = $json.ai_can_reply;\nconst routing = $json.routing_decision || {};\n\nconst originalEmail = $('Prepare Email Data').first().json;\nconst aiDraft = aiCanReply && $('AI Draft Reply Agent').item?.json?.output ? $('AI Draft Reply Agent').item.json.output : null;\n\nlet forwardBody = '';\n\nif (aiDraft) {\n  forwardBody = `🤖 AI SUGGESTED RESPONSE (Review & Approve):\\n${'='.repeat(60)}\\n${aiDraft.replace(/<br>/g, '\\n')}\\n${'='.repeat(60)}\\n\\n✅ AI Confidence: ${Math.round($json.confidence * 100)}%\\n✅ Classification: ${$json.primary_category}${$json.secondary_category ? ' > ' + $json.secondary_category : ''}\\n✅ Routed to you as: ${routing?.matched_roles?.join(' + ') || manager?.roles?.join(' + ') || 'Manager'}\\n\\n💡 QUICK ACTIONS:\\n├─ ✅ Approve: Reply to customer with this draft\\n├─ ✏️ Edit: Modify before sending\\n└─ ❌ Reject: Write your own response\\n\\n${'-'.repeat(60)}\\n\\n--- ORIGINAL CUSTOMER EMAIL ---\\nFrom: ${originalEmail.from}\\nTo: ${originalEmail.to}\\nSubject: ${originalEmail.subject}\\nDate: ${originalEmail.date || new Date().toISOString()}\\n\\n${originalEmail.body}\\n\\n${'-'.repeat(60)}\\n\\nFloWorx Email Processing System\\nManaged by ${manager?.name || 'Your Team'}`;\n} else {\n  forwardBody = `⚠️ AI COULD NOT GENERATE RESPONSE\\n\\n❌ Reason: Low confidence or requires human judgment\\n✅ Classification: ${$json.primary_category}${$json.secondary_category ? ' > ' + $json.secondary_category : ''}\\n✅ Confidence: ${Math.round($json.confidence * 100)}%\\n✅ Routed to you as: ${routing?.matched_roles?.join(' + ') || 'Manager'}\\n\\n💡 This email requires your personal response.\\n\\n${'-'.repeat(60)}\\n\\n--- ORIGINAL CUSTOMER EMAIL ---\\nFrom: ${originalEmail.from}\\nSubject: ${originalEmail.subject}\\n\\n${originalEmail.body}\\n\\n${'-'.repeat(60)}\\n\\nFloWorx Email Processing System\\nManaged by ${manager?.name || 'Your Team'}`;\n}\n\nreturn [{\n  json: {\n    shouldForward: !!(managerEmail && managerEmail.trim() !== '' && managerEmail.includes('@')),\n    forwardTo: managerEmail,\n    forwardSubject: `Fwd: ${originalEmail.subject}`,\n    forwardBody: forwardBody,\n    hasAIDraft: !!aiDraft,\n    managerName: manager?.name || 'Manager',\n    originalMessageId: originalEmail.id\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1800, 272],
+      "id": "build-forward-body-outlook",
+      "name": "Build Forward Email Body"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.shouldForward}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [2000, 272],
+      "id": "if-manager-email-outlook",
+      "name": "IF Manager Has Email"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "subject": "={{$json.forwardSubject}}",
+        "bodyContent": "={{$json.forwardBody}}",
+        "bodyContentType": "text",
+        "additionalFields": {
+          "toRecipients": [
+            {
+              "emailAddress": {
+                "address": "={{$json.forwardTo}}"
+              }
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2.1,
+      "position": [2200, 180],
+      "id": "forward-to-manager-outlook",
+      "name": "Forward to Manager (Outlook)",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "<<<CLIENT_OUTLOOK_CRED_ID>>>",
+          "name": "<<<BUSINESS_NAME>>> Outlook"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
         "resource": "draft",
         "subject": "=Re: {{ $('Prepare Email Data').first().json.subject }}",
         "body": "={{ $json.output }}",
@@ -699,6 +757,46 @@
       ]
     },
     "Format Reply as HTML": {
+      "main": [
+        [
+          {
+            "node": "Build Forward Email Body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Forward Email Body": {
+      "main": [
+        [
+          {
+            "node": "IF Manager Has Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Manager Has Email": {
+      "main": [
+        [
+          {
+            "node": "Forward to Manager (Outlook)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create a draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Forward to Manager (Outlook)": {
       "main": [
         [
           {
