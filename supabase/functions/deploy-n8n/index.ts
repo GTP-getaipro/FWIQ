@@ -2336,6 +2336,26 @@ async function handler(req) {
       console.log(`   - OpenAI nodes updated: ${openaiNodesUpdated}`);
       console.log(`   - Supabase nodes updated: ${supabaseNodesUpdated}`);
     }
+    // CRITICAL FIX: Check for duplicate workflows in N8N before creating new ones
+    console.log('🔍 Checking for existing workflows in N8N...');
+    let existingN8nWorkflows = [];
+    try {
+      const allWorkflows = await n8nRequest('/workflows', { method: 'GET' });
+      // Find workflows that match this user's pattern
+      const userWorkflowPattern = new RegExp(`${businessSlug}.*${clientShort}|${businessName}.*workflow`, 'i');
+      existingN8nWorkflows = allWorkflows.data.filter(wf => 
+        userWorkflowPattern.test(wf.name)
+      );
+      
+      if (existingN8nWorkflows.length > 0) {
+        console.log(`⚠️ Found ${existingN8nWorkflows.length} existing workflow(s) in N8N for this user:`, 
+          existingN8nWorkflows.map(wf => ({ id: wf.id, name: wf.name, active: wf.active }))
+        );
+      }
+    } catch (error) {
+      console.warn('⚠️ Could not check for existing N8N workflows:', error.message);
+    }
+    
     // Check existing workflow record for this user
     const { data: existingWf } = await supabaseAdmin.from('workflows').select('id, version, n8n_workflow_id').eq('user_id', userId).eq('status', 'active').order('version', {
       ascending: false
@@ -2344,6 +2364,45 @@ async function handler(req) {
     let n8nWorkflowId;
     let nextVersion = 1;
     let isNewWorkflow = false;
+    
+    // CRITICAL FIX: If multiple N8N workflows exist, deactivate and archive duplicates
+    if (existingN8nWorkflows.length > 1) {
+      console.log(`🧹 Cleaning up ${existingN8nWorkflows.length - 1} duplicate workflow(s)...`);
+      
+      // Keep the most recently updated active workflow
+      const sortedWorkflows = existingN8nWorkflows.sort((a, b) => 
+        new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime()
+      );
+      
+      const workflowToKeep = sortedWorkflows[0];
+      const workflowsToArchive = sortedWorkflows.slice(1);
+      
+      console.log(`✅ Keeping workflow: ${workflowToKeep.name} (ID: ${workflowToKeep.id})`);
+      
+      for (const wf of workflowsToArchive) {
+        try {
+          console.log(`🗑️ Archiving duplicate workflow: ${wf.name} (ID: ${wf.id})`);
+          
+          // Deactivate if active
+          if (wf.active) {
+            await n8nRequest(`/workflows/${wf.id}/deactivate`, { method: 'POST' });
+          }
+          
+          // Delete from N8N
+          await n8nRequest(`/workflows/${wf.id}`, { method: 'DELETE' });
+          console.log(`✅ Deleted duplicate workflow ${wf.id} from N8N`);
+        } catch (error) {
+          console.warn(`⚠️ Failed to delete workflow ${wf.id}:`, error.message);
+        }
+      }
+      
+      // Use the kept workflow
+      if (existingWf?.n8n_workflow_id !== workflowToKeep.id) {
+        // Database has different workflow ID, update it
+        console.log(`🔄 Updating database to use workflow ${workflowToKeep.id}`);
+        n8nWorkflowId = workflowToKeep.id;
+      }
+    }
     
     // Create clean payload exactly like Backend API does
     const cleanPayload = {
