@@ -786,6 +786,22 @@
       "main": [
         [
           {
+            "node": "Create Gmail Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Gmail Draft": {
+      "main": [
+        [
+          {
+            "node": "Save AI Draft for Learning",
+            "type": "main",
+            "index": 0
+          },
+          {
             "node": "Route to Manager (Dynamic)",
             "type": "main",
             "index": 0
@@ -807,22 +823,6 @@
     "Build Forward Email Body": {
       "main": [
         [
-          {
-            "node": "Create Gmail Draft",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Create Gmail Draft": {
-      "main": [
-        [
-          {
-            "node": "Save AI Draft for Learning",
-            "type": "main",
-            "index": 0
-          },
           {
             "node": "IF Manager Has Email",
             "type": "main",
