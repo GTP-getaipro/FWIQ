@@ -1865,6 +1865,7 @@ SIGNATURE: ${signatureBlock}
     '<<<UPCOMING_HOLIDAYS>>>': holidaysText,
     '<<<SOCIAL_MEDIA_LINKS>>>': socialMediaText,
     '<<<TEAM_ROUTING_RULES>>>': teamRoutingRules,
+    '<<<MANAGERS_CONFIG>>>': JSON.stringify(managers || []),
     // Credentials
     '<<<CLIENT_GMAIL_CRED_ID>>>': integrations.gmail?.credentialId || '',
     '<<<CLIENT_OUTLOOK_CRED_ID>>>': integrations.outlook?.credentialId || '',
