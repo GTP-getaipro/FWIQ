@@ -482,6 +482,7 @@ Email: "We supply hot tub covers and would like to become a vendor"
 /**
  * Match MANAGER category emails to appropriate role based on content analysis
  * CRITICAL FIX: Don't default to Unassigned - use role intelligence
+ * ENHANCEMENT: Support multiple roles per manager
  */
 function matchManagerByRoleContent(emailBody, emailSubject, managers) {
   if (!managers || managers.length === 0) {
@@ -515,36 +516,65 @@ function matchManagerByRoleContent(emailBody, emailSubject, managers) {
                 'volume pricing', 'B2B', 'trade', 'business account',
                 'commercial account', 'multiple properties'],
       weight: 1.0
+    },
+    support_lead: {
+      keywords: ['help', 'question', 'how do i', 'advice', 'general inquiry',
+                'information', 'wondering', 'curious'],
+      weight: 0.8
     }
   };
   
-  // Score each manager's role match
+  // Score each manager based on ALL their roles
   const scores = managers.map(manager => {
-    const roleType = normalizeRoleType(manager.role);
-    const roleConfig = roleKeywords[roleType];
+    // CRITICAL: Support both single role (string) and multiple roles (array)
+    const managerRoles = Array.isArray(manager.roles) 
+      ? manager.roles 
+      : (manager.role ? [manager.role] : []);
     
-    if (!roleConfig) {
-      return { manager, score: 0, reason: 'no_role_config' };
+    if (managerRoles.length === 0) {
+      return { manager, score: 0, matchedRoles: [], reason: 'no_roles_assigned' };
     }
     
-    // Count keyword matches
-    let matchCount = 0;
-    const matchedKeywords = [];
+    let totalScore = 0;
+    const matchedRoles = [];
+    const allMatchedKeywords = [];
     
-    roleConfig.keywords.forEach(keyword => {
-      if (fullText.includes(keyword)) {
-        matchCount++;
-        matchedKeywords.push(keyword);
+    // Check each role this manager has
+    managerRoles.forEach(role => {
+      const roleType = normalizeRoleType(role);
+      const roleConfig = roleKeywords[roleType];
+      
+      if (!roleConfig) return;
+      
+      // Count keyword matches for this role
+      let roleMatchCount = 0;
+      const roleKeywords = [];
+      
+      roleConfig.keywords.forEach(keyword => {
+        if (fullText.includes(keyword)) {
+          roleMatchCount++;
+          roleKeywords.push(keyword);
+        }
+      });
+      
+      if (roleMatchCount > 0) {
+        const roleScore = roleMatchCount * roleConfig.weight;
+        totalScore += roleScore;
+        matchedRoles.push({
+          role: role,
+          score: roleScore,
+          keywords: roleKeywords
+        });
+        allMatchedKeywords.push(...roleKeywords);
       }
     });
     
-    const score = matchCount * roleConfig.weight;
-    
     return {
       manager,
-      score,
-      matchedKeywords,
-      reason: score > 0 ? 'content_keywords_matched' : 'no_keywords_matched'
+      score: totalScore,
+      matchedRoles,
+      allMatchedKeywords,
+      reason: totalScore > 0 ? 'content_keywords_matched' : 'no_keywords_matched'
     };
   });
   
@@ -556,16 +586,18 @@ function matchManagerByRoleContent(emailBody, emailSubject, managers) {
     return {
       matched: scores[0].manager,
       score: scores[0].score,
-      matchedKeywords: scores[0].matchedKeywords,
+      matchedRoles: scores[0].matchedRoles,
+      matchedKeywords: scores[0].allMatchedKeywords,
       reason: 'manager_role_content_match'
     };
   }
   
   // Fallback: If no keyword match, use role priority
-  // Priority: Service Manager > Operations Manager > Sales Manager > Owner
-  const serviceManager = managers.find(m => 
-    normalizeRoleType(m.role) === 'service_manager'
-  );
+  // Priority: Service Manager > Operations Manager > Sales Manager > Support Lead > Owner
+  const serviceManager = managers.find(m => {
+    const roles = Array.isArray(m.roles) ? m.roles : [m.role];
+    return roles.some(r => normalizeRoleType(r) === 'service_manager');
+  });
   if (serviceManager) {
     return { 
       matched: serviceManager, 
@@ -573,9 +605,10 @@ function matchManagerByRoleContent(emailBody, emailSubject, managers) {
     };
   }
   
-  const opsManager = managers.find(m => 
-    normalizeRoleType(m.role) === 'operations_manager'
-  );
+  const opsManager = managers.find(m => {
+    const roles = Array.isArray(m.roles) ? m.roles : [m.role];
+    return roles.some(r => normalizeRoleType(r) === 'operations_manager');
+  });
   if (opsManager) {
     return { 
       matched: opsManager, 

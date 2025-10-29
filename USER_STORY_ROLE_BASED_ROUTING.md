@@ -270,13 +270,13 @@ managers: [
   { 
     name: "Mark Johnson", 
     email: "mark@hottubman.ca", 
-    role: "Sales Manager",
-    responsibilities: "Handles quotes, new leads, pricing inquiries"
+    roles: ["Sales Manager", "Operations Manager"],  // ← ARRAY of roles
+    responsibilities: "Handles quotes, new leads, pricing inquiries, vendor relationships, internal operations"
   },
   { 
     name: "Jillian Smith", 
     email: "jillian@hottubman.ca", 
-    role: "Service Manager",
+    roles: ["Service Manager"],  // ← Single role in array
     responsibilities: "Handles repairs, appointments, technical support"
   }
 ]
