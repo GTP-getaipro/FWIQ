@@ -946,8 +946,17 @@ export const validateAndSyncLabels = async (userId) => {
     extractedSuppliers: suppliers
   });
 
-  // Get business-specific schema instead of using standardLabels
-  const businessTypes = profile.client_config?.business_types || profile.client_config?.business_type || ['Pools & Spas'];
+  // CRITICAL FIX: Get business-specific schema using standardized business type extraction
+  const businessTypes = profile.business_types || 
+                        profile.client_config?.business_types || 
+                        profile.client_config?.business?.business_types ||
+                        [profile.client_config?.business?.business_type] ||
+                        ['Hot tub & Spa']; // Default matches deploy-n8n function
+  
+  if (!businessTypes || businessTypes.length === 0) {
+    throw new Error('business_types not found - onboarding incomplete. User must complete business type selection.');
+  }
+  
   console.log('🔍 DEBUG: Business types from profile:', businessTypes);
   
   // Import the business-specific schema system

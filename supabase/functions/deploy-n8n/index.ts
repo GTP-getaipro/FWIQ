@@ -1718,6 +1718,34 @@ async function handler(req) {
     // Fetch learned voice profile (communication style)
     const { data: voiceData } = await supabaseAdmin.from('communication_styles').select('style_profile, learning_count, last_updated').eq('user_id', userId).maybeSingle(); // Type assertion for voiceData
     const voiceProfile = voiceData || null;
+    
+    // CRITICAL FIX: Validate voice profile quality (especially for Outlook users)
+    if (voiceProfile) {
+      const hasMinimumData = voiceProfile.style_profile?.voice?.tone &&
+                             voiceProfile.style_profile?.voice?.formality !== undefined &&
+                             (voiceProfile.learning_count || 0) >= 0;
+      
+      if (!hasMinimumData) {
+        console.warn(`⚠️ Voice profile incomplete for ${provider} user:`, {
+          hasTone: !!voiceProfile.style_profile?.voice?.tone,
+          hasFormality: voiceProfile.style_profile?.voice?.formality !== undefined,
+          learningCount: voiceProfile.learning_count || 0,
+          lastUpdated: voiceProfile.last_updated
+        });
+        
+        // Log warning but don't block deployment - will use fallback voice
+        console.warn('⚠️ AI will use generic voice profile until voice training completes');
+      } else {
+        console.log(`✅ Voice profile validated for ${provider} user:`, {
+          tone: voiceProfile.style_profile.voice.tone,
+          formality: voiceProfile.style_profile.voice.formality,
+          learningCount: voiceProfile.learning_count,
+          lastUpdated: voiceProfile.last_updated
+        });
+      }
+    } else {
+      console.warn(`⚠️ No voice profile found for ${provider} user - using generic voice`);
+    }
     // 🔍 DETECT PROVIDER: Check which email provider the client is using (Gmail or Outlook)
     const { data: activeIntegrations } = await supabaseAdmin.from('integrations').select('access_token, refresh_token, provider, status, n8n_credential_id').eq('user_id', userId).eq('status', 'active').in('provider', [
       'google',

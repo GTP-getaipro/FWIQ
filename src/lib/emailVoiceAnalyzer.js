@@ -398,15 +398,70 @@ class EmailVoiceAnalyzer {
 
   /**
    * Fetch sent emails from Outlook/Microsoft Graph API
+   * CRITICAL FIX: Dynamic sent folder detection for localized Outlook
    * @param {string} accessToken - Valid Outlook access token
    * @param {number} maxResults - Maximum emails to fetch
    * @returns {Promise<Array>} - Sent emails
    */
   async fetchOutlookSentEmails(accessToken, maxResults = 50) {
     try {
-      // Fetch from Outlook SENT folder
+      // CRITICAL FIX: Find sent folder dynamically (handles localization)
+      const foldersResponse = await fetch(
+        'https://graph.microsoft.com/v1.0/me/mailFolders?$top=20',
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      if (!foldersResponse.ok) {
+        throw new Error(`Failed to fetch Outlook folders: ${foldersResponse.statusText}`);
+      }
+      
+      const foldersData = await foldersResponse.json();
+      const folders = foldersData.value || [];
+      
+      // Find sent folder (supports English, French, German, Spanish)
+      const sentFolder = folders.find(f => {
+        const displayName = f.displayName.toLowerCase();
+        return displayName.includes('sent') ||      // English
+               displayName.includes('envoyé') ||    // French
+               displayName.includes('gesendet') ||  // German
+               displayName.includes('enviado');     // Spanish
+      });
+      
+      if (!sentFolder) {
+        console.warn('⚠️ Sent folder not found in Outlook, trying WellKnownName fallback...');
+        // Fallback to well-known name
+        const sentFolderId = 'sentitems';
+        const response = await fetch(
+          `https://graph.microsoft.com/v1.0/me/mailFolders/${sentFolderId}/messages?$top=${maxResults}&$select=id,subject,body,from,toRecipients,sentDateTime`,
+          {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+        
+        if (!response.ok) {
+          throw new Error('Sent folder not found and WellKnownName fallback failed');
+        }
+        
+        const data = await response.json();
+        const messages = data.value || [];
+        const emails = messages.map(msg => this.parseOutlookMessage(msg));
+        console.log(`✅ Fetched ${emails.length} Outlook sent emails (fallback method)`);
+        return emails;
+      }
+      
+      console.log(`✅ Found Outlook sent folder: "${sentFolder.displayName}" (ID: ${sentFolder.id})`);
+      
+      // Fetch from discovered sent folder
       const response = await fetch(
-        `https://graph.microsoft.com/v1.0/me/mailFolders/sentitems/messages?$top=${maxResults}&$select=id,subject,body,from,toRecipients,sentDateTime`,
+        `https://graph.microsoft.com/v1.0/me/mailFolders/${sentFolder.id}/messages?$top=${maxResults}&$select=id,subject,body,from,toRecipients,sentDateTime`,
         {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
