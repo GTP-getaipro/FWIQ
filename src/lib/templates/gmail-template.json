@@ -99,8 +99,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -464,
-        272
+        -80,
+        400
       ],
       "id": "parse-classification",
       "name": "Parse AI Classification"
@@ -331,8 +331,8 @@
       "name": "AI Draft Reply Agent",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "position": [
-        1328,
-        272
+        1840,
+        400
       ],
       "typeVersion": 1.8
     },
@@ -489,8 +489,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        256,
-        464
+        640,
+        640
       ],
       "id": "calculate-metrics",
       "name": "Calculate Performance Metrics"
@@ -528,8 +528,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        448,
-        464
+        880,
+        640
       ],
       "id": "save-metrics",
       "name": "Save Performance Metrics",
