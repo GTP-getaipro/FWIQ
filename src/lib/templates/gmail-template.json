@@ -22,8 +22,8 @@
       "type": "n8n-nodes-base.gmailTrigger",
       "typeVersion": 1.2,
       "position": [
-        -1264,
-        272
+        -800,
+        800
       ],
       "id": "gmail-trigger",
       "name": "Email Trigger",
@@ -42,8 +42,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1040,
-        272
+        -560,
+        800
       ],
       "id": "prepare-email-data",
       "name": "Prepare Email Data"
@@ -60,8 +60,8 @@
       "name": "AI Master Classifier",
       "type": "@n8n/n8n-nodes-langchain.agent",
       "position": [
-        -816,
-        272
+        -320,
+        800
       ],
       "typeVersion": 1.8
     },
@@ -80,8 +80,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        -752,
-        496
+        -240,
+        1040
       ],
       "id": "openai-classifier-model-gmail",
       "name": "OpenAI Classifier Model",
@@ -313,8 +313,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1104,
-        272
+        1600,
+        800
       ],
       "id": "prepare-draft-context",
       "name": "Prepare Draft Context"
@@ -373,8 +373,8 @@
       "name": "Conversation Memory",
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "position": [
-        1488,
-        496
+        2040,
+        1040
       ],
       "typeVersion": 1.3
     },
@@ -386,8 +386,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1600,
-        272
+        2160,
+        800
       ],
       "id": "format-reply-html",
       "name": "Format Reply as HTML"
@@ -399,7 +399,7 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1800, 272],
+      "position": [2640, 800],
       "id": "route-to-manager",
       "name": "Route to Manager (Dynamic)"
     },
@@ -410,7 +410,7 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1800, 272],
+      "position": [2880, 800],
       "id": "build-forward-body",
       "name": "Build Forward Email Body"
     },
@@ -427,7 +427,7 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [2000, 272],
+      "position": [3120, 800],
       "id": "if-manager-email",
       "name": "IF Manager Has Email"
     },
@@ -443,7 +443,7 @@
       },
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
-      "position": [2200, 180],
+      "position": [3360, 720],
       "id": "forward-to-manager",
       "name": "Forward to Manager (Gmail)",
       "credentials": {
