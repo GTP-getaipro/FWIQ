@@ -680,10 +680,10 @@ function buildRoleBasedRoutingRules(managers) {
 ${rules}
 
 ### Routing Priority:
-1. Name mention (highest priority) - "Mark said..." → Mark's folder
-2. Role + category match - SALES email → Sales Manager's folder
-3. Category only - SUPPORT email → Best matching role
-4. No match - MANAGER/Unassigned/
+1. **Name mention** (highest priority) - "Mark said..." → Mark's folder
+2. **MANAGER category + role intelligence** - Check email content against role responsibilities
+3. **Category + role match** - SALES email → Sales Manager's folder
+4. **Unassigned** (last resort) - Only if truly no role match found
 `;
 }
 
