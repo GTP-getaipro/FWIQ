@@ -18,11 +18,55 @@ import { TeamReconfigurationManager } from '@/lib/teamReconfigurationManager';
 const MAX_MANAGERS = 5;
 const MAX_SUPPLIERS = 10;
 
+// CRITICAL ENHANCEMENT: Role configuration for intelligent routing
+const AVAILABLE_ROLES = [
+  {
+    id: 'sales_manager',
+    label: 'Sales Manager',
+    description: 'Handles quotes, new leads, pricing inquiries',
+    icon: '💰',
+    routes: ['SALES'],
+    keywords: ['price', 'quote', 'buy', 'purchase', 'how much']
+  },
+  {
+    id: 'service_manager',
+    label: 'Service Manager',
+    description: 'Handles repairs, appointments, emergencies',
+    icon: '🔧',
+    routes: ['SUPPORT', 'URGENT'],
+    keywords: ['repair', 'fix', 'broken', 'appointment', 'emergency']
+  },
+  {
+    id: 'operations_manager',
+    label: 'Operations Manager',
+    description: 'Handles vendors, internal ops, hiring',
+    icon: '⚙️',
+    routes: ['MANAGER', 'SUPPLIERS'],
+    keywords: ['vendor', 'supplier', 'hiring', 'internal']
+  },
+  {
+    id: 'support_lead',
+    label: 'Support Lead',
+    description: 'Handles general questions, parts, how-to',
+    icon: '💬',
+    routes: ['SUPPORT'],
+    keywords: ['help', 'question', 'parts', 'chemicals']
+  },
+  {
+    id: 'owner',
+    label: 'Owner/CEO',
+    description: 'Handles strategic, legal, high-priority',
+    icon: '👔',
+    routes: ['MANAGER', 'URGENT'],
+    keywords: ['strategic', 'legal', 'partnership', 'media']
+  }
+];
+
 const StepTeamSetup = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [managers, setManagers] = useState([{ name: '' }]);
+  const [managers, setManagers] = useState([{ name: '', email: '', roles: [] }]);
   const [suppliers, setSuppliers] = useState([{ name: '', domains: '' }]);
   const [businessType, setBusinessType] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -41,7 +85,15 @@ const StepTeamSetup = () => {
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching profile:', error);
       } else if (data) {
-        if (data.managers && data.managers.length > 0) setManagers(data.managers);
+        if (data.managers && data.managers.length > 0) {
+          // CRITICAL: Normalize managers to ensure roles is always an array
+          const normalizedManagers = data.managers.map(m => ({
+            name: m.name || '',
+            email: m.email || '',
+            roles: Array.isArray(m.roles) ? m.roles : (m.role ? [m.role] : [])
+          }));
+          setManagers(normalizedManagers);
+        }
         if (data.suppliers && data.suppliers.length > 0) {
           setSuppliers(data.suppliers.map(s => ({ ...s, domains: Array.isArray(s.domains) ? s.domains.join(', ') : s.domains })));
         }
@@ -60,8 +112,22 @@ const StepTeamSetup = () => {
 
   const addManager = () => {
     if (managers.length < MAX_MANAGERS) {
-      setManagers([...managers, { name: '' }]);
+      setManagers([...managers, { name: '', email: '', roles: [] }]);
     }
+  };
+
+  const toggleManagerRole = (managerIndex, roleId) => {
+    setManagers(prev => prev.map((mgr, idx) => {
+      if (idx !== managerIndex) return mgr;
+      
+      const hasRole = mgr.roles?.includes(roleId);
+      return {
+        ...mgr,
+        roles: hasRole 
+          ? (mgr.roles || []).filter(r => r !== roleId)  // Remove role
+          : [...(mgr.roles || []), roleId]                // Add role
+      };
+    }));
   };
 
   const removeManager = (index) => {
@@ -385,12 +451,116 @@ const StepTeamSetup = () => {
               </h2>
               <div className="space-y-4">
                 {managers.map((manager, index) => (
-                  <div key={index} className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <div className="flex items-center gap-4">
-                      <Input value={manager.name} onChange={(e) => handleManagerChange(index, 'name', e.target.value)} placeholder="Manager Name (e.g., John, Sarah, Mike)" className="flex-1 bg-white border-gray-300 text-gray-800" />
-                      <Button variant="ghost" size="icon" onClick={() => removeManager(index)} className="text-red-500 hover:bg-red-100"><XCircle className="h-5 w-5" /></Button>
+                  <div key={index} className="p-4 bg-gray-50 rounded-lg border border-gray-200 space-y-4">
+                    {/* Name field */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Name
+                      </label>
+                      <Input 
+                        value={manager.name} 
+                        onChange={(e) => handleManagerChange(index, 'name', e.target.value)} 
+                        placeholder="Mark Johnson" 
+                        className="bg-white border-gray-300" 
+                      />
+                      {errors.managers[index]?.name && (
+                        <p className="text-red-500 text-sm mt-1">{errors.managers[index].name}</p>
+                      )}
                     </div>
-                    {errors.managers[index]?.name && <p className="text-red-500 text-sm mt-1 ml-1">{errors.managers[index].name}</p>}
+
+                    {/* Email field with forwarding explanation */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                        Email (Optional)
+                        <div className="group relative">
+                          <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                          <div className="hidden group-hover:block absolute left-0 top-6 w-64 p-2 bg-gray-900 text-white text-xs rounded shadow-lg z-10">
+                            If provided, emails will be forwarded to this address with AI draft included for review
+                          </div>
+                        </div>
+                      </label>
+                      <Input 
+                        value={manager.email || ''} 
+                        onChange={(e) => handleManagerChange(index, 'email', e.target.value)} 
+                        placeholder="mark@example.com (optional)" 
+                        type="email"
+                        className="bg-white border-gray-300" 
+                      />
+                      {manager.email && manager.email.trim() !== '' ? (
+                        <p className="text-green-600 text-xs mt-1 flex items-center gap-1">
+                          <span className="inline-block w-2 h-2 bg-green-600 rounded-full"></span>
+                          Forwarding enabled - Will receive emails + AI drafts
+                        </p>
+                      ) : (
+                        <p className="text-gray-500 text-xs mt-1">
+                          No forwarding - Will check main inbox with folder filter
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Roles multi-select */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Roles (Select all that apply)
+                      </label>
+                      <div className="border rounded-lg p-3 bg-white space-y-2 max-h-64 overflow-y-auto">
+                        {AVAILABLE_ROLES.map(role => (
+                          <label 
+                            key={role.id}
+                            className="flex items-start gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={(manager.roles || []).includes(role.id)}
+                              onChange={() => toggleManagerRole(index, role.id)}
+                              className="mt-1"
+                            />
+                            <div className="flex-1">
+                              <div className="font-medium text-sm flex items-center gap-2">
+                                <span>{role.icon}</span>
+                                <span>{role.label}</span>
+                              </div>
+                              <div className="text-xs text-gray-500 mt-0.5">{role.description}</div>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                      
+                      {/* Show routing preview if roles selected */}
+                      {manager.roles && manager.roles.length > 0 && (
+                        <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                          <p className="text-sm font-medium text-blue-900 mb-2">
+                            📁 {manager.name || 'This person'}'s Email Routing:
+                          </p>
+                          <ul className="text-xs text-blue-700 space-y-1">
+                            {manager.roles.map(roleId => {
+                              const role = AVAILABLE_ROLES.find(r => r.id === roleId);
+                              return role ? (
+                                <li key={roleId}>
+                                  • {role.routes.join(', ')} emails → {manager.name || 'their'} folder
+                                </li>
+                              ) : null;
+                            })}
+                            <li>• Any mention of "{manager.name || 'name'}" → {manager.name || 'their'} folder</li>
+                            {manager.email && manager.email.trim() !== '' && (
+                              <li className="text-green-700 font-medium mt-2 pt-2 border-t border-blue-200">
+                                ✅ Forwarded to: {manager.email}
+                              </li>
+                            )}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Remove button */}
+                    <Button 
+                      variant="destructive" 
+                      size="sm" 
+                      onClick={() => removeManager(index)}
+                      className="w-full"
+                    >
+                      <XCircle className="mr-2 h-4 w-4" /> Remove Team Member
+                    </Button>
                   </div>
                 ))}
                 {managers.length < MAX_MANAGERS && (
