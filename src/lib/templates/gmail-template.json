@@ -242,8 +242,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        432,
-        272
+        880,
+        400
       ],
       "id": "check-can-reply",
       "name": "Can AI Reply?"
