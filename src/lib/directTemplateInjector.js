@@ -245,6 +245,9 @@ class DirectTemplateInjector {
 
       // Build service catalog text
       const serviceCatalogText = this.buildServiceCatalogText(businessInfo);
+      
+      // CRITICAL FIX: Build call-to-action options from custom form links
+      const callToActionOptions = this.buildCallToActionFromForms(clientData);
 
       // Generate AI placeholders
       const aiPlaceholders = generateAIPlaceholders(aiConfig);

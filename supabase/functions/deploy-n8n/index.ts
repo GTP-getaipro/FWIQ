@@ -74,6 +74,63 @@ function getStandardizedBusinessTypes(profile: any): string[] {
   
   return types;
 }
+
+/**
+ * Build call-to-action options from custom form links
+ * CRITICAL FIX: Use customer's actual form URLs instead of hardcoded links
+ */
+function buildCallToActionFromForms(formLinks: any[], business: any): string {
+  if (!formLinks || formLinks.length === 0) {
+    // Fallback to generic links if no custom forms provided
+    const websiteUrl = business.website || business.websiteUrl || 'https://example.com';
+    return `- Schedule a service call → ${websiteUrl}/contact
+- Order online → ${websiteUrl}
+- Browse products → ${websiteUrl}/products`;
+  }
+  
+  // Map form labels to common inquiry types
+  const formMap: Record<string, string> = {};
+  
+  formLinks.forEach((form: any) => {
+    if (!form.label || !form.url) return;
+    
+    const label = form.label.toLowerCase();
+    const url = form.url;
+    
+    // Map to common patterns
+    if (label.includes('repair') || label.includes('service') || label.includes('appointment')) {
+      formMap['service'] = `- Schedule a service call → ${url}`;
+    } else if (label.includes('quote') || label.includes('estimate')) {
+      formMap['quote'] = `- Request a quote → ${url}`;
+    } else if (label.includes('product') || label.includes('shop') || label.includes('spa') || label.includes('hot tub')) {
+      formMap['products'] = `- Browse products → ${url}`;
+    } else if (label.includes('parts') || label.includes('supplies') || label.includes('accessories')) {
+      formMap['parts'] = `- Order parts/supplies → ${url}`;
+    } else if (label.includes('cover')) {
+      formMap['covers'] = `- Order covers → ${url}`;
+    } else if (label.includes('treatment') || label.includes('chemical')) {
+      formMap['treatment'] = `- View treatment packages → ${url}`;
+    } else if (label.includes('blog') || label.includes('guide') || label.includes('learn')) {
+      formMap['resources'] = `- Learn more → ${url}`;
+    } else if (label.includes('contact')) {
+      formMap['contact'] = `- Contact us → ${url}`;
+    } else {
+      // Custom form - add with original label
+      formMap[label] = `- ${form.label} → ${url}`;
+    }
+  });
+  
+  // Build the call-to-action list
+  const callToActions = Object.values(formMap);
+  
+  // If we still don't have essential links, add fallback
+  if (!formMap['service'] && !formMap['contact']) {
+    const websiteUrl = business.website || business.websiteUrl || 'https://example.com';
+    callToActions.push(`- Contact us → ${websiteUrl}/contact`);
+  }
+  
+  return callToActions.join('\n');
+}
 // Inline OpenAI key rotation (avoids shared dependency issues)
 let cachedKeys = null;
 let keyCounter = 0;
@@ -1512,6 +1569,12 @@ ${rules?.aiGuardrails?.allowPricing ? 'You may discuss pricing and provide estim
 
 SIGNATURE: ${signatureBlock}
 `;
+  // CRITICAL FIX: Extract custom form links from client_config
+  const formLinks = clientData.contact?.formLinks || clientData.client_config?.contact?.formLinks || [];
+  
+  // Build dynamic call-to-action section from custom form links
+  const callToActionOptions = buildCallToActionFromForms(formLinks, business);
+  
   // BASE REPLACEMENTS
   const replacements = {
     // Business info
@@ -1525,6 +1588,7 @@ SIGNATURE: ${signatureBlock}
     '<<<HOURLY_RATE>>>': String(business.hourlyRate || 25),
     '<<<WORKFLOW_VERSION_ID>>>': String(version || 1),
     '<<<LABEL_MAPPINGS>>>': JSON.stringify(clientData.email_labels || {}),
+    '<<<CALL_TO_ACTION_OPTIONS>>>': callToActionOptions,
     // Credentials
     '<<<CLIENT_GMAIL_CRED_ID>>>': integrations.gmail?.credentialId || '',
     '<<<CLIENT_OUTLOOK_CRED_ID>>>': integrations.outlook?.credentialId || '',
