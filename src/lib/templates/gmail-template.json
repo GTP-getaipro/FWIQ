@@ -771,25 +771,18 @@
         ]
       ]
     },
-    "IF Manager Has Email": {
+    "Format Reply as HTML": {
       "main": [
         [
           {
-            "node": "Forward to Manager (Gmail)",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Create Gmail Draft",
+            "node": "Build Forward Email Body",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Forward to Manager (Gmail)": {
+    "Build Forward Email Body": {
       "main": [
         [
           {
@@ -805,6 +798,40 @@
         [
           {
             "node": "Save AI Draft for Learning",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IF Manager Has Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Manager Has Email": {
+      "main": [
+        [
+          {
+            "node": "Forward to Manager (Gmail)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Calculate Performance Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Forward to Manager (Gmail)": {
+      "main": [
+        [
+          {
+            "node": "Calculate Performance Metrics",
             "type": "main",
             "index": 0
           }
