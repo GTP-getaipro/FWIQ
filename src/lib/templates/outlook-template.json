@@ -782,6 +782,17 @@
       "main": [
         [
           {
+            "node": "Route to Manager (Dynamic)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route to Manager (Dynamic)": {
+      "main": [
+        [
+          {
             "node": "Build Forward Email Body",
             "type": "main",
             "index": 0
