@@ -589,6 +589,20 @@ const synchronizeOutlookFoldersHierarchical = async (accessToken, existingFolder
         // Create parent folder
         const parentResult = await createOutlookFolder(accessToken, parentName);
         
+        // CRITICAL FIX: Ensure parent was created successfully before proceeding
+        if (!parentResult || !parentResult.id) {
+          console.error(`❌ CRITICAL: Failed to create parent folder ${parentName}! Skipping all children.`);
+          syncResults.errors.push({ 
+            name: parentName, 
+            error: 'Parent folder creation failed - children skipped',
+            impact: 'high',
+            childrenSkipped: (parentData.sub || []).length
+          });
+          continue; // Skip to next parent folder
+        }
+        
+        console.log(`✅ Parent folder created successfully: ${parentName} (ID: ${parentResult.id})`);
+        
         if (parentResult) {
           // Add the newly created folder to our working map
           workingFolders[parentName] = {
@@ -688,6 +702,26 @@ const synchronizeOutlookFoldersHierarchical = async (accessToken, existingFolder
  */
 const createOutlookFolder = async (accessToken, folderName, parentId = null) => {
   try {
+    // CRITICAL FIX: Validate parent exists before creating child
+    if (parentId) {
+      try {
+        const parentCheck = await fetch(`https://graph.microsoft.com/v1.0/me/mailFolders/${parentId}`, {
+          headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        
+        if (!parentCheck.ok) {
+          console.error(`❌ Parent folder ${parentId} does not exist! Creating ${folderName} at root instead.`);
+          parentId = null; // Create at root if parent doesn't exist
+        } else {
+          const parentFolder = await parentCheck.json();
+          console.log(`✅ Verified parent folder exists: ${parentFolder.displayName} (${parentId})`);
+        }
+      } catch (error) {
+        console.warn(`⚠️ Could not verify parent ${parentId}, creating ${folderName} at root:`, error.message);
+        parentId = null;
+      }
+    }
+    
     const url = parentId 
       ? `https://graph.microsoft.com/v1.0/me/mailFolders/${parentId}/childFolders`
       : 'https://graph.microsoft.com/v1.0/me/mailFolders';
@@ -705,7 +739,8 @@ const createOutlookFolder = async (accessToken, folderName, parentId = null) => 
 
     if (response.ok) {
       const folder = await response.json();
-      console.log(`✅ Created Outlook folder: ${folderName} (ID: ${folder.id})`);
+      const location = parentId ? `under parent ${parentId}` : 'at root';
+      console.log(`✅ Created Outlook folder: ${folderName} (ID: ${folder.id}) ${location}`);
       return {
         id: folder.id,
         name: folder.displayName,
