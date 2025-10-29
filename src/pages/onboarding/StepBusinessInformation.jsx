@@ -153,13 +153,8 @@ const StepBusinessInformation = () => {
           currency: business.currency || 'USD',
           emailDomain: business.emailDomain || '',
           website: contact.website || '',
-          primaryContactName: contact.primary?.name || '',
-          primaryContactRole: contact.primary?.role || '',
-          primaryContactEmail: contact.primary?.email || '',
-          secondaryContactName: contact.secondary?.name || '', // FIX: Add missing field
-          secondaryContactEmail: contact.secondary?.email || '', // FIX: Add missing field
-          supportEmail: contact.supportEmail || '', // FIX: Add missing field
-          afterHoursPhone: contact.phone || contact.afterHoursPhone || '', // FIX: Use correct field name
+          billingEmail: contact.billingEmail || contact.primary?.email || user.email || '',
+          afterHoursPhone: contact.afterHoursPhone || contact.phone || '',
           crmProviderName: rules.crmProvider?.name || '',
           crmAlertEmails: Array.isArray(rules.crmAlertEmails) ? rules.crmAlertEmails.join(', ') : (rules.crmAlertEmails || ''),
           phoneProviderName: rules.phoneProvider?.name || '', // FIX: Add missing field
@@ -1196,48 +1191,23 @@ const StepBusinessInformation = () => {
               <p className="text-sm text-gray-600 mb-4">Contact information for customer communications and AI email responses.</p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="primaryContactName">Primary Contact Name*</Label>
-                  <p className="text-xs text-gray-500">The main person customers will interact with (owner, manager, etc.)</p>
-                  <Input id="primaryContactName" name="primaryContactName" value={values.primaryContactName} onChange={handleChange} placeholder="John Doe" className="mt-2" />
-                  {errors.primaryContactName && <p className="text-red-500 text-sm mt-1">{errors.primaryContactName}</p>}
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="primaryContactRole">Primary Contact Role*</Label>
-                  <p className="text-xs text-gray-500">Job title or role (Owner, Manager, Customer Service, etc.)</p>
-                  <Input id="primaryContactRole" name="primaryContactRole" value={values.primaryContactRole} onChange={handleChange} placeholder="Owner" className="mt-2" />
-                  {errors.primaryContactRole && <p className="text-red-500 text-sm mt-1">{errors.primaryContactRole}</p>}
+                <div className="md:col-span-2 bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-blue-900">
+                    ℹ️ <strong>Team member details</strong> (names, roles, emails for routing) are configured in the <strong>Team Setup</strong> step. This section is for business admin and emergency contact only.
+                  </p>
                 </div>
                 
                 <div className="md:col-span-2 space-y-2">
-                  <Label htmlFor="primaryContactEmail">Primary Contact Email*</Label>
-                  <p className="text-xs text-gray-500">Main business email address for customer communications</p>
-                  <Input id="primaryContactEmail" name="primaryContactEmail" type="email" value={values.primaryContactEmail} onChange={handleChange} placeholder="contact@yourbusiness.com" className="mt-2" />
-                  {errors.primaryContactEmail && <p className="text-red-500 text-sm mt-1">{errors.primaryContactEmail}</p>}
+                  <Label htmlFor="billingEmail">Billing/Account Email*</Label>
+                  <p className="text-xs text-gray-500">Main business email for billing, admin, and account management (not used for email routing)</p>
+                  <Input id="billingEmail" name="billingEmail" type="email" value={values.billingEmail} onChange={handleChange} placeholder="office@hottubman.ca" className="mt-2" />
+                  {errors.billingEmail && <p className="text-red-500 text-sm mt-1">{errors.billingEmail}</p>}
+                  <p className="text-xs text-green-600 mt-1">✅ Auto-filled from your login email</p>
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="secondaryContactName">Secondary Contact Name</Label>
-                  <p className="text-xs text-gray-500">Backup contact person (optional)</p>
-                  <Input id="secondaryContactName" name="secondaryContactName" value={values.secondaryContactName} onChange={handleChange} placeholder="Jane Doe" className="mt-2" />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="secondaryContactEmail">Secondary Contact Email</Label>
-                  <p className="text-xs text-gray-500">Backup contact email (optional)</p>
-                  <Input id="secondaryContactEmail" name="secondaryContactEmail" type="email" value={values.secondaryContactEmail} onChange={handleChange} placeholder="support@yourbusiness.com" className="mt-2" />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="supportEmail">Support Email</Label>
-                  <p className="text-xs text-gray-500">Email for customer support inquiries (optional)</p>
-                  <Input id="supportEmail" name="supportEmail" type="email" value={values.supportEmail} onChange={handleChange} placeholder="help@yourbusiness.com" className="mt-2" />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="afterHoursPhone">After Hours Support Line</Label>
-                  <p className="text-xs text-gray-500">Phone number for emergency or after-hours support (optional)</p>
+                <div className="md:col-span-2 space-y-2">
+                  <Label htmlFor="afterHoursPhone">After-Hours Emergency Phone</Label>
+                  <p className="text-xs text-gray-500">Phone number for urgent customer issues outside business hours (AI will direct emergency customers here)</p>
                   <Input id="afterHoursPhone" name="afterHoursPhone" value={values.afterHoursPhone} onChange={handleChange} placeholder="(403) 555-0123" className="mt-2" />
                 </div>
                 
