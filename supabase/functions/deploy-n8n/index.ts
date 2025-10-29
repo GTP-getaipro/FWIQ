@@ -131,6 +131,107 @@ function buildCallToActionFromForms(formLinks: any[], business: any): string {
   
   return callToActions.join('\n');
 }
+
+/**
+ * Format business hours for AI system message
+ * CRITICAL FIX: Inject operating hours so AI knows when business is open/closed
+ */
+function formatBusinessHoursForAI(businessHours: any): string {
+  if (!businessHours || Object.keys(businessHours).length === 0) {
+    return 'Operating hours not specified';
+  }
+  
+  const daysOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const formatted: string[] = [];
+  
+  daysOrder.forEach((day, index) => {
+    const dayData = businessHours[day];
+    if (dayData && !dayData.closed && dayData.open && dayData.close) {
+      formatted.push(`${dayNames[index]}: ${dayData.open} - ${dayData.close}`);
+    } else if (dayData && dayData.closed) {
+      formatted.push(`${dayNames[index]}: Closed`);
+    }
+  });
+  
+  if (formatted.length === 0) {
+    return 'Operating hours not specified';
+  }
+  
+  return formatted.join('\n');
+}
+
+/**
+ * Format service areas for AI system message
+ * CRITICAL FIX: Inject service areas so AI knows geographic coverage
+ */
+function formatServiceAreasForAI(business: any): string {
+  const serviceAreas = business.serviceAreas || business.serviceArea;
+  
+  if (Array.isArray(serviceAreas)) {
+    return serviceAreas.join(', ');
+  } else if (typeof serviceAreas === 'string') {
+    return serviceAreas;
+  }
+  
+  return 'Service area not specified';
+}
+
+/**
+ * Format holiday exceptions for AI system message
+ * CRITICAL FIX: Inject holidays so AI can avoid scheduling on closed days
+ */
+function formatHolidayExceptionsForAI(holidays: any[]): string {
+  if (!holidays || holidays.length === 0) {
+    return 'No upcoming holidays scheduled';
+  }
+  
+  const today = new Date();
+  const upcomingHolidays = holidays
+    .filter(h => {
+      if (!h.date) return false;
+      const holidayDate = new Date(h.date);
+      return holidayDate >= today;
+    })
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .slice(0, 5); // Only show next 5 holidays
+  
+  if (upcomingHolidays.length === 0) {
+    return 'No upcoming holidays scheduled';
+  }
+  
+  return upcomingHolidays
+    .map(h => `${h.date}: ${h.reason || 'Closed'}`)
+    .join('\n');
+}
+
+/**
+ * Format social media links for AI system message
+ * CRITICAL FIX: Inject social media links to promote engagement
+ */
+function formatSocialMediaLinksForAI(socialLinks: any[]): string {
+  if (!socialLinks || socialLinks.length === 0) {
+    return '';
+  }
+  
+  const validLinks = socialLinks.filter(link => link && link.trim() !== '');
+  
+  if (validLinks.length === 0) {
+    return '';
+  }
+  
+  return validLinks
+    .map(link => {
+      // Try to identify platform from URL
+      const url = link.toLowerCase();
+      if (url.includes('facebook')) return `Facebook: ${link}`;
+      if (url.includes('instagram')) return `Instagram: ${link}`;
+      if (url.includes('linkedin')) return `LinkedIn: ${link}`;
+      if (url.includes('twitter') || url.includes('x.com')) return `Twitter/X: ${link}`;
+      return link; // Generic link
+    })
+    .join('\n');
+}
 // Inline OpenAI key rotation (avoids shared dependency issues)
 let cachedKeys = null;
 let keyCounter = 0;
@@ -1575,6 +1676,13 @@ SIGNATURE: ${signatureBlock}
   // Build dynamic call-to-action section from custom form links
   const callToActionOptions = buildCallToActionFromForms(formLinks, business);
   
+  // CRITICAL FIX: Format business hours, service areas, holidays, etc.
+  const operatingHours = formatBusinessHoursForAI(rules?.businessHours || {});
+  const serviceAreasText = formatServiceAreasForAI(business);
+  const holidaysText = formatHolidayExceptionsForAI(rules?.holidays || []);
+  const socialMediaText = formatSocialMediaLinksForAI(contact?.socialLinks || []);
+  const afterHoursPhone = contact?.phone || contact?.afterHoursPhone || '';
+  
   // BASE REPLACEMENTS
   const replacements = {
     // Business info
@@ -1589,6 +1697,12 @@ SIGNATURE: ${signatureBlock}
     '<<<WORKFLOW_VERSION_ID>>>': String(version || 1),
     '<<<LABEL_MAPPINGS>>>': JSON.stringify(clientData.email_labels || {}),
     '<<<CALL_TO_ACTION_OPTIONS>>>': callToActionOptions,
+    // CRITICAL FIX: Inject business context data
+    '<<<OPERATING_HOURS>>>': operatingHours,
+    '<<<SERVICE_AREAS>>>': serviceAreasText,
+    '<<<AFTER_HOURS_PHONE>>>': afterHoursPhone,
+    '<<<UPCOMING_HOLIDAYS>>>': holidaysText,
+    '<<<SOCIAL_MEDIA_LINKS>>>': socialMediaText,
     // Credentials
     '<<<CLIENT_GMAIL_CRED_ID>>>': integrations.gmail?.credentialId || '',
     '<<<CLIENT_OUTLOOK_CRED_ID>>>': integrations.outlook?.credentialId || '',

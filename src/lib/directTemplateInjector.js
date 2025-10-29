@@ -248,6 +248,13 @@ class DirectTemplateInjector {
       
       // CRITICAL FIX: Build call-to-action options from custom form links
       const callToActionOptions = this.buildCallToActionFromForms(clientData);
+      
+      // CRITICAL FIX: Format business hours, service areas, holidays, social media
+      const operatingHours = this.formatBusinessHoursForAI(rules.businessHours);
+      const serviceAreasText = this.formatServiceAreasForAI(businessInfo);
+      const holidaysText = this.formatHolidayExceptionsForAI(rules.holidays);
+      const socialMediaText = this.formatSocialMediaLinksForAI(clientData.contact?.socialLinks);
+      const afterHoursPhone = clientData.contact?.phone || clientData.contact?.afterHoursPhone || '';
 
       // Generate AI placeholders
       const aiPlaceholders = generateAIPlaceholders(aiConfig);
@@ -287,6 +294,12 @@ class DirectTemplateInjector {
         "<<<LABEL_MAP>>>": JSON.stringify(clientData.email_labels || {}),
         "<<<LABEL_MAPPINGS>>>": JSON.stringify(clientData.email_labels || {}),
         "<<<CALL_TO_ACTION_OPTIONS>>>": callToActionOptions,
+        // CRITICAL FIX: Inject business context data
+        "<<<OPERATING_HOURS>>>": operatingHours,
+        "<<<SERVICE_AREAS>>>": serviceAreasText,
+        "<<<AFTER_HOURS_PHONE>>>": afterHoursPhone,
+        "<<<UPCOMING_HOLIDAYS>>>": holidaysText,
+        "<<<SOCIAL_MEDIA_LINKS>>>": socialMediaText,
         
         // Content
         "<<<SIGNATURE_BLOCK>>>": signatureBlock,
