@@ -56,9 +56,7 @@ const StepBusinessInformation = () => {
     currency: { required: true, message: 'Currency is required.' },
     emailDomain: { required: true, pattern: /^@?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/, message: 'Enter a valid domain (e.g., yourcompany.com)' },
     website: { pattern: /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/, message: 'Please enter a valid URL.' },
-    primaryContactName: { required: true, message: 'Primary contact name is required.' },
-    primaryContactRole: { required: true, message: 'Primary contact role is required.' },
-    primaryContactEmail: { required: true, pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Please enter a valid email.' },
+    billingEmail: { required: true, pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Please enter a valid email.' },
     responseSLA: { required: true, message: 'Response SLA is required.' },
   };
 
@@ -72,12 +70,7 @@ const StepBusinessInformation = () => {
     currency: 'USD',
     emailDomain: '',
     website: '',
-    primaryContactName: '',
-    primaryContactRole: '',
-    primaryContactEmail: '',
-    secondaryContactName: '', // FIX: Add missing field
-    secondaryContactEmail: '', // FIX: Add missing field
-    supportEmail: '', // FIX: Add missing field
+    billingEmail: '', // SIMPLIFIED: Renamed from primaryContactEmail, for billing/admin only
     afterHoursPhone: '',
     responseSLA: '24h',
     defaultEscalationManager: '',
@@ -144,7 +137,7 @@ const StepBusinessInformation = () => {
           address: business.address,
           phone: contact.phone,
           website: contact.website,
-          primaryContactName: contact.primary?.name,
+          billingEmail: contact.primary?.email || user.email || '',
           businessCategory: businessCategory,
           businessTypes: businessTypes
         });
@@ -620,10 +613,8 @@ const StepBusinessInformation = () => {
         emailDomain: values.emailDomain.startsWith('@') ? values.emailDomain.substring(1) : values.emailDomain,
       },
       contact: {
-        primary: { name: values.primaryContactName, role: values.primaryContactRole, email: values.primaryContactEmail },
-        secondary: { name: values.secondaryContactName, email: values.secondaryContactEmail },
-        phone: values.afterHoursPhone, // FIX: Use the correct field name
-        supportEmail: values.supportEmail,
+        billingEmail: values.billingEmail,
+        afterHoursPhone: values.afterHoursPhone,
         website: values.website,
         formLinks: formLinks.filter(link => link.label.trim() !== '' && link.url.trim() !== ''),
         socialLinks: socialLinks.filter(link => link.trim() !== ''),
