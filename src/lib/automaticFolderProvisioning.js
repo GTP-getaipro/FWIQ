@@ -427,17 +427,27 @@ export function getFolderProvisioningFeedback(provisioningResult) {
 
   // Success case
   const validation = provisioningResult.validation || {};
+  const provisioning = provisioningResult.provisioning || {};
+  const details = provisioningResult.details || {};
+  
+  // CRITICAL FIX: Get actual folder counts from integration result
+  const created = details.created?.length || provisioning.labelsCreated || 0;
+  const matched = details.matched?.length || provisioning.labelsMatched || 0;
+  const total = details.total || created + matched || validation.totalFound || 0;
+  
   const allFoldersPresent = validation.allFoldersPresent || false;
   
-  if (allFoldersPresent) {
+  if (allFoldersPresent || total > 0) {
     return {
       type: 'success',
-      title: 'Folders Created Successfully! ✅',
-      message: provisioningResult.message || 'All email folders have been created',
+      title: 'Folders Ready! ✅',
+      message: created > 0 
+        ? `Created ${created} new folders${matched > 0 ? `, matched ${matched} existing (${total} total)` : ''}`
+        : `All ${matched} folders already exist and are ready`,
       details: {
-        created: provisioningResult.provisioning?.labelsCreated || 0,
-        matched: provisioningResult.provisioning?.labelsMatched || 0,
-        total: validation.totalFound || 0,
+        created,
+        matched,
+        total,
         healthPercentage: validation.healthPercentage || 100
       },
       icon: '✅'
