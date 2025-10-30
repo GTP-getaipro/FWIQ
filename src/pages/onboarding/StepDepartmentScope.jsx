@@ -150,7 +150,7 @@ const StepDepartmentScope = () => {
       });
       
       // Navigate to business type selection
-      navigate('/onboarding/step-3-business-type');
+      navigate('/onboarding/business-type');
       
     } catch (error) {
       console.error('Error saving department scope:', error);
@@ -165,7 +165,7 @@ const StepDepartmentScope = () => {
   };
 
   const handleBack = () => {
-    navigate('/onboarding/step-2-email-n8n');
+    navigate('/onboarding/email-integration');
   };
 
   if (loading) {
