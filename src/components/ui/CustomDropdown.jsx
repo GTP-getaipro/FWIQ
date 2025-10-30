@@ -77,7 +77,7 @@ const CustomDropdown = ({
         name={name}
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`flex items-center justify-between w-full px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 min-h-[40px] ${
+        className={`flex items-center justify-between w-full px-4 py-2.5 text-sm font-medium text-gray-800 dark:text-gray-200 bg-blue-50 dark:bg-gray-700 border-2 border-blue-300 dark:border-gray-500 rounded-lg shadow-sm hover:bg-blue-100 hover:border-blue-400 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 min-h-[40px] ${
           disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
         }`}
       >

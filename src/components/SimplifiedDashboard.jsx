@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
 import { 
   Mail, 
@@ -14,7 +14,10 @@ import {
   ChevronUp,
   Edit,
   Eye,
-  Activity
+  Activity,
+  X,
+  Info,
+  CheckCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -45,6 +48,9 @@ const SimplifiedDashboard = ({ user, profile }) => {
   const [recentEmails, setRecentEmails] = useState([]);
   const [loading, setLoading] = useState(true);
   const [departmentScope, setDepartmentScope] = useState(['all']);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [tempDepartmentScope, setTempDepartmentScope] = useState(['all']);
+  const [savingSettings, setSavingSettings] = useState(false);
 
   // Fetch metrics data and department scope
   useEffect(() => {
@@ -140,6 +146,71 @@ const SimplifiedDashboard = ({ user, profile }) => {
 
   const handleViewWorkflows = () => {
     window.location.href = '/workflows';
+  };
+
+  const handleOpenSettings = () => {
+    setTempDepartmentScope([...departmentScope]); // Copy current settings
+    setShowSettingsModal(true);
+  };
+
+  const toggleTempDepartment = (dept) => {
+    if (dept === 'all') {
+      setTempDepartmentScope(['all']);
+    } else {
+      setTempDepartmentScope(prev => {
+        // Remove 'all' if selecting specific department
+        const withoutAll = prev.filter(d => d !== 'all');
+        
+        if (withoutAll.includes(dept)) {
+          // Remove this department
+          const updated = withoutAll.filter(d => d !== dept);
+          // If no departments left, default to 'all'
+          return updated.length === 0 ? ['all'] : updated;
+        } else {
+          // Add this department
+          return [...withoutAll, dept];
+        }
+      });
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    if (!user) return;
+    
+    setSavingSettings(true);
+    try {
+      // Update business_profiles with new department scope
+      const { error } = await supabase
+        .from('business_profiles')
+        .upsert({
+          user_id: user.id,
+          department_scope: tempDepartmentScope,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id'
+        });
+      
+      if (error) throw error;
+      
+      // Update local state
+      setDepartmentScope(tempDepartmentScope);
+      setShowSettingsModal(false);
+      
+      toast({
+        title: 'Settings Updated',
+        description: 'Your department scope has been updated. Redeploy your workflow to apply changes.',
+      });
+      
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to save settings. Please try again.'
+      });
+    } finally {
+      setSavingSettings(false);
+    }
   };
 
   // Metric card component
@@ -243,7 +314,7 @@ const SimplifiedDashboard = ({ user, profile }) => {
                 ))}
               </div>
 
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" onClick={handleOpenSettings}>
                 <Settings className="h-4 w-4" />
               </Button>
               
@@ -511,6 +582,264 @@ const SimplifiedDashboard = ({ user, profile }) => {
           )}
         </motion.div>
       </main>
+
+      {/* Settings Modal */}
+      <AnimatePresence>
+        {showSettingsModal && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowSettingsModal(false)}
+              className="fixed inset-0 bg-black/50 z-50"
+            />
+            
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            >
+              <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                {/* Header */}
+                <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <Settings className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-900">Workflow Settings</h2>
+                      <p className="text-sm text-gray-600">Configure your email automation</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowSettingsModal(false)}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Content */}
+                <div className="p-6 space-y-6">
+                  {/* Department Scope Selector */}
+                  <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-xl p-6">
+                    <div className="flex items-start space-x-3">
+                      <Mail className="w-6 h-6 text-purple-600 mt-1 flex-shrink-0" />
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-800 mb-2">What does this email handle?</h3>
+                        <p className="text-sm text-gray-600 mb-4">
+                          Select one or more departments. Changes require redeployment to take effect.
+                        </p>
+                        
+                        {/* Department Checkboxes */}
+                        <div className="space-y-3 mb-4">
+                          {/* All Departments (Office Hub) */}
+                          <label className={`flex items-center space-x-3 p-3 border rounded-lg cursor-pointer transition-all ${
+                            tempDepartmentScope.includes('all') 
+                              ? 'bg-green-50 border-green-300' 
+                              : 'bg-white border-gray-200 hover:border-gray-300'
+                          }`}>
+                            <input
+                              type="checkbox"
+                              checked={tempDepartmentScope.includes('all')}
+                              onChange={() => toggleTempDepartment('all')}
+                              className="w-5 h-5 text-green-600 rounded focus:ring-2 focus:ring-green-500"
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2">
+                                <span className="text-lg">🏢</span>
+                                <span className="font-medium text-gray-800">All Departments (Office Hub)</span>
+                                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Recommended</span>
+                              </div>
+                              <p className="text-xs text-gray-600 mt-1">
+                                Processes all email types (SALES, SUPPORT, MANAGER, BANKING, etc.)
+                              </p>
+                            </div>
+                          </label>
+                          
+                          {/* Sales Department */}
+                          <label className={`flex items-center space-x-3 p-3 border rounded-lg cursor-pointer transition-all ${
+                            tempDepartmentScope.includes('sales') && !tempDepartmentScope.includes('all')
+                              ? 'bg-blue-50 border-blue-300' 
+                              : 'bg-white border-gray-200 hover:border-gray-300'
+                          } ${tempDepartmentScope.includes('all') ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                            <input
+                              type="checkbox"
+                              checked={tempDepartmentScope.includes('sales') && !tempDepartmentScope.includes('all')}
+                              onChange={() => toggleTempDepartment('sales')}
+                              disabled={tempDepartmentScope.includes('all')}
+                              className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2">
+                                <span className="text-lg">💰</span>
+                                <span className="font-medium text-gray-800">Sales Department</span>
+                              </div>
+                              <p className="text-xs text-gray-600 mt-1">
+                                SALES + FORMSUB only
+                              </p>
+                            </div>
+                          </label>
+                          
+                          {/* Support Department */}
+                          <label className={`flex items-center space-x-3 p-3 border rounded-lg cursor-pointer transition-all ${
+                            tempDepartmentScope.includes('support') && !tempDepartmentScope.includes('all')
+                              ? 'bg-blue-50 border-blue-300' 
+                              : 'bg-white border-gray-200 hover:border-gray-300'
+                          } ${tempDepartmentScope.includes('all') ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                            <input
+                              type="checkbox"
+                              checked={tempDepartmentScope.includes('support') && !tempDepartmentScope.includes('all')}
+                              onChange={() => toggleTempDepartment('support')}
+                              disabled={tempDepartmentScope.includes('all')}
+                              className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2">
+                                <span className="text-lg">🛠️</span>
+                                <span className="font-medium text-gray-800">Support Department</span>
+                              </div>
+                              <p className="text-xs text-gray-600 mt-1">
+                                SUPPORT + URGENT only
+                              </p>
+                            </div>
+                          </label>
+                          
+                          {/* Operations Department */}
+                          <label className={`flex items-center space-x-3 p-3 border rounded-lg cursor-pointer transition-all ${
+                            tempDepartmentScope.includes('operations') && !tempDepartmentScope.includes('all')
+                              ? 'bg-blue-50 border-blue-300' 
+                              : 'bg-white border-gray-200 hover:border-gray-300'
+                          } ${tempDepartmentScope.includes('all') ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                            <input
+                              type="checkbox"
+                              checked={tempDepartmentScope.includes('operations') && !tempDepartmentScope.includes('all')}
+                              onChange={() => toggleTempDepartment('operations')}
+                              disabled={tempDepartmentScope.includes('all')}
+                              className="w-5 h-5 text-purple-600 rounded focus:ring-2 focus:ring-purple-500"
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2">
+                                <span className="text-lg">⚙️</span>
+                                <span className="font-medium text-gray-800">Operations Department</span>
+                              </div>
+                              <p className="text-xs text-gray-600 mt-1">
+                                MANAGER + SUPPLIERS + BANKING + RECRUITMENT
+                              </p>
+                            </div>
+                          </label>
+                          
+                          {/* Urgent Department */}
+                          <label className={`flex items-center space-x-3 p-3 border rounded-lg cursor-pointer transition-all ${
+                            tempDepartmentScope.includes('urgent') && !tempDepartmentScope.includes('all')
+                              ? 'bg-red-50 border-red-300' 
+                              : 'bg-white border-gray-200 hover:border-gray-300'
+                          } ${tempDepartmentScope.includes('all') ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                            <input
+                              type="checkbox"
+                              checked={tempDepartmentScope.includes('urgent') && !tempDepartmentScope.includes('all')}
+                              onChange={() => toggleTempDepartment('urgent')}
+                              disabled={tempDepartmentScope.includes('all')}
+                              className="w-5 h-5 text-red-600 rounded focus:ring-2 focus:ring-red-500"
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2">
+                                <span className="text-lg">🚨</span>
+                                <span className="font-medium text-gray-800">Urgent/Emergency Only</span>
+                              </div>
+                              <p className="text-xs text-gray-600 mt-1">
+                                URGENT emergencies only
+                              </p>
+                            </div>
+                          </label>
+                        </div>
+                        
+                        {/* Selected Summary */}
+                        {!tempDepartmentScope.includes('all') && tempDepartmentScope.length > 0 && (
+                          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="flex items-start space-x-2">
+                              <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                              <div className="text-sm">
+                                <strong className="text-blue-900">Selected Departments:</strong>
+                                <div className="mt-1 text-blue-800">
+                                  {tempDepartmentScope.map(dept => (
+                                    <span key={dept} className="inline-flex items-center px-2 py-1 bg-blue-100 rounded-md mr-2 mb-1">
+                                      {dept === 'sales' && '💰'}
+                                      {dept === 'support' && '🛠️'}
+                                      {dept === 'operations' && '⚙️'}
+                                      {dept === 'urgent' && '🚨'}
+                                      <span className="ml-1 capitalize">{dept}</span>
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {tempDepartmentScope.includes('all') && (
+                          <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                            <div className="flex items-start space-x-2">
+                              <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                              <div className="text-sm">
+                                <strong className="text-green-900">Office Hub Mode:</strong>
+                                <p className="text-green-800 mt-1">
+                                  Processes ALL email types automatically.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Info Banner */}
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div className="flex items-start space-x-2">
+                      <Info className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                      <div className="text-sm text-yellow-800">
+                        <strong>Important:</strong> After saving these settings, you'll need to <strong>redeploy your workflow</strong> for changes to take effect.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex items-center justify-end space-x-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowSettingsModal(false)}
+                    disabled={savingSettings}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleSaveSettings}
+                    disabled={savingSettings}
+                  >
+                    {savingSettings ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Save Settings
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
