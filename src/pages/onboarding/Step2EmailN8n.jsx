@@ -332,15 +332,16 @@ const Step2EmailN8n = () => {
       return;
     }
     
+    // ROUTING FIX: Navigate to department-scope (Step 2), not business-type (Step 3)
     const { error } = await supabase
       .from('profiles')
-      .update({ onboarding_step: 'business_type' })
+      .update({ onboarding_step: 'department_scope' })
       .eq('id', user.id);
 
     if (error) {
       toast({ variant: 'destructive', title: 'Navigation Error', description: error.message });
     } else {
-      navigate('/onboarding/business-type');
+      navigate('/onboarding/department-scope');
     }
   };
 
