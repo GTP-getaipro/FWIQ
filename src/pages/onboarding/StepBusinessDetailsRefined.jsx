@@ -28,6 +28,11 @@ const StepBusinessDetailsRefined = () => {
   const [managers, setManagers] = useState([]);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
   // Refined form state - AI-optimized structure
   const [formData, setFormData] = useState({
     // 1️⃣ Business Identity

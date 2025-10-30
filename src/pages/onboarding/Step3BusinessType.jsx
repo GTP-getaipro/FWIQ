@@ -145,6 +145,11 @@ const Step3BusinessType = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isAnalyzingVoice, setIsAnalyzingVoice] = useState(false);
 
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
   useEffect(() => {
     const fetchProfile = async () => {
       if (!user) return;

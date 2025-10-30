@@ -2,12 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
-import { Users, Briefcase, Info, PlusCircle, XCircle, Loader2, ArrowLeft } from 'lucide-react';
+import { Users, Briefcase, Info, PlusCircle, XCircle, Loader2, ArrowLeft, Mail, MailOff } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { businessPresets } from '@/lib/businessPresets';
 import { supabase } from '@/lib/customSupabaseClient';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useOnboardingData } from '@/lib/onboardingDataAggregator';
@@ -66,11 +67,16 @@ const StepTeamSetup = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [managers, setManagers] = useState([{ name: '', email: '', roles: [] }]);
+  const [managers, setManagers] = useState([{ name: '', email: '', roles: [], forward_enabled: true }]);
   const [suppliers, setSuppliers] = useState([{ name: '', domains: '' }]);
   const [businessType, setBusinessType] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({ managers: [], suppliers: [] });
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -90,7 +96,8 @@ const StepTeamSetup = () => {
           const normalizedManagers = data.managers.map(m => ({
             name: m.name || '',
             email: m.email || '',
-            roles: Array.isArray(m.roles) ? m.roles : (m.role ? [m.role] : [])
+            roles: Array.isArray(m.roles) ? m.roles : (m.role ? [m.role] : []),
+            forward_enabled: m.forward_enabled !== undefined ? m.forward_enabled : (!!m.email)
           }));
           setManagers(normalizedManagers);
         }
@@ -112,20 +119,28 @@ const StepTeamSetup = () => {
 
   const addManager = () => {
     if (managers.length < MAX_MANAGERS) {
-      setManagers([...managers, { name: '', email: '', roles: [] }]);
+      setManagers([...managers, { name: '', email: '', roles: [], forward_enabled: true }]);
     }
   };
 
-  const toggleManagerRole = (managerIndex, roleId) => {
+  const handleRoleChange = (managerIndex, roleId) => {
     setManagers(prev => prev.map((mgr, idx) => {
       if (idx !== managerIndex) return mgr;
       
-      const hasRole = mgr.roles?.includes(roleId);
       return {
         ...mgr,
-        roles: hasRole 
-          ? (mgr.roles || []).filter(r => r !== roleId)  // Remove role
-          : [...(mgr.roles || []), roleId]                // Add role
+        roles: [roleId]  // Single role selection via dropdown
+      };
+    }));
+  };
+  
+  const toggleForwardingEnabled = (managerIndex) => {
+    setManagers(prev => prev.map((mgr, idx) => {
+      if (idx !== managerIndex) return mgr;
+      
+      return {
+        ...mgr,
+        forward_enabled: !mgr.forward_enabled
       };
     }));
   };
@@ -468,7 +483,7 @@ const StepTeamSetup = () => {
                       )}
                     </div>
 
-                    {/* Email field with forwarding explanation */}
+                    {/* Email field with forwarding toggle */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
                         Email (Optional)
@@ -486,65 +501,97 @@ const StepTeamSetup = () => {
                         type="email"
                         className="bg-white border-gray-300" 
                       />
-                      {manager.email && manager.email.trim() !== '' ? (
-                        <p className="text-green-600 text-xs mt-1 flex items-center gap-1">
-                          <span className="inline-block w-2 h-2 bg-green-600 rounded-full"></span>
-                          Forwarding enabled - Will receive emails + AI drafts
-                        </p>
-                      ) : (
-                        <p className="text-gray-500 text-xs mt-1">
-                          No forwarding - Will check main inbox with folder filter
+                      
+                      {/* Email Forwarding Toggle */}
+                      {manager.email && manager.email.trim() !== '' && (
+                        <div className="mt-3 p-3 bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              {manager.forward_enabled ? (
+                                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                                  <Mail className="w-5 h-5 text-green-600" />
+                                </div>
+                              ) : (
+                                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                                  <MailOff className="w-5 h-5 text-gray-400" />
+                                </div>
+                              )}
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-gray-800">
+                                  Forward emails to {manager.email}
+                                </p>
+                                <p className="text-xs text-gray-600">
+                                  {manager.forward_enabled 
+                                    ? '✅ Receives emails + AI drafts for review'
+                                    : '⚪ Folder labeling only (no forwarding)'}
+                                </p>
+                              </div>
+                            </div>
+                            <Switch
+                              checked={manager.forward_enabled || false}
+                              onCheckedChange={() => toggleForwardingEnabled(index)}
+                            />
+                          </div>
+                        </div>
+                      )}
+                      
+                      {(!manager.email || manager.email.trim() === '') && (
+                        <p className="text-gray-500 text-xs mt-2 flex items-center gap-1">
+                          <Info className="w-3 h-3" />
+                          No email = Folder labeling only (no forwarding)
                         </p>
                       )}
                     </div>
 
-                    {/* Roles multi-select */}
+                    {/* Primary Role Dropdown */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Roles (Select all that apply)
+                        Primary Role
                       </label>
-                      <div className="border rounded-lg p-3 bg-white space-y-2 max-h-64 overflow-y-auto">
+                      <select
+                        value={(manager.roles && manager.roles.length > 0) ? manager.roles[0] : ''}
+                        onChange={(e) => handleRoleChange(index, e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white transition-all"
+                      >
+                        <option value="">Select a role...</option>
                         {AVAILABLE_ROLES.map(role => (
-                          <label 
-                            key={role.id}
-                            className="flex items-start gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer transition-colors"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={(manager.roles || []).includes(role.id)}
-                              onChange={() => toggleManagerRole(index, role.id)}
-                              className="mt-1"
-                            />
-                            <div className="flex-1">
-                              <div className="font-medium text-sm flex items-center gap-2">
-                                <span>{role.icon}</span>
-                                <span>{role.label}</span>
-                              </div>
-                              <div className="text-xs text-gray-500 mt-0.5">{role.description}</div>
-                            </div>
-                          </label>
+                          <option key={role.id} value={role.id}>
+                            {role.icon} {role.label} - {role.description}
+                          </option>
                         ))}
-                      </div>
+                      </select>
                       
-                      {/* Show routing preview if roles selected */}
+                      {/* Show routing preview if role selected */}
                       {manager.roles && manager.roles.length > 0 && (
-                        <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                          <p className="text-sm font-medium text-blue-900 mb-2">
-                            📁 {manager.name || 'This person'}'s Email Routing:
+                        <div className="mt-3 p-4 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+                          <p className="text-sm font-medium text-blue-900 mb-3 flex items-center gap-2">
+                            <span className="text-lg">📁</span>
+                            {manager.name || 'This person'}'s Email Routing:
                           </p>
-                          <ul className="text-xs text-blue-700 space-y-1">
+                          <ul className="text-xs text-blue-800 space-y-2">
                             {manager.roles.map(roleId => {
                               const role = AVAILABLE_ROLES.find(r => r.id === roleId);
                               return role ? (
-                                <li key={roleId}>
-                                  • {role.routes.join(', ')} emails → {manager.name || 'their'} folder
+                                <li key={roleId} className="flex items-start gap-2">
+                                  <span className="text-blue-600 mt-0.5">•</span>
+                                  <span><strong>{role.routes.join(', ')}</strong> emails → {manager.name || 'their'} folder</span>
                                 </li>
                               ) : null;
                             })}
-                            <li>• Any mention of "{manager.name || 'name'}" → {manager.name || 'their'} folder</li>
-                            {manager.email && manager.email.trim() !== '' && (
-                              <li className="text-green-700 font-medium mt-2 pt-2 border-t border-blue-200">
-                                ✅ Forwarded to: {manager.email}
+                            <li className="flex items-start gap-2">
+                              <span className="text-blue-600 mt-0.5">•</span>
+                              <span>Any mention of <strong>"{manager.name || 'name'}"</strong> → {manager.name || 'their'} folder</span>
+                            </li>
+                            {manager.email && manager.email.trim() !== '' && manager.forward_enabled && (
+                              <li className="flex items-start gap-2 text-green-700 font-medium mt-3 pt-3 border-t border-blue-300">
+                                <span className="mt-0.5">✅</span>
+                                <span>Forwarded to: <strong>{manager.email}</strong></span>
+                              </li>
+                            )}
+                            {manager.email && manager.email.trim() !== '' && !manager.forward_enabled && (
+                              <li className="flex items-start gap-2 text-gray-600 mt-3 pt-3 border-t border-blue-300">
+                                <span className="mt-0.5">📂</span>
+                                <span>Labeled only (forwarding disabled)</span>
                               </li>
                             )}
                           </ul>

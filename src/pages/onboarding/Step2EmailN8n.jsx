@@ -30,6 +30,11 @@ const Step2EmailN8n = () => {
   const [businessName, setBusinessName] = useState('');
   const [departmentScope, setDepartmentScope] = useState(['all']);
 
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
   // Get business name and department scope from profile
   useEffect(() => {
     const fetchBusinessName = async () => {
