@@ -123,13 +123,18 @@ const StepTeamSetup = () => {
     }
   };
 
-  const handleRoleChange = (managerIndex, roleId) => {
+  const toggleManagerRole = (managerIndex, roleId) => {
     setManagers(prev => prev.map((mgr, idx) => {
       if (idx !== managerIndex) return mgr;
       
+      const currentRoles = mgr.roles || [];
+      const hasRole = currentRoles.includes(roleId);
+      
       return {
         ...mgr,
-        roles: [roleId]  // Single role selection via dropdown
+        roles: hasRole 
+          ? currentRoles.filter(r => r !== roleId)  // Remove role
+          : [...currentRoles, roleId]  // Add role
       };
     }));
   };
@@ -543,23 +548,39 @@ const StepTeamSetup = () => {
                       )}
                     </div>
 
-                    {/* Primary Role Dropdown */}
+                    {/* Roles (Multiple Selection) */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Primary Role
+                      <label className="block text-sm font-medium text-gray-700 mb-3">
+                        Roles (Select all that apply)
                       </label>
-                      <select
-                        value={(manager.roles && manager.roles.length > 0) ? manager.roles[0] : ''}
-                        onChange={(e) => handleRoleChange(index, e.target.value)}
-                        className="w-full px-4 py-3 border-2 border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-blue-50 text-gray-800 font-medium hover:bg-blue-100 hover:border-blue-400 transition-all cursor-pointer"
-                      >
-                        <option value="" className="bg-white">Select a role...</option>
+                      <div className="space-y-2">
                         {AVAILABLE_ROLES.map(role => (
-                          <option key={role.id} value={role.id} className="bg-white py-2">
-                            {role.icon} {role.label} - {role.description}
-                          </option>
+                          <label
+                            key={role.id}
+                            className={`flex items-center space-x-3 p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                              manager.roles?.includes(role.id)
+                                ? 'bg-blue-50 border-blue-400 shadow-sm'
+                                : 'bg-white border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={manager.roles?.includes(role.id) || false}
+                              onChange={() => toggleManagerRole(index, role.id)}
+                              className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2">
+                                <span className="text-lg">{role.icon}</span>
+                                <span className="font-medium text-gray-800">{role.label}</span>
+                              </div>
+                              <p className="text-xs text-gray-600 mt-0.5 ml-7">
+                                {role.description}
+                              </p>
+                            </div>
+                          </label>
                         ))}
-                      </select>
+                      </div>
                       
                       {/* Show routing preview if role selected */}
                       {manager.roles && manager.roles.length > 0 && (
