@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import Step2Email from '@/pages/onboarding/Step2Email';
+import StepDepartmentScope from '@/pages/onboarding/StepDepartmentScope';
 import Step3BusinessType from '@/pages/onboarding/Step3BusinessType';
 import StepTeamSetup from '@/pages/onboarding/StepTeamSetup';
 import StepBusinessInformation from '@/pages/onboarding/StepBusinessInformation';
@@ -16,7 +17,8 @@ import { Button } from '@/components/ui/button';
 import LogoutButton from '@/components/LogoutButton';
 
 const steps = [
-  { path: 'email-integration', label: 'Email Integration' },
+  { path: 'email-integration', label: 'Email Setup' },
+  { path: 'department-scope', label: 'Department Scope' },
   { path: 'business-type', label: 'Business Type' },
   { path: 'team-setup', label: 'Team Setup' },
   { path: 'business-information', label: 'Business Info' },
@@ -187,6 +189,7 @@ const OnboardingWizard = () => {
         <Routes>
           <Route path="start" element={<Navigate to="email-integration" replace />} />
           <Route path="email-integration" element={<Step2Email />} />
+          <Route path="department-scope" element={<StepDepartmentScope />} />
           <Route path="business-type" element={<Step3BusinessType />} />
           <Route path="team-setup" element={<StepTeamSetup />} />
           <Route path="business-information" element={<StepBusinessInformation />} />

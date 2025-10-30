@@ -60,18 +60,18 @@ const Step2Email = () => {
     // Show success message
     toast({
       title: 'Email Connected!',
-      description: 'Your email provider has been connected successfully. Please select your business type.',
+      description: 'Your email provider has been connected successfully. Please select your department scope.',
     });
     
     const { error } = await supabase
       .from('profiles')
-      .update({ onboarding_step: 'business_type' })
+      .update({ onboarding_step: 'department_scope' })
       .eq('id', user.id);
 
     if (error) {
       toast({ variant: 'destructive', title: 'Navigation Error', description: error.message });
     } else {
-      navigate('/onboarding/business-type');
+      navigate('/onboarding/department-scope');
     }
   }, [hasAnyConnection, toast, user.id, navigate, connections]);
 
