@@ -138,7 +138,7 @@ const StepDepartmentScope = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-6">
+    <div className="w-full max-w-4xl mx-auto">
       <Helmet>
         <title>Onboarding: Department Scope - FloWorx</title>
       </Helmet>
@@ -147,256 +147,223 @@ const StepDepartmentScope = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="w-full max-w-3xl"
+        className="bg-white rounded-xl p-8 shadow-sm border border-gray-200"
       >
-        <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-200">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Building className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">
-              What Does This Email Handle?
-            </h1>
-            <p className="text-gray-600">
-              Choose whether this is your main office hub or a specific department
-            </p>
-            {businessName && (
-              <p className="text-sm text-blue-600 mt-2">
-                Setting up for: <strong>{businessName}</strong>
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+            What Does This Email Handle?
+          </h1>
+          <p className="text-gray-600">
+            Choose whether this is your main office hub or a specific department.
+          </p>
+        </div>
+
+        {/* Info Box */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="flex items-start space-x-3">
+            <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div className="text-sm text-gray-700">
+              <strong className="text-gray-900">Why we need this info:</strong>
+              <p className="mt-1">
+                This determines which types of emails the AI will process. Choose "Office Hub" to handle all departments, or select specific departments for focused email management.
               </p>
-            )}
-          </div>
-
-          {/* Step Indicator */}
-          <div className="flex items-center justify-center mb-8">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                ✓
-              </div>
-              <div className="w-12 h-1 bg-green-500"></div>
-              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                ✓
-              </div>
-              <div className="w-12 h-1 bg-blue-500"></div>
-              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                3
-              </div>
-              <div className="w-12 h-1 bg-gray-300"></div>
-              <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-gray-500 text-sm font-medium">
-                4
-              </div>
-              <div className="w-12 h-1 bg-gray-300"></div>
-              <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center text-gray-500 text-sm font-medium">
-                5
-              </div>
             </div>
           </div>
+        </div>
 
-          {/* Department Scope Selector */}
-          <div className="bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl p-6 mb-6">
-            <div className="flex items-start space-x-3">
-              <Mail className="w-6 h-6 text-purple-600 mt-1 flex-shrink-0" />
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-800 mb-2">Select Email Scope</h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  Choose one option for a single department, or select multiple departments if this email handles several areas.
-                </p>
+        {/* Department Scope Selector */}
+        <div className="space-y-3 mb-6">
                 
-                {/* Department Checkboxes */}
-                <div className="space-y-3 mb-4">
-                  {/* All Departments (Office Hub) */}
-                  <label className={`flex items-center space-x-3 p-4 border-2 rounded-xl cursor-pointer transition-all ${
-                    departmentScope.includes('all') 
-                      ? 'bg-green-50 border-green-400 shadow-md' 
-                      : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm'
-                  }`}>
-                    <input
-                      type="checkbox"
-                      checked={departmentScope.includes('all')}
-                      onChange={() => toggleDepartment('all')}
-                      className="w-6 h-6 text-green-600 rounded-lg focus:ring-2 focus:ring-green-500"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-2xl">🏢</span>
-                        <span className="font-semibold text-gray-800 text-lg">All Departments (Office Hub)</span>
-                        <span className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full font-medium">Recommended</span>
-                      </div>
-                      <p className="text-sm text-gray-600 mt-2 ml-10">
-                        Perfect for small businesses! Handles <strong>all email types</strong>: Sales, Support, Operations, Banking, Urgent, and more.
-                      </p>
-                    </div>
-                  </label>
+          {/* All Departments (Office Hub) */}
+          <label className={`flex items-center space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+            departmentScope.includes('all') 
+              ? 'bg-blue-50 border-blue-300' 
+              : 'bg-white border-gray-200 hover:border-gray-300'
+          }`}>
+            <input
+              type="checkbox"
+              checked={departmentScope.includes('all')}
+              onChange={() => toggleDepartment('all')}
+              className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <div className="flex-1">
+              <div className="flex items-center space-x-2">
+                <span className="text-xl">🏢</span>
+                <span className="font-medium text-gray-800">All Departments (Office Hub)</span>
+                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Recommended</span>
+              </div>
+              <p className="text-sm text-gray-600 mt-1">
+                Perfect for small businesses! Handles all email types: Sales, Support, Operations, Banking, Urgent, and more.
+              </p>
+            </div>
+          </label>
                   
-                  {/* Sales Department */}
-                  <label className={`flex items-center space-x-3 p-4 border-2 rounded-xl cursor-pointer transition-all ${
-                    departmentScope.includes('sales') && !departmentScope.includes('all')
-                      ? 'bg-blue-50 border-blue-400 shadow-md' 
-                      : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm'
-                  } ${departmentScope.includes('all') ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                    <input
-                      type="checkbox"
-                      checked={departmentScope.includes('sales') && !departmentScope.includes('all')}
-                      onChange={() => toggleDepartment('sales')}
-                      disabled={departmentScope.includes('all')}
-                      className="w-6 h-6 text-blue-600 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-2xl">💰</span>
-                        <span className="font-semibold text-gray-800 text-lg">Sales Department</span>
-                      </div>
-                      <p className="text-sm text-gray-600 mt-2 ml-10">
-                        Handles: <strong>SALES</strong> inquiries, quotes, pricing + <strong>FORMSUB</strong> (form submissions)
-                      </p>
-                    </div>
-                  </label>
+          {/* Sales Department */}
+          <label className={`flex items-center space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+            departmentScope.includes('sales') && !departmentScope.includes('all')
+              ? 'bg-blue-50 border-blue-300' 
+              : 'bg-white border-gray-200 hover:border-gray-300'
+          } ${departmentScope.includes('all') ? 'opacity-50 cursor-not-allowed' : ''}`}>
+            <input
+              type="checkbox"
+              checked={departmentScope.includes('sales') && !departmentScope.includes('all')}
+              onChange={() => toggleDepartment('sales')}
+              disabled={departmentScope.includes('all')}
+              className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <div className="flex-1">
+              <div className="flex items-center space-x-2">
+                <span className="text-xl">💰</span>
+                <span className="font-medium text-gray-800">Sales Department</span>
+              </div>
+              <p className="text-sm text-gray-600 mt-1">
+                Handles SALES inquiries, quotes, pricing + FORMSUB (form submissions)
+              </p>
+            </div>
+          </label>
                   
-                  {/* Support Department */}
-                  <label className={`flex items-center space-x-3 p-4 border-2 rounded-xl cursor-pointer transition-all ${
-                    departmentScope.includes('support') && !departmentScope.includes('all')
-                      ? 'bg-blue-50 border-blue-400 shadow-md' 
-                      : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm'
-                  } ${departmentScope.includes('all') ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                    <input
-                      type="checkbox"
-                      checked={departmentScope.includes('support') && !departmentScope.includes('all')}
-                      onChange={() => toggleDepartment('support')}
-                      disabled={departmentScope.includes('all')}
-                      className="w-6 h-6 text-blue-600 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-2xl">🛠️</span>
-                        <span className="font-semibold text-gray-800 text-lg">Support Department</span>
-                      </div>
-                      <p className="text-sm text-gray-600 mt-2 ml-10">
-                        Handles: <strong>SUPPORT</strong> tickets, customer service + <strong>URGENT</strong> emergencies
-                      </p>
-                    </div>
-                  </label>
-                  
-                  {/* Operations Department */}
-                  <label className={`flex items-center space-x-3 p-4 border-2 rounded-xl cursor-pointer transition-all ${
-                    departmentScope.includes('operations') && !departmentScope.includes('all')
-                      ? 'bg-purple-50 border-purple-400 shadow-md' 
-                      : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm'
-                  } ${departmentScope.includes('all') ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                    <input
-                      type="checkbox"
-                      checked={departmentScope.includes('operations') && !departmentScope.includes('all')}
-                      onChange={() => toggleDepartment('operations')}
-                      disabled={departmentScope.includes('all')}
-                      className="w-6 h-6 text-purple-600 rounded-lg focus:ring-2 focus:ring-purple-500"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-2xl">⚙️</span>
-                        <span className="font-semibold text-gray-800 text-lg">Operations Department</span>
-                      </div>
-                      <p className="text-sm text-gray-600 mt-2 ml-10">
-                        Handles: <strong>MANAGER</strong> emails, <strong>SUPPLIERS</strong>, <strong>BANKING</strong>, <strong>RECRUITMENT</strong>
-                      </p>
-                    </div>
-                  </label>
-                  
-                  {/* Urgent Department */}
-                  <label className={`flex items-center space-x-3 p-4 border-2 rounded-xl cursor-pointer transition-all ${
-                    departmentScope.includes('urgent') && !departmentScope.includes('all')
-                      ? 'bg-red-50 border-red-400 shadow-md' 
-                      : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm'
-                  } ${departmentScope.includes('all') ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                    <input
-                      type="checkbox"
-                      checked={departmentScope.includes('urgent') && !departmentScope.includes('all')}
-                      onChange={() => toggleDepartment('urgent')}
-                      disabled={departmentScope.includes('all')}
-                      className="w-6 h-6 text-red-600 rounded-lg focus:ring-2 focus:ring-red-500"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-2xl">🚨</span>
-                        <span className="font-semibold text-gray-800 text-lg">Urgent/Emergency Only</span>
-                      </div>
-                      <p className="text-sm text-gray-600 mt-2 ml-10">
-                        Handles: <strong>URGENT</strong> emergencies and high-priority requests only
-                      </p>
-                    </div>
-                  </label>
+          {/* Support Department */}
+          <label className={`flex items-center space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+            departmentScope.includes('support') && !departmentScope.includes('all')
+              ? 'bg-blue-50 border-blue-300' 
+              : 'bg-white border-gray-200 hover:border-gray-300'
+          } ${departmentScope.includes('all') ? 'opacity-50 cursor-not-allowed' : ''}`}>
+            <input
+              type="checkbox"
+              checked={departmentScope.includes('support') && !departmentScope.includes('all')}
+              onChange={() => toggleDepartment('support')}
+              disabled={departmentScope.includes('all')}
+              className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <div className="flex-1">
+              <div className="flex items-center space-x-2">
+                <span className="text-xl">🛠️</span>
+                <span className="font-medium text-gray-800">Support Department</span>
+              </div>
+              <p className="text-sm text-gray-600 mt-1">
+                Handles SUPPORT tickets, customer service + URGENT emergencies
+              </p>
+            </div>
+          </label>
+          
+          {/* Operations Department */}
+          <label className={`flex items-center space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+            departmentScope.includes('operations') && !departmentScope.includes('all')
+              ? 'bg-blue-50 border-blue-300' 
+              : 'bg-white border-gray-200 hover:border-gray-300'
+          } ${departmentScope.includes('all') ? 'opacity-50 cursor-not-allowed' : ''}`}>
+            <input
+              type="checkbox"
+              checked={departmentScope.includes('operations') && !departmentScope.includes('all')}
+              onChange={() => toggleDepartment('operations')}
+              disabled={departmentScope.includes('all')}
+              className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <div className="flex-1">
+              <div className="flex items-center space-x-2">
+                <span className="text-xl">⚙️</span>
+                <span className="font-medium text-gray-800">Operations Department</span>
+              </div>
+              <p className="text-sm text-gray-600 mt-1">
+                Handles MANAGER emails, SUPPLIERS, BANKING, RECRUITMENT
+              </p>
+            </div>
+          </label>
+          
+          {/* Urgent Department */}
+          <label className={`flex items-center space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+            departmentScope.includes('urgent') && !departmentScope.includes('all')
+              ? 'bg-blue-50 border-blue-300' 
+              : 'bg-white border-gray-200 hover:border-gray-300'
+          } ${departmentScope.includes('all') ? 'opacity-50 cursor-not-allowed' : ''}`}>
+            <input
+              type="checkbox"
+              checked={departmentScope.includes('urgent') && !departmentScope.includes('all')}
+              onChange={() => toggleDepartment('urgent')}
+              disabled={departmentScope.includes('all')}
+              className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <div className="flex-1">
+              <div className="flex items-center space-x-2">
+                <span className="text-xl">🚨</span>
+                <span className="font-medium text-gray-800">Urgent/Emergency Only</span>
+              </div>
+              <p className="text-sm text-gray-600 mt-1">
+                Handles URGENT emergencies and high-priority requests only
+              </p>
+            </div>
+          </label>
+        </div>
+                
+        {/* Selected Summary */}
+        {!departmentScope.includes('all') && departmentScope.length > 0 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="flex items-start space-x-2">
+              <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-gray-700">
+                <strong className="text-gray-900">Selected Departments:</strong>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {departmentScope.map(dept => (
+                    <span key={dept} className="inline-flex items-center px-2 py-1 bg-blue-100 rounded-md text-blue-800 text-xs font-medium">
+                      {dept === 'sales' && '💰 Sales'}
+                      {dept === 'support' && '🛠️ Support'}
+                      {dept === 'operations' && '⚙️ Operations'}
+                      {dept === 'urgent' && '🚨 Urgent'}
+                    </span>
+                  ))}
                 </div>
-                
-                {/* Selected Summary */}
-                {!departmentScope.includes('all') && departmentScope.length > 0 && (
-                  <div className="mt-4 p-4 bg-blue-50 border border-blue-300 rounded-lg">
-                    <div className="flex items-start space-x-2">
-                      <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                      <div className="text-sm">
-                        <strong className="text-blue-900">Selected Departments:</strong>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {departmentScope.map(dept => (
-                            <span key={dept} className="inline-flex items-center px-3 py-1.5 bg-blue-100 rounded-lg text-blue-800 font-medium">
-                              {dept === 'sales' && '💰 Sales'}
-                              {dept === 'support' && '🛠️ Support'}
-                              {dept === 'operations' && '⚙️ Operations'}
-                              {dept === 'urgent' && '🚨 Urgent'}
-                            </span>
-                          ))}
-                        </div>
-                        <p className="text-xs text-blue-700 mt-2">
-                          Emails outside these categories will be labeled as <strong>OUT_OF_SCOPE</strong>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                {departmentScope.includes('all') && (
-                  <div className="mt-4 p-4 bg-green-50 border border-green-300 rounded-lg">
-                    <div className="flex items-start space-x-2">
-                      <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                      <div className="text-sm">
-                        <strong className="text-green-900">Office Hub Mode Active</strong>
-                        <p className="text-green-800 mt-1">
-                          This email will process <strong>ALL email types</strong> and route them automatically. Perfect for small businesses!
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                <p className="text-xs text-gray-600 mt-2">
+                  Emails outside these categories will be labeled as <strong>OUT_OF_SCOPE</strong>
+                </p>
               </div>
             </div>
           </div>
-
-          {/* Navigation Buttons */}
-          <div className="flex items-center justify-between">
-            <Button
-              variant="outline"
-              onClick={handleBack}
-              disabled={saving}
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
-            </Button>
-            
-            <Button
-              onClick={handleContinue}
-              disabled={saving}
-              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-            >
-              {saving ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  Save and Continue
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </>
-              )}
-            </Button>
+        )}
+        
+        {departmentScope.includes('all') && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <div className="flex items-start space-x-2">
+              <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-gray-700">
+                <strong className="text-gray-900">Office Hub Mode Active</strong>
+                <p className="text-gray-700 mt-1">
+                  This email will process <strong>ALL email types</strong> and route them automatically. Perfect for small businesses!
+                </p>
+              </div>
+            </div>
           </div>
+        )}
+
+        {/* Navigation Buttons */}
+        <div className="flex items-center justify-between pt-6">
+          <Button
+            variant="outline"
+            onClick={handleBack}
+            disabled={saving}
+            className="text-gray-700 border-gray-300 hover:bg-gray-100"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+          
+          <Button
+            onClick={handleContinue}
+            disabled={saving}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            {saving ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                Saving...
+              </>
+            ) : (
+              <>
+                Continue
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </>
+            )}
+          </Button>
         </div>
       </motion.div>
     </div>
