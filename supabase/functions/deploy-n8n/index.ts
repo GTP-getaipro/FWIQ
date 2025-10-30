@@ -319,15 +319,19 @@ function buildTeamRoutingRules(managers: any[]): string {
       ? `✅ Emails forwarded to: ${mgr.email} (includes AI draft when available)`
       : '❌ No forwarding (no email provided - check main inbox with label filter)';
     
+    // Safe name handling - extract first name safely
+    const fullName = mgr.name || 'Unknown';
+    const firstName = fullName.includes(' ') ? fullName.split(' ')[0] : fullName;
+    
     return `
-**${mgr.name}** - ${mgr.email || 'No email'}
+**${fullName}** - ${mgr.email || 'No email'}
 Roles: ${rolesText}
 → Handles: ${uniqueHandles.join(', ')}
 → Routes when:
-  • Email mentions "${mgr.name}" or "${mgr.name.split(' ')[0]}"
+  • Email mentions "${fullName}" or "${firstName}"
   • Email classified as: ${uniqueCategories.join(' or ')}
   • Email contains keywords: ${uniqueKeywords.slice(0, 8).join(', ')}
-→ Folder: MANAGER/${mgr.name}/
+→ Folder: MANAGER/${fullName}/
 → Forwarding: ${forwardingStatus}
 `;
   }).join('\n');
@@ -341,7 +345,11 @@ ${rules}
 
 **Priority 1: Name Detection (Highest)**
 If customer email mentions a team member name:
-${managers.map(m => `- "${m.name}" or "${m.name.split(' ')[0]}" detected → Route to MANAGER/${m.name}/`).join('\n')}
+${managers.map(m => {
+    const fullName = m.name || 'Unknown';
+    const firstName = fullName.includes(' ') ? fullName.split(' ')[0] : fullName;
+    return `- "${fullName}" or "${firstName}" detected → Route to MANAGER/${fullName}/`;
+  }).join('\n')}
 
 **Priority 2: MANAGER Category + Content Analysis**
 If email classified as MANAGER but no name mentioned:
@@ -391,9 +399,9 @@ When forwarding email to manager's personal inbox:
 `;
 }
 // Inline OpenAI key rotation (avoids shared dependency issues)
-let cachedKeys = null;
+let cachedKeys: string[] | null = null;
 let keyCounter = 0;
-function loadKeys() {
+function loadKeys(): string[] {
   if (cachedKeys) return cachedKeys;
   const envKeys = [
     Deno.env.get('OPENAI_KEY_1'),
@@ -401,7 +409,7 @@ function loadKeys() {
     Deno.env.get('OPENAI_KEY_3'),
     Deno.env.get('OPENAI_KEY_4'),
     Deno.env.get('OPENAI_KEY_5')
-  ].filter((k)=>Boolean(k)); // Type assertion for filter
+  ].filter((k): k is string => Boolean(k)); // Type assertion for filter
   cachedKeys = envKeys;
   return envKeys;
 }
@@ -450,14 +458,14 @@ const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
     persistSession: false
   }
 });
-function slugify(input, fallback) {
+function slugify(input: string | undefined, fallback: string): string {
   const s = (input || fallback || 'client').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
   return s.slice(0, 20);
 }
 /**
  * Fetch merged business type template from database
  * Supports multi-business selection with intelligent template merging
- */ async function fetchBusinessTypeTemplate(businessTypes) {
+ */ async function fetchBusinessTypeTemplate(businessTypes: string[]): Promise<any> {
   if (!businessTypes || businessTypes.length === 0) {
     console.log('⚠️ No business types provided, skipping template fetch');
     return null;
@@ -542,7 +550,7 @@ async function generateDynamicAISystemMessage(userId) {
   const suppliers = profile.suppliers || [];
   
   // Get primary business type
-  const primaryBusinessType = businessInfo.businessTypes?.[0] || businessInfo.businessType || 'General Services';
+  const primaryBusinessType = businessInfo.businessTypes?.[0] || 'General Services';
   
   console.log('🚀 Generating enhanced classifier system message for:', primaryBusinessType);
   
@@ -843,13 +851,13 @@ const provider = '${provider}';
 const labelMap = ${labelMapString};
 
 // Helper: Normalize category name for matching
-function normalizeCategory(category) {
+function normalizeCategory(category: string | null | undefined): string | null {
   if (!category) return null;
   return category.toString().toUpperCase().trim();
 }
 
 // Helper: Find label ID with intelligent matching
-function findLabelId(category, labelMap) {
+function findLabelId(category: string | null | undefined, labelMap: any): string | null {
   if (!category) return null;
   
   const normalized = normalizeCategory(category);
@@ -929,10 +937,11 @@ const uniqueLabelIds = [...new Set(labelIds)].filter(id =>
 let fallbackLabelId = findLabelId('MISC', labelMap) || findLabelId('Misc', labelMap);
 if (!fallbackLabelId) {
   // Use first available label as last resort
-  fallbackLabelId = Object.values(labelMap)[0];
+  const labelValues = Object.values(labelMap);
+  fallbackLabelId = labelValues.length > 0 ? labelValues[0] : null;
 }
 
-const finalLabels = uniqueLabelIds.length > 0 ? uniqueLabelIds : [fallbackLabelId];
+const finalLabels = uniqueLabelIds.length > 0 ? uniqueLabelIds : (fallbackLabelId ? [fallbackLabelId] : []);
 
 // Return result with label IDs
 return {
@@ -1027,7 +1036,7 @@ async function provisionEmailFolders(
 /**
  * Generate enhanced classifier system message (simplified for Deno Edge Function)
  */
-function generateEnhancedClassifierSystemMessage(businessType, businessInfo, managers = [], suppliers = []) {
+function generateEnhancedClassifierSystemMessage(businessType: string, businessInfo: any, managers: Array<{name: string}> = [], suppliers: Array<{name: string}> = []) {
   // Business-specific product names
   const products = {
     "Hot tub & Spa": "hot tubs",
@@ -1222,7 +1231,7 @@ Return ONLY the following JSON structure. Do not add any other text or explanati
 /**
  * Get business-specific sales keywords
  */
-function getBusinessSpecificSalesKeywords(businessType) {
+function getBusinessSpecificSalesKeywords(businessType: string): string[] {
   const keywords = {
     "Hot tub & Spa": ["hot tub", "spa", "jacuzzi", "whirlpool", "installation", "maintenance", "water care", "winterization"],
     "Pools": ["pool", "swimming pool", "inground", "above ground", "installation", "maintenance", "cleaning", "repair"],
@@ -1243,7 +1252,7 @@ function getBusinessSpecificSalesKeywords(businessType) {
 /**
  * Get business-specific urgent examples
  */
-function getBusinessSpecificUrgentExamples(businessType) {
+function getBusinessSpecificUrgentExamples(businessType: string): string[] {
   const examples = {
     "Hot tub & Spa": ["My spa heater isn't heating", "Spa is leaking water", "Control panel won't light up", "Jets aren't working"],
     "Pools": ["Pool pump not working", "Pool is leaking", "Water chemistry is off", "Pool equipment failure"],
@@ -1253,7 +1262,7 @@ function getBusinessSpecificUrgentExamples(businessType) {
   };
   return examples[businessType] || ["Equipment failure", "Service emergency", "Urgent repair needed"];
 }
-async function n8nRequest(path, init = {}) {
+async function n8nRequest(path: string, init: RequestInit = {}): Promise<any> {
   const url = `${N8N_BASE_URL.replace(/\/$/, '')}/api/v1${path}`;
   const headers = {
     'Content-Type': 'application/json',
@@ -1262,7 +1271,7 @@ async function n8nRequest(path, init = {}) {
   console.log(`🔗 Making n8n API request: ${init.method || 'GET'} ${url}`);
   console.log(`🔑 Using API Key: ${N8N_API_KEY ? N8N_API_KEY.substring(0, 20) + '...' : 'Not set'}`);
   console.log(`🔍 Request headers:`, headers);
-  console.log(`🔍 Request body:`, init.body ? JSON.parse(init.body) : 'No body');
+  console.log(`🔍 Request body:`, init.body && typeof init.body === 'string' ? JSON.parse(init.body) : 'No body');
   
   const res = await fetch(url, {
     ...init,
@@ -1314,7 +1323,7 @@ async function resolveCredentialIdByName(name) {
     throw new Error(`Failed to load ${provider} template: ${error.message}`);
   }
 }
-async function loadWorkflowTemplate(businessType) {
+async function loadWorkflowTemplate(businessType: string): Promise<any> {
   // DEPRECATED: Use loadWorkflowTemplateByProvider instead
   // This function is kept for backward compatibility
   // For now, returning a comprehensive base template with all placeholders
@@ -1767,7 +1776,7 @@ async function loadWorkflowTemplate(businessType) {
     "tags": []
   };
 }
-async function injectOnboardingData(clientData, workflowTemplate) {
+async function injectOnboardingData(clientData: any, workflowTemplate: any, userId: string) {
   let templateString = JSON.stringify(workflowTemplate);
   
   // DEBUG: Log the complete client data structure
@@ -1785,7 +1794,8 @@ async function injectOnboardingData(clientData, workflowTemplate) {
   // Build signature block
   const signatureBlock = `\n\nBest regards,\nThe ${business.name || 'Your Business'} Team\n${contact.phone || ''}`;
   const serviceCatalogText = (services || []).map((s)=>`- ${s.name} (${s.pricingType} ${s.price} ${business.currency || 'USD'}): ${s.description}`).join('\n');
-  const managersText = (clientData.managers || []).map((m)=>m.name).join(', ');
+  const managers = clientData.managers || [];
+  const managersText = managers.map((m: any)=>m.name).join(', ');
   // Extract business types
   const businessTypes = clientData.business?.types || (clientData.business?.type ? [
     clientData.business.type
@@ -1848,8 +1858,8 @@ async function injectOnboardingData(clientData, workflowTemplate) {
     };
     
     // Combine categories from all selected departments
-    const allowedCategories = [];
-    const departmentDescriptions = [];
+    const allowedCategories: string[] = [];
+    const departmentDescriptions: string[] = [];
     
     departmentScopeArray.forEach(dept => {
       const deptConfig = departmentCategoryMap[dept];
@@ -2048,9 +2058,18 @@ SIGNATURE: ${signatureBlock}
     const escapedPh = ph.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
     templateString = templateString.replace(new RegExp(escapedPh, 'g'), safe);
   }
-  return JSON.parse(templateString);
+  
+  // Parse JSON with error handling
+  try {
+    return JSON.parse(templateString);
+  } catch (error) {
+    console.error('❌ Failed to parse workflow template JSON:', error.message);
+    console.error('Template string length:', templateString.length);
+    console.error('First 500 chars:', templateString.substring(0, 500));
+    throw new Error(`Invalid workflow template JSON after replacements: ${error.message}`);
+  }
 }
-async function handler(req) {
+async function handler(req: Request): Promise<Response> {
   try {
     console.log('🚀 Edge Function started:', {
       method: req.method,
@@ -2159,6 +2178,33 @@ async function handler(req) {
       'profile.client_config.business.business_types': profile.client_config?.business?.business_types,
       'profile.client_config.business.business_type': profile.client_config?.business?.business_type
     });
+    
+    // 🔍 DETECT PROVIDER: Check which email provider the client is using (Gmail or Outlook)
+    // CRITICAL FIX: Move provider detection BEFORE voice profile validation to avoid hoisting errors
+    const { data: activeIntegrations } = await supabaseAdmin.from('integrations').select('access_token, refresh_token, provider, status, n8n_credential_id').eq('user_id', userId).eq('status', 'active').in('provider', [
+      'google',
+      'gmail',
+      'outlook',
+      'microsoft'
+    ]);
+    console.log(`🔍 Found ${activeIntegrations?.length || 0} active integrations:`, activeIntegrations?.map((i)=>({
+        provider: i.provider,
+        hasRefreshToken: !!i.refresh_token,
+        hasCredentialId: !!i.n8n_credential_id,
+        refreshTokenPreview: i.refresh_token ? `${i.refresh_token.substring(0, 20)}...` : 'MISSING'
+      })));
+    // Determine which provider to use (prefer the one with n8n_credential_id)
+    let provider = 'gmail'; // default
+    let integration: any = null;
+    if (activeIntegrations && activeIntegrations.length > 0) {
+      // Prefer integration with n8n_credential_id
+      const integrationWithCred = activeIntegrations.find((i)=>i.n8n_credential_id);
+      integration = integrationWithCred || activeIntegrations[0];
+      // CRITICAL FIX: Normalize provider detection (case-insensitive)
+      const normalizedProvider = (integration.provider || '').toLowerCase();
+      provider = ['outlook', 'microsoft'].includes(normalizedProvider) ? 'outlook' : 'gmail';
+    }
+    
     // Fetch learned voice profile (communication style)
     const { data: voiceData } = await supabaseAdmin.from('communication_styles').select('style_profile, learning_count, last_updated').eq('user_id', userId).maybeSingle(); // Type assertion for voiceData
     const voiceProfile = voiceData || null;
@@ -2189,30 +2235,6 @@ async function handler(req) {
       }
     } else {
       console.warn(`⚠️ No voice profile found for ${provider} user - using generic voice`);
-    }
-    // 🔍 DETECT PROVIDER: Check which email provider the client is using (Gmail or Outlook)
-    const { data: activeIntegrations } = await supabaseAdmin.from('integrations').select('access_token, refresh_token, provider, status, n8n_credential_id').eq('user_id', userId).eq('status', 'active').in('provider', [
-      'google',
-      'gmail',
-      'outlook',
-      'microsoft'
-    ]);
-    console.log(`🔍 Found ${activeIntegrations?.length || 0} active integrations:`, activeIntegrations?.map((i)=>({
-        provider: i.provider,
-        hasRefreshToken: !!i.refresh_token,
-        hasCredentialId: !!i.n8n_credential_id,
-        refreshTokenPreview: i.refresh_token ? `${i.refresh_token.substring(0, 20)}...` : 'MISSING'
-      })));
-    // Determine which provider to use (prefer the one with n8n_credential_id)
-    let provider = 'gmail'; // default
-    let integration = null;
-    if (activeIntegrations && activeIntegrations.length > 0) {
-      // Prefer integration with n8n_credential_id
-      const integrationWithCred = activeIntegrations.find((i)=>i.n8n_credential_id);
-      integration = integrationWithCred || activeIntegrations[0];
-      // CRITICAL FIX: Normalize provider detection (case-insensitive)
-      const normalizedProvider = (integration.provider || '').toLowerCase();
-      provider = ['outlook', 'microsoft'].includes(normalizedProvider) ? 'outlook' : 'gmail';
     }
     console.log(`📧 Detected email provider: ${provider}`);
     console.log(`📧 Selected integration:`, {
@@ -2318,7 +2340,7 @@ async function handler(req) {
             }
           }
           
-          if (!folderHealthResult.allFoldersPresent && folderHealthResult.missingFolders.length > 0) {
+          if (!folderHealthResult.allFoldersPresent && folderHealthResult.missingFolders && folderHealthResult.missingFolders.length > 0) {
             console.warn(`⚠️ ${folderHealthResult.missingFolders.length} non-critical folders missing:`, folderHealthResult.missingFolders.slice(0, 5));
             console.warn(`⚠️ Deployment will continue, but some email routing may not work until folders are created`);
           }
@@ -2580,8 +2602,8 @@ async function handler(req) {
     let postgresId = 'vKqQGjAQQ0k38UdC'; // supabase-metrics credential ID
     console.log(`✅ Using supabase-metrics credential: ${postgresId}`);
     // Extract AI system messages from workflowData if available
-    let extractedAiSystemMessage = null;
-    let extractedBehaviorReplyPrompt = null;
+    let extractedAiSystemMessage: string | null = null;
+    let extractedBehaviorReplyPrompt: string | null = null;
     
     if (workflowData && workflowData.nodes) {
       // Find the AI classifier node and extract the system message
@@ -2593,9 +2615,11 @@ async function handler(req) {
       
       if (aiClassifierNode && aiClassifierNode.parameters && aiClassifierNode.parameters.options) {
         extractedAiSystemMessage = aiClassifierNode.parameters.options.systemMessage;
-        console.log('✅ Extracted AI system message from injected workflow');
-        console.log('📊 AI system message length:', extractedAiSystemMessage.length);
-        console.log('📊 AI system message preview:', extractedAiSystemMessage.substring(0, 200) + '...');
+        if (extractedAiSystemMessage) {
+          console.log('✅ Extracted AI system message from injected workflow');
+          console.log('📊 AI system message length:', extractedAiSystemMessage.length);
+          console.log('📊 AI system message preview:', extractedAiSystemMessage.substring(0, 200) + '...');
+        }
       } else {
         console.log('⚠️ Could not find AI system message in workflow, will use fallback');
         console.log('🔍 Available nodes:', workflowData.nodes?.map(n => ({ name: n.name, type: n.type, id: n.id })));
@@ -2611,9 +2635,11 @@ async function handler(req) {
       
       if (aiDraftNode && aiDraftNode.parameters && aiDraftNode.parameters.options) {
         extractedBehaviorReplyPrompt = aiDraftNode.parameters.options.systemMessage;
-        console.log('✅ Extracted behavior reply prompt from injected workflow');
-        console.log('📊 Behavior reply prompt length:', extractedBehaviorReplyPrompt.length);
-        console.log('📊 Behavior reply prompt preview:', extractedBehaviorReplyPrompt.substring(0, 200) + '...');
+        if (extractedBehaviorReplyPrompt) {
+          console.log('✅ Extracted behavior reply prompt from injected workflow');
+          console.log('📊 Behavior reply prompt length:', extractedBehaviorReplyPrompt.length);
+          console.log('📊 Behavior reply prompt preview:', extractedBehaviorReplyPrompt.substring(0, 200) + '...');
+        }
       } else {
         console.log('⚠️ Could not find behavior reply prompt in workflow, will use fallback');
       }
@@ -2662,7 +2688,7 @@ async function handler(req) {
       // Fallback: Load and inject template based on provider (Gmail or Outlook)
       console.log(`⚠️ No workflowData provided, loading ${provider} template and injecting data`);
       const workflowTemplate = await loadWorkflowTemplateByProvider(provider);
-      workflowJson = await injectOnboardingData(clientData, workflowTemplate);
+      workflowJson = await injectOnboardingData(clientData, workflowTemplate, userId);
     }
     // Ensure workflow has proper name and credentials
     workflowJson.name = `${businessSlug}-${clientShort}-workflow`;
@@ -2782,7 +2808,7 @@ async function handler(req) {
     }
     // CRITICAL FIX: Enhanced duplicate detection - Check for duplicate workflows in N8N
     console.log('🔍 Checking for existing workflows in N8N...');
-    let existingN8nWorkflows = [];
+    let existingN8nWorkflows: any[] = [];
     try {
       const allWorkflows = await n8nRequest('/workflows', { method: 'GET' });
       

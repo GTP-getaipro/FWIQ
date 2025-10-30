@@ -22,39 +22,43 @@ const StepDepartmentScope = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  // Fetch existing data
+  // Fetch existing data - OPTIMIZED: Parallel queries
   useEffect(() => {
     const fetchData = async () => {
       if (!user) return;
       
       setLoading(true);
       try {
-        // Get business name from profiles
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('business_name')
-          .eq('id', user.id)
-          .single();
+        // PERFORMANCE FIX: Execute both queries in parallel
+        const [profileResult, businessProfileResult] = await Promise.all([
+          supabase
+            .from('profiles')
+            .select('business_name')
+            .eq('id', user.id)
+            .single(),
+          supabase
+            .from('business_profiles')
+            .select('department_scope')
+            .eq('user_id', user.id)
+            .maybeSingle()  // Use maybeSingle() - doesn't throw if missing
+        ]);
         
-        if (profile?.business_name) {
-          setBusinessName(profile.business_name);
+        // Extract data from results
+        if (profileResult.data?.business_name) {
+          setBusinessName(profileResult.data.business_name);
         }
         
-        // Get department scope from business_profiles
-        const { data: businessProfile } = await supabase
-          .from('business_profiles')
-          .select('department_scope')
-          .eq('user_id', user.id)
-          .single();
-        
-        if (businessProfile?.department_scope) {
-          const scope = Array.isArray(businessProfile.department_scope) 
-            ? businessProfile.department_scope 
+        if (businessProfileResult.data?.department_scope) {
+          const scope = Array.isArray(businessProfileResult.data.department_scope) 
+            ? businessProfileResult.data.department_scope 
             : ['all'];
           setDepartmentScope(scope);
         }
+        // If no department_scope found, keep default ['all']
+        
       } catch (error) {
         console.error('Error fetching data:', error);
+        // Gracefully handle errors - keep defaults
       } finally {
         setLoading(false);
       }
@@ -106,18 +110,39 @@ const StepDepartmentScope = () => {
     
     setSaving(true);
     try {
-      // Save department scope to business_profiles
-      const { error } = await supabase
+      // CRITICAL FIX: Check if business_profiles record exists first
+      const { data: existingProfile } = await supabase
         .from('business_profiles')
-        .upsert({
-          user_id: user.id,
-          department_scope: departmentScope,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'user_id'
-        });
+        .select('user_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
       
-      if (error) throw error;
+      if (existingProfile) {
+        // Record exists - UPDATE only department_scope
+        const { error } = await supabase
+          .from('business_profiles')
+          .update({
+            department_scope: departmentScope,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id);
+        
+        if (error) throw error;
+      } else {
+        // Record doesn't exist - Store in profiles as fallback
+        // The business_profiles record will be created in Step 3 with all required fields
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            department_scope: departmentScope  // Store temporarily in profiles
+          })
+          .eq('id', user.id);
+        
+        if (error) {
+          console.warn('Could not save to profiles, continuing anyway:', error);
+          // Don't throw - department scope can be set later
+        }
+      }
       
       toast({
         title: 'Department Scope Saved',
