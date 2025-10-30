@@ -1,0 +1,613 @@
+{
+  "name": "<<<BUSINESS_NAME>>> IMAP AI Email Processing Workflow v<<<CONFIG_VERSION>>>",
+  "meta": {
+    "templateVersion": "2.0",
+    "provider": "imap",
+    "description": "Production-ready IMAP/SMTP email processing with AI classification and reply generation",
+    "requiredCredentials": {
+      "imap": "<<<CLIENT_IMAP_CRED_ID>>>",
+      "smtp": "<<<CLIENT_SMTP_CRED_ID>>>",
+      "openai": "<<<CLIENT_OPENAI_CRED_ID>>>",
+      "supabase": "mQziputTJekSuLa6"
+    },
+    "notes": {
+      "polling": "IMAP uses polling (every 2 minutes) instead of webhooks",
+      "folders": "IMAP supports folders but not labels (no nested categories)",
+      "authentication": "Uses username/password or app-specific password",
+      "compatibility": "Works with: cPanel, Plesk, GoDaddy, Namecheap, Bluehost, etc."
+    }
+  },
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "custom",
+              "cronExpression": "0 */2 * * * *"
+            }
+          ]
+        },
+        "mailbox": "INBOX",
+        "format": "simple",
+        "options": {
+          "allowUnauthorizedCerts": false,
+          "forceReconnect": 5,
+          "customEmailConfig": "={{ JSON.stringify({ searchFilter: ['UNSEEN'] }) }}"
+        }
+      },
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2.1,
+      "position": [-1264, 272],
+      "id": "imap-email-trigger",
+      "name": "IMAP Email Trigger",
+      "credentials": {
+        "imap": {
+          "id": "<<<CLIENT_IMAP_CRED_ID>>>",
+          "name": "<<<BUSINESS_NAME>>> IMAP"
+        }
+      },
+      "notes": "Polls INBOX every 2 minutes for UNSEEN emails (unread). Works with any IMAP server."
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// IMAP Email Data Normalizer\n// Converts IMAP email format to FloWorx standard format\n\nconst item = $json;\n\nfunction htmlToText(html) {\n  if (!html) return '';\n  return html\n    .replace(/<script[^>]*>([\\S\\s]*?)<\\/script>/gmi, '')\n    .replace(/<style[^>]*>([\\S\\s]*?)<\\/style>/gmi, '')\n    .replace(/<!--[\\s\\S]*?-->/g, '')\n    .replace(/<br\\s*\\/?>/gi, '\\n')\n    .replace(/<\\/(div|p|h[1-6]|li|tr)>/gi, '\\n')\n    .replace(/<[^>]+>/g, '')\n    .replace(/&nbsp;/g, ' ')\n    .replace(/&amp;/g, '&')\n    .replace(/&lt;/g, '<')\n    .replace(/&gt;/g, '>')\n    .replace(/&quot;/g, '\"')\n    .replace(/&#39;/g, \"'\")\n    .replace(/(\\n\\s*){3,}/g, '\\n\\n')\n    .trim();\n}\n\n// Extract email from address format: \"Name <email@domain.com>\" or \"email@domain.com\"\nfunction extractEmail(address) {\n  if (!address) return null;\n  const match = address.match(/<([^>]+)>/);\n  return match ? match[1] : address.trim();\n}\n\nfunction extractName(address) {\n  if (!address) return null;\n  const match = address.match(/^([^<]+)</);\n  return match ? match[1].trim().replace(/\"/g, '') : null;\n}\n\n// IMAP emails come in different formats depending on server\nconst messageBody = htmlToText(item.html || item.textHtml || item.text);\nconst fromAddress = item.from?.value?.[0]?.address || extractEmail(item.from);\nconst toAddress = item.to?.value?.[0]?.address || extractEmail(item.to);\n\n// Generate consistent IDs\nconst messageId = item.headers?.['message-id'] || item.uid || `imap-${Date.now()}-${Math.random()}`;\nconst threadId = item.headers?.['in-reply-to'] || item.headers?.references || messageId;\n\nreturn {\n  json: {\n    // Standard FloWorx email format\n    id: item.uid || messageId,\n    threadId: threadId,\n    subject: item.subject || '(No Subject)',\n    from: fromAddress,\n    fromName: extractName(item.from) || fromAddress,\n    to: toAddress,\n    toName: extractName(item.to) || toAddress,\n    date: item.date || new Date().toISOString(),\n    body: messageBody || item.text || '',\n    bodyHtml: item.html || item.textHtml || null,\n    \n    // IMAP-specific data\n    provider: 'imap',\n    uid: item.uid,\n    mailbox: 'INBOX',\n    flags: item.flags || [],\n    \n    // Attachment info\n    hasAttachments: !!(item.attachments && item.attachments.length > 0),\n    attachments: item.attachments || [],\n    \n    // Size\n    sizeEstimate: item.size || 0,\n    \n    // Headers for threading\n    messageId: messageId,\n    inReplyTo: item.headers?.['in-reply-to'] || null,\n    references: item.headers?.references || null,\n    \n    // Full headers (for debugging)\n    headers: item.headers || {}\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-1040, 272],
+      "id": "prepare-email-data",
+      "name": "Prepare Email Data",
+      "notes": "Normalizes IMAP email format to FloWorx standard format. Handles various IMAP server formats."
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Subject: {{ $json.subject }}\nFrom: {{ $json.from }}\nFrom Name: {{ $json.fromName }}\nTo: {{ $json.to }}\nDate: {{ $json.date }}\nMessage ID: {{ $json.id }}\nProvider: IMAP\nHas Attachments: {{ $json.hasAttachments }}\n\nEmail Body:\n{{ $json.body }}",
+        "options": {
+          "systemMessage": "<<<AI_SYSTEM_MESSAGE>>>"
+        }
+      },
+      "id": "ai-classifier",
+      "name": "AI Master Classifier",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [-816, 272],
+      "typeVersion": 1.8,
+      "notes": "AI classifies email into business-specific categories using GPT-4o-mini"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [-752, 496],
+      "id": "openai-classifier-model",
+      "name": "OpenAI Classifier Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "<<<CLIENT_OPENAI_CRED_ID>>>",
+          "name": "<<<BUSINESS_NAME>>> OpenAI"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse AI Classification Output\n// Handles various LLM output formats and attaches email metadata\n\nconst outputs = [];\nconst aiItems = $input.all();\nconst emailItems = $('Prepare Email Data').all();\n\nfor (let i = 0; i < aiItems.length; i++) {\n  const aiOutput = aiItems[i].json.output;\n\n  try {\n    // Normalize to JSON string\n    let clean = typeof aiOutput === 'string' ? aiOutput.trim() : JSON.stringify(aiOutput);\n\n    // Remove markdown code fences (common LLM quirk)\n    clean = clean.replace(/^```(?:json)?\\s*/i, '').replace(/\\s*```$/, '');\n\n    // Trim after last closing brace\n    const lastBrace = clean.lastIndexOf('}');\n    if (lastBrace !== -1) clean = clean.slice(0, lastBrace + 1);\n\n    const parsedOutput = JSON.parse(clean);\n\n    // Attach email metadata from previous step\n    const email = emailItems[Math.min(i, emailItems.length - 1)]?.json || {};\n    if (email.id) parsedOutput.id = email.id;\n    if (email.uid) parsedOutput.uid = email.uid;\n    if (email.threadId) parsedOutput.threadId = email.threadId;\n    if (email.from) parsedOutput.from = email.from;\n    if (email.subject) parsedOutput.subject = email.subject;\n    parsedOutput.provider = 'imap';\n\n    outputs.push({ json: { parsed_output: parsedOutput, error: false } });\n\n  } catch (e) {\n    // ERROR HANDLING: Log and route to MISC folder\n    const email = emailItems[Math.min(i, emailItems.length - 1)]?.json || {};\n    console.error('AI Classification Parse Error:', e.message, '| Raw output:', aiOutput);\n    \n    outputs.push({\n      json: {\n        error: true,\n        id: email.id,\n        uid: email.uid,\n        threadId: email.threadId,\n        from: email.from,\n        subject: email.subject,\n        provider: 'imap',\n        errorMessage: e.message,\n        originalOutput: aiOutput,\n        // Fallback classification\n        parsed_output: {\n          primary_category: 'MISC',\n          secondary_category: 'Unclassified',\n          confidence: 0.3,\n          ai_can_reply: false,\n          summary: 'Error parsing AI classification'\n        }\n      }\n    });\n  }\n}\n\nreturn outputs;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-592, 272],
+      "id": "parse-classification",
+      "name": "Parse AI Classification",
+      "notes": "Parses AI output and handles errors gracefully. Falls back to MISC category on parse failure."
+    },
+    {
+      "parameters": {
+        "jsCode": "// Generate IMAP Folder Path\n// Maps AI categories to IMAP folder structure\n// Note: IMAP uses folders, not labels (no multi-category support)\n\nconst FOLDER_MAP = <<<LABEL_MAP>>>;\n\nconst classification = $json.parsed_output || $json;\nconst primaryCategory = classification.primary_category?.toUpperCase() || 'MISC';\nconst secondaryCategory = classification.secondary_category || null;\nconst tertiaryCategory = classification.tertiary_category || null;\n\n// IMAP folder path (uses \"/\" as separator, e.g., \"SALES/NewInquiry\")\nlet folderPath = primaryCategory;\n\nif (secondaryCategory && FOLDER_MAP[primaryCategory]?.subfolders?.[secondaryCategory]) {\n  folderPath = `${primaryCategory}/${secondaryCategory}`;\n  \n  if (tertiaryCategory && FOLDER_MAP[primaryCategory]?.subfolders?.[secondaryCategory]?.subfolders?.[tertiaryCategory]) {\n    folderPath = `${primaryCategory}/${secondaryCategory}/${tertiaryCategory}`;\n  }\n}\n\n// For manager/supplier emails, use specific folders\nif (primaryCategory === 'MANAGER' && classification.matched_manager?.name) {\n  folderPath = `MANAGER/${classification.matched_manager.name}`;\n} else if (primaryCategory === 'SUPPLIERS' && tertiaryCategory) {\n  folderPath = `SUPPLIERS/${tertiaryCategory}`;\n}\n\nconsole.log('📁 IMAP Folder Path:', folderPath, '| Category:', primaryCategory, '>', secondaryCategory, '>', tertiaryCategory);\n\nreturn {\n  json: {\n    ...classification,\n    folder_path: folderPath,\n    primary_folder: primaryCategory,\n    full_classification: `${primaryCategory} > ${secondaryCategory || 'General'}`,\n    imap_move_required: true\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-368, 272],
+      "id": "generate-folder-path",
+      "name": "Generate IMAP Folder Path",
+      "notes": "Maps AI categories to IMAP folder paths. IMAP uses folders (not labels) with '/' separator."
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Route to Manager\n// Intelligently matches emails to the right manager based on content, roles, and priority\n\nconst classification = $json.parsed_output || $json;\nconst emailData = $('Prepare Email Data').first()?.json || {};\n\n// CRITICAL: Load team configuration from deployment\nconst TEAM_CONFIG = <<<TEAM_CONFIG>>>;\n\n// Extract managers and suppliers from config\nconst managers = TEAM_CONFIG.managers || [];\nconst suppliers = TEAM_CONFIG.suppliers || [];\n\nconsole.log('🎯 Manager Routing | Primary Category:', classification.primary_category, '| Team Size:', managers.length);\n\n// Helper: Role configuration\nfunction getRoleConfig(roleId) {\n  const configs = {\n    'sales_manager': {\n      categories: ['SALES'],\n      keywords: ['quote', 'price', 'cost', 'buy', 'purchase', 'pricing', 'estimate'],\n      weight: 10\n    },\n    'service_manager': {\n      categories: ['SUPPORT', 'URGENT'],\n      keywords: ['repair', 'fix', 'broken', 'not working', 'appointment', 'emergency'],\n      weight: 10\n    },\n    'operations_manager': {\n      categories: ['MANAGER', 'SUPPLIERS'],\n      keywords: ['vendor', 'supplier', 'order', 'inventory', 'hiring'],\n      weight: 8\n    },\n    'support_lead': {\n      categories: ['SUPPORT'],\n      keywords: ['help', 'question', 'how to', 'parts'],\n      weight: 6\n    },\n    'owner': {\n      categories: ['MANAGER', 'URGENT'],\n      keywords: ['legal', 'strategic', 'partnership', 'important'],\n      weight: 10\n    }\n  };\n  return configs[roleId] || { categories: [], keywords: [], weight: 0 };\n}\n\nlet matchedManager = null;\nlet routingReason = '';\nlet routingConfidence = 0;\n\n// PRIORITY 1: Name mentioned in email\nconst emailBody = emailData.body?.toLowerCase() || '';\nconst emailSubject = emailData.subject?.toLowerCase() || '';\nconst fullEmailText = `${emailSubject} ${emailBody}`;\n\nfor (const manager of managers) {\n  const fullName = manager.name.toLowerCase();\n  const firstName = fullName.split(' ')[0];\n  \n  if (fullEmailText.includes(fullName) || fullEmailText.includes(firstName)) {\n    matchedManager = manager;\n    routingReason = `Name mentioned: \"${manager.name}\"`;\n    routingConfidence = 100;\n    console.log(`✅ Priority 1: Name Match - ${manager.name}`);\n    break;\n  }\n}\n\n// PRIORITY 2: Category + Role match\nif (!matchedManager) {\n  const primaryCategory = classification.primary_category?.toUpperCase() || '';\n  const scores = [];\n  \n  for (const manager of managers) {\n    let score = 0;\n    const managerRoles = Array.isArray(manager.roles) ? manager.roles : (manager.role ? [manager.role] : []);\n    const matchedRoles = [];\n    \n    for (const roleId of managerRoles) {\n      const roleConfig = getRoleConfig(roleId);\n      if (roleConfig.categories.includes(primaryCategory)) {\n        score += roleConfig.weight;\n        matchedRoles.push(roleId);\n      }\n    }\n    \n    if (score > 0) {\n      scores.push({ manager, score, reason: `Category match: ${primaryCategory}`, matchedRoles });\n    }\n  }\n  \n  if (scores.length > 0) {\n    scores.sort((a, b) => b.score - a.score);\n    const winner = scores[0];\n    matchedManager = winner.manager;\n    routingReason = winner.reason;\n    routingConfidence = Math.min(95, 70 + winner.score);\n    console.log(`✅ Priority 2: Category Match - ${winner.manager.name} (score: ${winner.score})`);\n  }\n}\n\n// PRIORITY 3: Content analysis for MANAGER category\nif (!matchedManager && classification.primary_category?.toUpperCase() === 'MANAGER') {\n  const scores = [];\n  \n  for (const manager of managers) {\n    let score = 0;\n    const managerRoles = Array.isArray(manager.roles) ? manager.roles : (manager.role ? [manager.role] : []);\n    const matchedKeywords = [];\n    \n    for (const roleId of managerRoles) {\n      const roleConfig = getRoleConfig(roleId);\n      for (const keyword of roleConfig.keywords) {\n        if (fullEmailText.includes(keyword.toLowerCase())) {\n          score += 2;\n          matchedKeywords.push(keyword);\n        }\n      }\n      score += roleConfig.weight * 0.1;\n    }\n    \n    if (score > 0) {\n      scores.push({ manager, score, reason: `Content analysis: ${matchedKeywords.slice(0, 3).join(', ')}` });\n    }\n  }\n  \n  if (scores.length > 0) {\n    scores.sort((a, b) => b.score - a.score);\n    const winner = scores[0];\n    matchedManager = winner.manager;\n    routingReason = winner.reason;\n    routingConfidence = Math.min(85, 50 + winner.score * 2);\n    console.log(`✅ Priority 3: Content Analysis - ${winner.manager.name}`);\n  }\n}\n\n// PRIORITY 4: Supplier detection\nif (!matchedManager && suppliers.length > 0) {\n  const senderEmail = emailData.from?.toLowerCase() || '';\n  const senderDomain = senderEmail.split('@')[1] || '';\n  \n  for (const supplier of suppliers) {\n    const supplierEmail = supplier.email?.toLowerCase() || '';\n    if (senderEmail === supplierEmail || (supplier.domain && senderDomain.includes(supplier.domain))) {\n      const opsManager = managers.find(m => {\n        const roles = Array.isArray(m.roles) ? m.roles : (m.role ? [m.role] : []);\n        return roles.includes('operations_manager');\n      });\n      \n      if (opsManager) {\n        matchedManager = opsManager;\n        routingReason = `Supplier email: ${supplier.name}`;\n        routingConfidence = 90;\n        console.log(`✅ Priority 4: Supplier - ${opsManager.name}`);\n        break;\n      }\n    }\n  }\n}\n\n// FALLBACK: Default to first manager\nif (!matchedManager && managers.length > 0) {\n  matchedManager = managers[0];\n  routingReason = 'Default routing (no specific match)';\n  routingConfidence = 30;\n  console.log(`⚠️ Fallback: Default to ${matchedManager.name}`);\n}\n\n// Output with routing decision\nreturn {\n  json: {\n    ...classification,\n    matched_manager: matchedManager,\n    routing_decision: {\n      manager_name: matchedManager?.name || 'Unassigned',\n      manager_email: matchedManager?.email || null,\n      matched_roles: Array.isArray(matchedManager?.roles) ? matchedManager.roles : (matchedManager?.role ? [matchedManager.role] : []),\n      routing_reason: routingReason,\n      routing_confidence: routingConfidence,\n      timestamp: new Date().toISOString()\n    },\n    manager_folder: matchedManager?.name ? `MANAGER/${matchedManager.name}` : 'MANAGER/Unassigned'\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-144, 272],
+      "id": "route-to-manager",
+      "name": "Route to Manager",
+      "notes": "Intelligent manager routing: name detection → category match → content analysis → supplier detection"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "ai-can-reply",
+              "leftValue": "={{ $json.ai_can_reply }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "confidence-threshold",
+              "leftValue": "={{ $json.confidence }}",
+              "rightValue": 0.9,
+              "operator": {
+                "type": "number",
+                "operation": "largerEqual"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "can-ai-reply",
+      "name": "Can AI Reply?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [80, 272],
+      "notes": "Only draft replies if AI is confident (≥90%) and can reply. Prevents low-quality drafts."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "<<<SUPABASE_URL>>>/functions/v1/style-memory",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  userId: '<<<USER_ID>>>',\n  senderEmail: $('Prepare Email Data').first().json.from,\n  threadId: $('Prepare Email Data').first().json.threadId,\n  category: $json.primary_category,\n  limit: 5,\n  fetchStrategy: 'sender_then_thread_then_category'\n}) }}",
+        "options": {}
+      },
+      "id": "fetch-voice-context",
+      "name": "Fetch Voice Context",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [304, 164],
+      "credentials": {
+        "supabaseApi": {
+          "id": "mQziputTJekSuLa6",
+          "name": "Supabase API"
+        }
+      },
+      "notes": "Fetches user's writing style examples for personalized AI drafts"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "original-email",
+              "name": "original_email",
+              "type": "string",
+              "value": "=Subject: {{ $('Prepare Email Data').first().json.subject }}\nFrom: {{ $('Prepare Email Data').first().json.from }}\nDate: {{ $('Prepare Email Data').first().json.date }}\n\n{{ $('Prepare Email Data').first().json.body }}"
+            },
+            {
+              "id": "voice-examples",
+              "name": "voice_examples",
+              "type": "string",
+              "value": "={{ $json.examples ? JSON.stringify($json.examples, null, 2) : 'No voice examples found' }}"
+            },
+            {
+              "id": "category",
+              "name": "category",
+              "type": "string",
+              "value": "={{ $('Route to Manager').first().json.primary_category }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "prepare-draft-context",
+      "name": "Prepare Draft Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [528, 164]
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are an expert email assistant helping <<<BUSINESS_NAME>>>.\n\nYour task: Draft a professional, helpful reply to customer emails.\n\nWriting Style Guidelines:\n{{ $json.voice_examples }}\n\nRules:\n1. Match the writing style from examples above\n2. Be professional yet friendly\n3. Address the customer's specific question/concern\n4. Keep responses concise (2-4 paragraphs)\n5. Use proper grammar and punctuation\n6. Sign with: \"Best regards,\\n<<<BUSINESS_NAME>>> Team\"\n\nCategory: {{ $json.category }}\n\nIMPORTANT: Generate ONLY the email body. No subject line, no \"Dear...\", just the content."
+            },
+            {
+              "role": "user",
+              "content": "=Draft a reply to this email:\n\n{{ $json.original_email }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "id": "generate-ai-draft",
+      "name": "Generate AI Draft",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.4,
+      "position": [752, 164],
+      "credentials": {
+        "openAiApi": {
+          "id": "<<<CLIENT_OPENAI_CRED_ID>>>",
+          "name": "<<<BUSINESS_NAME>>> OpenAI"
+        }
+      },
+      "notes": "Generates AI reply using user's voice profile for personalized tone"
+    },
+    {
+      "parameters": {
+        "operation": "move",
+        "uidAttributeName": "={{ $('Prepare Email Data').first().json.uid }}",
+        "path": "={{ $json.folder_path }}",
+        "options": {
+          "allowUnauthorizedCerts": false,
+          "forceReconnect": 5
+        }
+      },
+      "id": "move-to-folder",
+      "name": "Move Email to Folder",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2.1,
+      "position": [976, 272],
+      "credentials": {
+        "imap": {
+          "id": "<<<CLIENT_IMAP_CRED_ID>>>",
+          "name": "<<<BUSINESS_NAME>>> IMAP"
+        }
+      },
+      "notes": "Moves email to appropriate IMAP folder based on AI classification"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "message": "={{ $json.message }}",
+        "options": {
+          "allowUnauthorizedCerts": false,
+          "ccEmail": "={{ $json.cc }}",
+          "fromEmail": "<<<BUSINESS_EMAIL>>>",
+          "fromName": "<<<BUSINESS_NAME>>>",
+          "replyTo": "={{ $('Prepare Email Data').first().json.from }}",
+          "subject": "=Re: {{ $('Prepare Email Data').first().json.subject }}"
+        }
+      },
+      "id": "save-draft-smtp",
+      "name": "Save Draft (SMTP)",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [976, 164],
+      "credentials": {
+        "smtp": {
+          "id": "<<<CLIENT_SMTP_CRED_ID>>>",
+          "name": "<<<BUSINESS_NAME>>> SMTP"
+        }
+      },
+      "disabled": true,
+      "notes": "OPTIONAL: Save draft via SMTP (most IMAP servers don't support draft creation via IMAP)"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build Forward Email Body\n// Creates email content for forwarding to managers\n\nconst emailData = $('Prepare Email Data').first().json;\nconst classification = $json;\nconst draftText = $('Generate AI Draft').first()?.json?.message || 'No AI draft generated';\nconst manager = classification.matched_manager;\n\nconst forwardBody = `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📧 FloWorx AI Email Routing - Action Required\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n🎯 CLASSIFICATION:\nCategory: ${classification.primary_category} > ${classification.secondary_category || 'General'}\nConfidence: ${(classification.confidence * 100).toFixed(1)}%\nAI Can Reply: ${classification.ai_can_reply ? 'Yes' : 'No'}\n\n👤 ROUTED TO:\n${manager?.name || 'Unassigned'}\nReason: ${classification.routing_decision?.routing_reason || 'N/A'}\nConfidence: ${classification.routing_decision?.routing_confidence || 0}%\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📨 ORIGINAL EMAIL:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nFrom: ${emailData.fromName} <${emailData.from}>\nTo: ${emailData.to}\nDate: ${emailData.date}\nSubject: ${emailData.subject}\n\n${emailData.body}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n🤖 AI SUGGESTED DRAFT:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n${draftText}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n💡 NEXT STEPS:\n1. Review the AI draft above\n2. Edit if needed or write your own response\n3. Reply directly to the customer at: ${emailData.from}\n\n📂 Email filed in: ${classification.folder_path}\n🤖 Processed by FloWorx AI\n`;\n\nreturn {\n  json: {\n    ...classification,\n    forward_body: forwardBody,\n    forward_to: manager?.email || null,\n    forward_subject: `[FloWorx] ${classification.primary_category} - ${emailData.subject}`\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1200, 272],
+      "id": "build-forward-body",
+      "name": "Build Forward Email Body",
+      "notes": "Creates formatted forward email with AI draft and routing info for manager"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": ""
+          },
+          "conditions": [
+            {
+              "id": "has-manager-email",
+              "leftValue": "={{ $json.forward_to }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "should-forward",
+      "name": "Should Forward to Manager?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1424, 272],
+      "notes": "Only forward if manager has email address configured"
+    },
+    {
+      "parameters": {
+        "fromEmail": "<<<BUSINESS_EMAIL>>>",
+        "toEmail": "={{ $json.forward_to }}",
+        "subject": "={{ $json.forward_subject }}",
+        "message": "={{ $json.forward_body }}",
+        "options": {
+          "allowUnauthorizedCerts": false
+        }
+      },
+      "id": "forward-to-manager",
+      "name": "Forward to Manager",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1648, 164],
+      "credentials": {
+        "smtp": {
+          "id": "<<<CLIENT_SMTP_CRED_ID>>>",
+          "name": "<<<BUSINESS_NAME>>> SMTP"
+        }
+      },
+      "notes": "Forwards email to manager via SMTP with AI draft and routing info"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "<<<SUPABASE_URL>>>/rest/v1/performance_metrics",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "supabaseApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  user_id: '<<<USER_ID>>>',\n  email_id: $('Prepare Email Data').first().json.id,\n  classification_category: $json.primary_category,\n  classification_confidence: $json.confidence,\n  ai_drafted: !!$('Generate AI Draft').first(),\n  forwarded_to_manager: !!$json.forward_to,\n  processing_time_seconds: 5,\n  time_saved_minutes: 3,\n  cost_saved_usd: 2.5,\n  provider: 'imap',\n  created_at: new Date().toISOString()\n}) }}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "save-metrics",
+      "name": "Calculate & Save Performance Metrics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1648, 380],
+      "credentials": {
+        "supabaseApi": {
+          "id": "mQziputTJekSuLa6",
+          "name": "Supabase API"
+        }
+      },
+      "notes": "Saves performance metrics to database for analytics dashboard"
+    }
+  ],
+  "connections": {
+    "IMAP Email Trigger": {
+      "main": [
+        [
+          {
+            "node": "Prepare Email Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Email Data": {
+      "main": [
+        [
+          {
+            "node": "AI Master Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Master Classifier": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Classification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Classifier Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Master Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Classification": {
+      "main": [
+        [
+          {
+            "node": "Generate IMAP Folder Path",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate IMAP Folder Path": {
+      "main": [
+        [
+          {
+            "node": "Route to Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route to Manager": {
+      "main": [
+        [
+          {
+            "node": "Can AI Reply?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Move Email to Folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Can AI Reply?": {
+      "main": [
+        [
+          {
+            "node": "Fetch Voice Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Voice Context": {
+      "main": [
+        [
+          {
+            "node": "Prepare Draft Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Draft Context": {
+      "main": [
+        [
+          {
+            "node": "Generate AI Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate AI Draft": {
+      "main": [
+        [
+          {
+            "node": "Build Forward Email Body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Move Email to Folder": {
+      "main": [
+        [
+          {
+            "node": "Build Forward Email Body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Forward Email Body": {
+      "main": [
+        [
+          {
+            "node": "Should Forward to Manager?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Forward to Manager?": {
+      "main": [
+        [
+          {
+            "node": "Forward to Manager",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Calculate & Save Performance Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Forward to Manager": {
+      "main": [
+        [
+          {
+            "node": "Calculate & Save Performance Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "<<<ERROR_WORKFLOW_ID>>>"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2025-10-29T00:00:00.000Z",
+      "updatedAt": "2025-10-29T00:00:00.000Z",
+      "id": "imap-email-automation",
+      "name": "IMAP Email Automation"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-10-29T00:00:00.000Z",
+  "versionId": "<<<WORKFLOW_VERSION_ID>>>"
+}
+

@@ -1803,10 +1803,113 @@ async function injectOnboardingData(clientData, workflowTemplate) {
   });
   
   const businessTypesText = Array.isArray(businessTypes) ? businessTypes.join(' + ') : businessTypes;
+  
+  // CRITICAL FIX: Get department scope from business_profiles (now supports multi-select)
+  const { data: businessProfile } = await supabaseAdmin
+    .from('business_profiles')
+    .select('department_scope, department_categories')
+    .eq('user_id', userId)
+    .single();
+  
+  // department_scope is now an array: ["all"] or ["sales", "support"]
+  const departmentScopeArray = businessProfile?.department_scope || ['all'];
+  const customCategories = businessProfile?.department_categories;
+  
+  console.log(`🏢 Department Scope: ${JSON.stringify(departmentScopeArray)}`);
+  
   // BUILD AI CONFIGURATION (Layer 1)
   // Use the frontend-generated AI system message from buildProductionClassifier()
   // The frontend already generates comprehensive system messages with all business context
-  const aiSystemMessage = clientData.aiSystemMessage || 'You are an email classifier. Categorize emails accurately and return JSON with summary, primary_category, confidence, and ai_can_reply fields.';
+  let aiSystemMessage = clientData.aiSystemMessage || 'You are an email classifier. Categorize emails accurately and return JSON with summary, primary_category, confidence, and ai_can_reply fields.';
+  
+  // DEPARTMENT FILTERING: Add department-specific instructions to AI (supports multi-select)
+  if (!departmentScopeArray.includes('all')) {
+    const departmentCategoryMap = {
+      'sales': {
+        categories: ['SALES', 'FORMSUB'],
+        description: 'Sales - New inquiries, quotes, form submissions'
+      },
+      'support': {
+        categories: ['SUPPORT', 'URGENT'],
+        description: 'Support - Customer service, technical support, emergencies'
+      },
+      'operations': {
+        categories: ['MANAGER', 'SUPPLIERS', 'BANKING', 'RECRUITMENT'],
+        description: 'Operations - Internal operations, supplier management, finances'
+      },
+      'urgent': {
+        categories: ['URGENT'],
+        description: 'Emergency - Urgent and emergency requests only'
+      },
+      'custom': {
+        categories: customCategories || ['MISC'],
+        description: 'Custom - Specified categories only'
+      }
+    };
+    
+    // Combine categories from all selected departments
+    const allowedCategories = [];
+    const departmentDescriptions = [];
+    
+    departmentScopeArray.forEach(dept => {
+      const deptConfig = departmentCategoryMap[dept];
+      if (deptConfig) {
+        allowedCategories.push(...deptConfig.categories);
+        departmentDescriptions.push(deptConfig.description);
+      }
+    });
+    
+    // Remove duplicates
+    const uniqueCategories = [...new Set(allowedCategories)];
+    
+    if (uniqueCategories.length > 0) {
+      const departmentNames = departmentScopeArray.map(d => d.charAt(0).toUpperCase() + d.slice(1)).join(' + ');
+      
+      const departmentFilter = `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 DEPARTMENT SCOPE RESTRICTION - CRITICAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+THIS WORKFLOW HANDLES: ${departmentNames}
+Departments: ${departmentDescriptions.join(' | ')}
+
+ALLOWED CATEGORIES FOR CLASSIFICATION:
+${uniqueCategories.map(cat => `  ✅ ${cat}`).join('\n')}
+
+FOR ANY EMAIL THAT DOES NOT FIT THE ABOVE CATEGORIES:
+Return this EXACT classification:
+{
+  "primary_category": "OUT_OF_SCOPE",
+  "secondary_category": null,
+  "tertiary_category": null,
+  "confidence": 0.95,
+  "ai_can_reply": false,
+  "summary": "Email does not belong to selected departments (${departmentNames})",
+  "reason": "This email should be handled by a different department or the main office"
+}
+
+IMPORTANT RULES:
+1. You MUST ONLY use categories from the allowed list above
+2. If an email fits multiple allowed categories, choose the most specific one
+3. If an email doesn't fit ANY allowed category, return OUT_OF_SCOPE
+4. Do NOT try to force-fit emails into allowed categories
+5. Be strict - it's better to mark as OUT_OF_SCOPE than misclassify
+
+EXAMPLES:
+${departmentScopeArray.includes('sales') ? '✅ "I want a quote" → SALES (allowed)\n' : ''}${departmentScopeArray.includes('support') ? '✅ "My heater is broken" → SUPPORT (allowed)\n' : ''}${!departmentScopeArray.includes('sales') && !departmentScopeArray.includes('support') ? '⚠️ "I want a quote" → OUT_OF_SCOPE (sales not in scope)\n' : ''}${!departmentScopeArray.includes('operations') ? '⚠️ "Invoice from supplier" → OUT_OF_SCOPE (operations not in scope)' : ''}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`;
+      
+      aiSystemMessage = aiSystemMessage + departmentFilter;
+      console.log(`✅ Added department filter for: ${departmentNames}`);
+      console.log(`   Selected departments: ${departmentScopeArray.join(', ')}`);
+      console.log(`   Allowed categories: ${uniqueCategories.join(', ')}`);
+    }
+  } else {
+    console.log(`📧 Email Hub Mode: Processing all categories (no filtering)`);
+  }
   // BUILD BEHAVIOR CONFIGURATION (Layer 2 + Voice Training)
   // Use the frontend-generated behavior configuration instead of building our own
   // The frontend already generates comprehensive behavior prompts with voice training
@@ -2677,21 +2780,55 @@ async function handler(req) {
       console.log(`   - OpenAI nodes updated: ${openaiNodesUpdated}`);
       console.log(`   - Supabase nodes updated: ${supabaseNodesUpdated}`);
     }
-    // CRITICAL FIX: Check for duplicate workflows in N8N before creating new ones
+    // CRITICAL FIX: Enhanced duplicate detection - Check for duplicate workflows in N8N
     console.log('🔍 Checking for existing workflows in N8N...');
     let existingN8nWorkflows = [];
     try {
       const allWorkflows = await n8nRequest('/workflows', { method: 'GET' });
-      // Find workflows that match this user's pattern
-      const userWorkflowPattern = new RegExp(`${businessSlug}.*${clientShort}|${businessName}.*workflow`, 'i');
-      existingN8nWorkflows = allWorkflows.data.filter(wf => 
-        userWorkflowPattern.test(wf.name)
-      );
+      
+      // Multiple matching strategies to catch all duplicates
+      const businessNameVariations = [
+        businessName,
+        businessSlug,
+        clientShort,
+        businessName?.toLowerCase().replace(/\s+/g, '-'),
+        businessName?.toLowerCase().replace(/\s+/g, '_')
+      ].filter(Boolean);
+      
+      // Find workflows that match ANY of these patterns
+      existingN8nWorkflows = allWorkflows.data.filter(wf => {
+        const workflowName = wf.name?.toLowerCase() || '';
+        
+        // Check if workflow name contains any variation of business name
+        const matchesBusinessName = businessNameVariations.some(variation => 
+          workflowName.includes(variation.toLowerCase())
+        );
+        
+        // Check if workflow name contains provider
+        const matchesProvider = workflowName.includes(provider.toLowerCase()) || 
+                               workflowName.includes('email') || 
+                               workflowName.includes('workflow');
+        
+        // Check if workflow name contains "AI" and "Processing" (common in our templates)
+        const matchesTemplate = workflowName.includes('ai') && 
+                               (workflowName.includes('processing') || workflowName.includes('automation'));
+        
+        // Match if business name is found AND (provider OR template pattern)
+        return matchesBusinessName && (matchesProvider || matchesTemplate);
+      });
       
       if (existingN8nWorkflows.length > 0) {
         console.log(`⚠️ Found ${existingN8nWorkflows.length} existing workflow(s) in N8N for this user:`, 
-          existingN8nWorkflows.map(wf => ({ id: wf.id, name: wf.name, active: wf.active }))
+          existingN8nWorkflows.map(wf => ({ 
+            id: wf.id, 
+            name: wf.name, 
+            active: wf.active,
+            updatedAt: wf.updatedAt,
+            createdAt: wf.createdAt
+          }))
         );
+      } else {
+        console.log(`✅ No existing workflows found for this user`);
       }
     } catch (error) {
       console.warn('⚠️ Could not check for existing N8N workflows:', error.message);
@@ -2706,42 +2843,81 @@ async function handler(req) {
     let nextVersion = 1;
     let isNewWorkflow = false;
     
-    // CRITICAL FIX: If multiple N8N workflows exist, deactivate and archive duplicates
+    // CRITICAL FIX: Enhanced cleanup - If multiple N8N workflows exist, deactivate and delete duplicates
     if (existingN8nWorkflows.length > 1) {
-      console.log(`🧹 Cleaning up ${existingN8nWorkflows.length - 1} duplicate workflow(s)...`);
+      console.log(`🧹 DUPLICATE WORKFLOWS DETECTED! Cleaning up ${existingN8nWorkflows.length - 1} duplicate(s)...`);
       
-      // Keep the most recently updated active workflow
-      const sortedWorkflows = existingN8nWorkflows.sort((a, b) => 
-        new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime()
-      );
+      // Prioritize keeping workflows in this order:
+      // 1. Active workflows over inactive
+      // 2. Most recently updated
+      // 3. Has matching database record
+      const sortedWorkflows = existingN8nWorkflows.sort((a, b) => {
+        // Active workflows get priority
+        if (a.active && !b.active) return -1;
+        if (!a.active && b.active) return 1;
+        
+        // Then sort by most recent update
+        return new Date(b.updatedAt || b.createdAt).getTime() - 
+               new Date(a.updatedAt || a.createdAt).getTime();
+      });
       
-      const workflowToKeep = sortedWorkflows[0];
-      const workflowsToArchive = sortedWorkflows.slice(1);
+      // Determine which workflow to keep
+      let workflowToKeep = sortedWorkflows[0];
       
-      console.log(`✅ Keeping workflow: ${workflowToKeep.name} (ID: ${workflowToKeep.id})`);
+      // If we have a database record, prefer that workflow
+      if (existingWf?.n8n_workflow_id) {
+        const dbWorkflow = sortedWorkflows.find(wf => wf.id === existingWf.n8n_workflow_id);
+        if (dbWorkflow) {
+          console.log(`📊 Database points to workflow ${dbWorkflow.id}, prioritizing it`);
+          workflowToKeep = dbWorkflow;
+        }
+      }
       
-      for (const wf of workflowsToArchive) {
+      const workflowsToDelete = sortedWorkflows.filter(wf => wf.id !== workflowToKeep.id);
+      
+      console.log(`✅ KEEPING: ${workflowToKeep.name}`);
+      console.log(`   - ID: ${workflowToKeep.id}`);
+      console.log(`   - Status: ${workflowToKeep.active ? 'Active' : 'Inactive'}`);
+      console.log(`   - Updated: ${workflowToKeep.updatedAt || workflowToKeep.createdAt}`);
+      
+      console.log(`🗑️ DELETING ${workflowsToDelete.length} duplicate(s):`);
+      
+      for (const wf of workflowsToDelete) {
         try {
-          console.log(`🗑️ Archiving duplicate workflow: ${wf.name} (ID: ${wf.id})`);
+          console.log(`   - Deleting: ${wf.name} (ID: ${wf.id}, Active: ${wf.active})`);
           
-          // Deactivate if active
+          // Deactivate if active (prevents execution during deletion)
           if (wf.active) {
-            await n8nRequest(`/workflows/${wf.id}/deactivate`, { method: 'POST' });
+            try {
+              await n8nRequest(`/workflows/${wf.id}/deactivate`, { method: 'POST' });
+              console.log(`     ✓ Deactivated workflow ${wf.id}`);
+            } catch (deactivateError) {
+              console.warn(`     ⚠️ Could not deactivate workflow ${wf.id}:`, deactivateError.message);
+            }
           }
           
           // Delete from N8N
           await n8nRequest(`/workflows/${wf.id}`, { method: 'DELETE' });
-          console.log(`✅ Deleted duplicate workflow ${wf.id} from N8N`);
+          console.log(`     ✓ DELETED workflow ${wf.id} from N8N`);
+          
         } catch (error) {
-          console.warn(`⚠️ Failed to delete workflow ${wf.id}:`, error.message);
+          console.error(`     ❌ FAILED to delete workflow ${wf.id}:`, error.message);
+          // Continue with other deletions even if one fails
         }
       }
       
-      // Use the kept workflow
-      if (existingWf?.n8n_workflow_id !== workflowToKeep.id) {
-        // Database has different workflow ID, update it
-        console.log(`🔄 Updating database to use workflow ${workflowToKeep.id}`);
-        n8nWorkflowId = workflowToKeep.id;
+      console.log(`✅ Duplicate cleanup complete. Using workflow: ${workflowToKeep.id}`);
+      
+      // Update n8nWorkflowId to the workflow we're keeping
+      n8nWorkflowId = workflowToKeep.id;
+      
+      // If database has different workflow ID, update it
+      if (existingWf?.n8n_workflow_id && existingWf.n8n_workflow_id !== workflowToKeep.id) {
+        console.log(`🔄 Updating database record to point to kept workflow ${workflowToKeep.id}`);
+        await supabaseAdmin.from('workflows').update({
+          n8n_workflow_id: workflowToKeep.id,
+          updated_at: new Date().toISOString()
+        }).eq('id', existingWf.id);
       }
     }
     

@@ -1,0 +1,201 @@
+{
+  "description": "Add these 4 nodes to your N8N workflow for complete manager routing",
+  "instructions": [
+    "1. Copy the 'new_nodes' below",
+    "2. Add them to your workflow's 'nodes' array",
+    "3. Update the 'connections' section with the new connections provided",
+    "4. The workflow will then intelligently route emails to managers"
+  ],
+  
+  "new_nodes": [
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// ═══════════════════════════════════════════════════════════\n// DYNAMIC MANAGER ROUTING ENGINE\n// Intelligently matches emails to the right manager\n// ═══════════════════════════════════════════════════════════\n\nconst classification = $json.parsed_output || $json;\nconst emailData = $('Prepare Email Data').first()?.json || {};\n\n// TEAM CONFIGURATION: Extracted from your AI system message\nconst TEAM_CONFIG = {\n  managers: [\n    {\n      name: \"Hailey\",\n      email: \"dizelll2007@gmail.com\",\n      roles: [\"sales_manager\", \"owner\"]\n    },\n    {\n      name: \"Jillian\",\n      email: \"dizelll2007@gmail.com\",\n      roles: [\"service_manager\"]\n    },\n    {\n      name: \"Aaron\",\n      email: \"Aaron@thehottubman.ca\",\n      roles: [\"operations_manager\"]\n    },\n    {\n      name: \"Artem\",\n      email: null,  // No email - will only be labeled, not forwarded\n      roles: [\"support_lead\"]\n    }\n  ],\n  suppliers: [\n    { name: \"StrongSpas\", email: \"strongspas@example.com\" },\n    { name: \"AquaSpaPoolSupply\", email: \"aquaspa@example.com\" },\n    { name: \"WaterwayPlastics\", email: \"waterway@example.com\" },\n    { name: \"ParadisePatioFurnitureLtd\", email: \"paradise@example.com\" }\n  ]\n};\n\nconst managers = TEAM_CONFIG.managers;\nconst suppliers = TEAM_CONFIG.suppliers;\n\nconsole.log('🎯 Starting Manager Routing...', {\n  primaryCategory: classification.primary_category,\n  secondaryCategory: classification.secondary_category,\n  emailFrom: emailData.from,\n  emailSubject: emailData.subject,\n  teamSize: managers.length\n});\n\n// ═══════════════════════════════════════════════════════════\n// HELPER: Role Configuration\n// ═══════════════════════════════════════════════════════════\nfunction getRoleConfig(roleId) {\n  const configs = {\n    'sales_manager': {\n      categories: ['SALES'],\n      keywords: ['quote', 'price', 'cost', 'buy', 'purchase', 'pricing', 'estimate', 'hot tub', 'spa'],\n      weight: 10\n    },\n    'service_manager': {\n      categories: ['SUPPORT', 'URGENT'],\n      keywords: ['repair', 'fix', 'broken', 'not working', 'appointment', 'emergency', 'service call', 'leak', 'jets'],\n      weight: 10\n    },\n    'operations_manager': {\n      categories: ['MANAGER', 'SUPPLIERS'],\n      keywords: ['vendor', 'supplier', 'order', 'inventory', 'hiring', 'internal', 'operations', 'delivery'],\n      weight: 8\n    },\n    'support_lead': {\n      categories: ['SUPPORT'],\n      keywords: ['help', 'question', 'how to', 'parts', 'chemicals', 'general', 'inquiry'],\n      weight: 6\n    },\n    'owner': {\n      categories: ['MANAGER', 'URGENT'],\n      keywords: ['legal', 'strategic', 'partnership', 'media', 'important', 'urgent'],\n      weight: 10\n    }\n  };\n  \n  return configs[roleId] || { categories: [], keywords: [], weight: 0 };\n}\n\n// ═══════════════════════════════════════════════════════════\n// ROUTING PRIORITY LOGIC\n// ═══════════════════════════════════════════════════════════\n\nlet matchedManager = null;\nlet routingReason = '';\nlet routingConfidence = 0;\n\n// ─────────────────────────────────────────────────────────\n// PRIORITY 1: Name Detection (Highest)\n// If customer mentions a manager by name → route to them\n// ─────────────────────────────────────────────────────────\nconst emailBody = emailData.body?.toLowerCase() || '';\nconst emailSubject = emailData.subject?.toLowerCase() || '';\nconst fullEmailText = `${emailSubject} ${emailBody}`;\n\nfor (const manager of managers) {\n  const fullName = manager.name.toLowerCase();\n  const firstName = fullName.split(' ')[0];\n  \n  if (fullEmailText.includes(fullName) || fullEmailText.includes(firstName)) {\n    matchedManager = manager;\n    routingReason = `Name mentioned: \"${manager.name}\"`;\n    routingConfidence = 100;\n    console.log(`✅ Priority 1: Name Match - ${manager.name}`);\n    break;\n  }\n}\n\n// ─────────────────────────────────────────────────────────\n// PRIORITY 2: Secondary Category Match (from AI classification)\n// AI already classified with secondary category (e.g., MANAGER/Hailey)\n// ─────────────────────────────────────────────────────────\nif (!matchedManager && classification.secondary_category) {\n  const secondaryCategory = classification.secondary_category;\n  \n  // Check if secondary category matches a manager name\n  const managerByCategory = managers.find(m => \n    m.name.toLowerCase() === secondaryCategory.toLowerCase()\n  );\n  \n  if (managerByCategory) {\n    matchedManager = managerByCategory;\n    routingReason = `AI classified as MANAGER/${managerByCategory.name}`;\n    routingConfidence = 95;\n    console.log(`✅ Priority 2: AI Category Match - ${managerByCategory.name}`);\n  }\n}\n\n// ─────────────────────────────────────────────────────────\n// PRIORITY 3: Category + Role Match\n// Match email category to manager roles\n// ─────────────────────────────────────────────────────────\nif (!matchedManager) {\n  const primaryCategory = classification.primary_category?.toUpperCase() || '';\n  const scores = [];\n  \n  for (const manager of managers) {\n    let score = 0;\n    const managerRoles = Array.isArray(manager.roles) ? manager.roles : [];\n    const matchedRoles = [];\n    \n    for (const roleId of managerRoles) {\n      const roleConfig = getRoleConfig(roleId);\n      \n      if (roleConfig.categories.includes(primaryCategory)) {\n        score += roleConfig.weight;\n        matchedRoles.push(roleId);\n      }\n    }\n    \n    if (score > 0) {\n      scores.push({\n        manager,\n        score,\n        reason: `Category match: ${primaryCategory} → ${matchedRoles.join(' + ')}`,\n        matchedRoles\n      });\n    }\n  }\n  \n  if (scores.length > 0) {\n    scores.sort((a, b) => b.score - a.score);\n    const winner = scores[0];\n    matchedManager = winner.manager;\n    routingReason = winner.reason;\n    routingConfidence = Math.min(95, 70 + winner.score);\n    console.log(`✅ Priority 3: Category Match - ${winner.manager.name} (score: ${winner.score})`);\n  }\n}\n\n// ─────────────────────────────────────────────────────────\n// PRIORITY 4: MANAGER Category + Content Analysis\n// For emails classified as MANAGER but no name mentioned\n// ─────────────────────────────────────────────────────────\nif (!matchedManager && classification.primary_category?.toUpperCase() === 'MANAGER') {\n  const scores = [];\n  \n  for (const manager of managers) {\n    let score = 0;\n    const managerRoles = Array.isArray(manager.roles) ? manager.roles : [];\n    const matchedKeywords = [];\n    \n    for (const roleId of managerRoles) {\n      const roleConfig = getRoleConfig(roleId);\n      \n      for (const keyword of roleConfig.keywords) {\n        if (fullEmailText.includes(keyword.toLowerCase())) {\n          score += 2;\n          matchedKeywords.push(keyword);\n        }\n      }\n      \n      score += roleConfig.weight * 0.1;\n    }\n    \n    if (score > 0) {\n      scores.push({\n        manager,\n        score,\n        reason: `MANAGER content analysis: ${matchedKeywords.slice(0, 3).join(', ')}`,\n        matchedKeywords\n      });\n    }\n  }\n  \n  if (scores.length > 0) {\n    scores.sort((a, b) => b.score - a.score);\n    const winner = scores[0];\n    matchedManager = winner.manager;\n    routingReason = winner.reason;\n    routingConfidence = Math.min(85, 50 + winner.score * 2);\n    console.log(`✅ Priority 4: Content Analysis - ${winner.manager.name}`);\n  }\n}\n\n// ─────────────────────────────────────────────────────────\n// PRIORITY 5: Supplier Detection\n// Check if email is from a known supplier\n// ─────────────────────────────────────────────────────────\nif (!matchedManager && suppliers.length > 0) {\n  const senderEmail = emailData.from?.toLowerCase() || '';\n  const senderDomain = senderEmail.split('@')[1] || '';\n  \n  for (const supplier of suppliers) {\n    const supplierName = supplier.name.toLowerCase();\n    const supplierEmail = supplier.email?.toLowerCase() || '';\n    \n    if (senderEmail === supplierEmail || fullEmailText.includes(supplierName)) {\n      const opsManager = managers.find(m => {\n        const roles = Array.isArray(m.roles) ? m.roles : [];\n        return roles.includes('operations_manager');\n      });\n      \n      if (opsManager) {\n        matchedManager = opsManager;\n        routingReason = `Supplier email: ${supplier.name}`;\n        routingConfidence = 90;\n        console.log(`✅ Priority 5: Supplier - ${opsManager.name}`);\n        break;\n      }\n    }\n  }\n}\n\n// ─────────────────────────────────────────────────────────\n// FALLBACK: Default to first manager or \"Unassigned\"\n// ─────────────────────────────────────────────────────────\nif (!matchedManager) {\n  if (managers.length > 0) {\n    matchedManager = managers[0];\n    routingReason = 'Default routing (no specific match)';\n    routingConfidence = 30;\n    console.log(`⚠️ Fallback: Default to ${matchedManager.name}`);\n  } else {\n    matchedManager = {\n      name: 'Unassigned',\n      email: null,\n      roles: []\n    };\n    routingReason = 'No managers configured';\n    routingConfidence = 0;\n    console.log('⚠️ No managers configured - routing to Unassigned');\n  }\n}\n\n// ═══════════════════════════════════════════════════════════\n// OUTPUT: Enhanced classification with routing decision\n// ═══════════════════════════════════════════════════════════\n\nreturn {\n  json: {\n    ...classification,\n    \n    // Manager routing result\n    matched_manager: matchedManager,\n    \n    // Routing metadata\n    routing_decision: {\n      manager_name: matchedManager?.name,\n      manager_email: matchedManager?.email,\n      matched_roles: Array.isArray(matchedManager?.roles) \n        ? matchedManager.roles \n        : [],\n      routing_reason: routingReason,\n      routing_confidence: routingConfidence,\n      timestamp: new Date().toISOString()\n    },\n    \n    // For label application\n    manager_folder: matchedManager?.name ? `MANAGER/${matchedManager.name}` : 'MANAGER/Unassigned'\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        320,
+        272
+      ],
+      "id": "route-to-manager-node",
+      "name": "Route to Manager"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Build Forward Email Body\n// Creates email content for forwarding to managers\n\nconst emailData = $('Prepare Email Data').first().json;\nconst classification = $json;\nconst manager = classification.matched_manager;\n\n// Get draft if it was generated\nlet draftText = 'No AI draft generated (confidence too low or ai_can_reply = false)';\ntry {\n  const formatNode = $('Format Reply as HTML').first();\n  if (formatNode && formatNode.json && formatNode.json.output) {\n    draftText = formatNode.json.output.replace(/<br>/g, '\\n');\n  }\n} catch (e) {\n  console.log('No draft available:', e.message);\n}\n\nconst forwardBody = `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📧 FloWorx AI Email Routing - Action Required\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n🎯 CLASSIFICATION:\nCategory: ${classification.primary_category} > ${classification.secondary_category || 'General'}\nConfidence: ${(classification.confidence * 100).toFixed(1)}%\nAI Can Reply: ${classification.ai_can_reply ? 'Yes' : 'No'}\n\n👤 ROUTED TO:\n${manager?.name || 'Unassigned'}\nReason: ${classification.routing_decision?.routing_reason || 'N/A'}\nConfidence: ${classification.routing_decision?.routing_confidence || 0}%\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📨 ORIGINAL EMAIL:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nFrom: ${emailData.fromName || emailData.from} <${emailData.from}>\nTo: ${emailData.to}\nDate: ${emailData.date}\nSubject: ${emailData.subject}\n\n${emailData.body}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n🤖 AI SUGGESTED DRAFT:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n${draftText}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n💡 NEXT STEPS:\n1. Review the AI draft above\n2. Edit if needed or write your own response\n3. Reply directly to the customer at: ${emailData.from}\n\n📂 Email filed in Gmail: ${classification.categoriesToApply ? classification.categoriesToApply.join(', ') : 'N/A'}\n🤖 Processed by FloWorx AI\n`;\n\nreturn {\n  json: {\n    ...classification,\n    forward_body: forwardBody,\n    forward_to: manager?.email || null,\n    forward_subject: `[FloWorx] ${classification.primary_category} - ${emailData.subject}`\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2224,
+        272
+      ],
+      "id": "build-forward-body-node",
+      "name": "Build Forward Email Body"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": ""
+          },
+          "conditions": [
+            {
+              "id": "has-manager-email",
+              "leftValue": "={{ $json.forward_to }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "should-forward-node",
+      "name": "Should Forward to Manager?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2448,
+        272
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.forward_to }}",
+        "subject": "={{ $json.forward_subject }}",
+        "emailType": "text",
+        "message": "={{ $json.forward_body }}",
+        "options": {
+          "allowUnauthorizedCerts": false
+        }
+      },
+      "id": "forward-to-manager-node",
+      "name": "Forward to Manager",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2672,
+        144
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ZMJZoB5Li8bcp0Jx",
+          "name": "gmail-the-hot-tub-man-40b2d"
+        }
+      }
+    }
+  ],
+
+  "updated_connections": {
+    "description": "Replace these connections in your workflow",
+    "connections": {
+      "Generate Label Mappings": {
+        "main": [
+          [
+            {
+              "node": "Route to Manager",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Route to Manager": {
+        "main": [
+          [
+            {
+              "node": "Apply Gmail Labels",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Calculate Performance Metrics",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Save AI Draft for Learning": {
+        "main": [
+          [
+            {
+              "node": "Build Forward Email Body",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Forward Email Body": {
+        "main": [
+          [
+            {
+              "node": "Should Forward to Manager?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Should Forward to Manager?": {
+        "main": [
+          [
+            {
+              "node": "Forward to Manager",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    }
+  },
+
+  "node_positions": {
+    "description": "Suggested positions for clean workflow layout",
+    "Route to Manager": [320, 272],
+    "Build Forward Email Body": [2224, 272],
+    "Should Forward to Manager?": [2448, 272],
+    "Forward to Manager": [2672, 144]
+  },
+
+  "team_config": {
+    "description": "Manager configuration extracted from your AI system message",
+    "managers": [
+      {
+        "name": "Hailey",
+        "email": "dizelll2007@gmail.com",
+        "roles": ["sales_manager", "owner"],
+        "notes": "Routes SALES emails, name mentions, owner responsibilities"
+      },
+      {
+        "name": "Jillian",
+        "email": "dizelll2007@gmail.com",
+        "roles": ["service_manager"],
+        "notes": "Routes SUPPORT and URGENT emails, service appointments"
+      },
+      {
+        "name": "Aaron",
+        "email": "Aaron@thehottubman.ca",
+        "roles": ["operations_manager"],
+        "notes": "Routes MANAGER, SUPPLIERS emails, internal operations"
+      },
+      {
+        "name": "Artem",
+        "email": null,
+        "roles": ["support_lead"],
+        "notes": "Routes SUPPORT emails, but NO forwarding (no email)"
+      }
+    ]
+  }
+}
+

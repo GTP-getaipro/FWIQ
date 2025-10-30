@@ -44,14 +44,30 @@ const SimplifiedDashboard = ({ user, profile }) => {
   });
   const [recentEmails, setRecentEmails] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [departmentScope, setDepartmentScope] = useState(['all']);
 
-  // Fetch metrics data
+  // Fetch metrics data and department scope
   useEffect(() => {
     const fetchMetrics = async () => {
       if (!user) return;
       
       setLoading(true);
       try {
+        // Fetch department scope (now an array)
+        const { data: businessProfile } = await supabase
+          .from('business_profiles')
+          .select('department_scope')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (businessProfile?.department_scope) {
+          const scope = Array.isArray(businessProfile.department_scope) 
+            ? businessProfile.department_scope 
+            : ['all'];
+          setDepartmentScope(scope);
+        }
+        
+        // Fetch metrics
         const metricsService = new MetricsService(user.id);
         const dashboardMetrics = await metricsService.getDashboardMetrics(timeFilter);
         
@@ -185,6 +201,28 @@ const SimplifiedDashboard = ({ user, profile }) => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               <h1 className="text-xl font-bold text-gray-900">FloWorx</h1>
+              
+              {/* Department Scope Badge - Multi-Select */}
+              {!departmentScope.includes('all') && departmentScope.length > 0 ? (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800">
+                  {departmentScope.map((dept, index) => (
+                    <span key={dept} className="inline-flex items-center">
+                      {dept === 'sales' && '💰'}
+                      {dept === 'support' && '🛠️'}
+                      {dept === 'operations' && '⚙️'}
+                      {dept === 'urgent' && '🚨'}
+                      <span className="ml-1 capitalize">{dept}</span>
+                      {index < departmentScope.length - 1 && <span className="mx-1">+</span>}
+                    </span>
+                  ))}
+                  <span className="ml-1">Dept{departmentScope.length > 1 ? 's' : ''}</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800">
+                  <Mail className="w-3 h-3 mr-1" />
+                  Office Hub (All Departments)
+                </span>
+              )}
             </div>
             
             <div className="flex items-center space-x-4">

@@ -434,7 +434,13 @@
         "subject": "={{$json.forwardSubject}}",
         "bodyContent": "={{$json.forwardBody}}",
         "bodyContentType": "text",
-        "toRecipients": "={{ $json.forwardTo }}",
+        "toRecipients": [
+          {
+            "emailAddress": {
+              "address": "={{$json.forwardTo}}"
+            }
+          }
+        ],
         "additionalFields": {}
       },
       "type": "n8n-nodes-base.microsoftOutlook",
