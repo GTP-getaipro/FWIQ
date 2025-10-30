@@ -35,34 +35,41 @@ const Step2EmailN8n = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  // Get business name and department scope from profile
+  // Get business name and department scope from profile - OPTIMIZED: Parallel queries
   useEffect(() => {
     const fetchBusinessName = async () => {
       if (!user) return;
       
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('business_name')
-        .eq('id', user.id)
-        .single();
-      
-      if (profile?.business_name) {
-        setBusinessName(profile.business_name);
-      }
-      
-      // Fetch department scope from business_profiles
-      const { data: businessProfile } = await supabase
-        .from('business_profiles')
-        .select('department_scope')
-        .eq('user_id', user.id)
-        .single();
-      
-      if (businessProfile?.department_scope) {
-        // department_scope is now a JSONB array: ["all"] or ["sales", "support"]
-        const scope = Array.isArray(businessProfile.department_scope) 
-          ? businessProfile.department_scope 
-          : ['all'];
-        setDepartmentScope(scope);
+      try {
+        // PERFORMANCE FIX: Execute both queries in parallel
+        const [profileResult, businessProfileResult] = await Promise.all([
+          supabase
+            .from('profiles')
+            .select('business_name')
+            .eq('id', user.id)
+            .maybeSingle(),
+          supabase
+            .from('business_profiles')
+            .select('department_scope')
+            .eq('user_id', user.id)
+            .maybeSingle()
+        ]);
+        
+        // Extract data from results
+        if (profileResult.data?.business_name) {
+          setBusinessName(profileResult.data.business_name);
+        }
+        
+        if (businessProfileResult.data?.department_scope) {
+          // department_scope is now a JSONB array: ["all"] or ["sales", "support"]
+          const scope = Array.isArray(businessProfileResult.data.department_scope) 
+            ? businessProfileResult.data.department_scope 
+            : ['all'];
+          setDepartmentScope(scope);
+        }
+      } catch (error) {
+        console.error('Error fetching business data:', error);
+        // Gracefully handle errors - keep defaults
       }
     };
 
