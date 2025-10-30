@@ -551,11 +551,11 @@ const StepTeamSetup = () => {
                       <select
                         value={(manager.roles && manager.roles.length > 0) ? manager.roles[0] : ''}
                         onChange={(e) => handleRoleChange(index, e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white transition-all"
+                        className="w-full px-4 py-3 border-2 border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-blue-50 text-gray-800 font-medium hover:bg-blue-100 hover:border-blue-400 transition-all cursor-pointer"
                       >
-                        <option value="">Select a role...</option>
+                        <option value="" className="bg-white">Select a role...</option>
                         {AVAILABLE_ROLES.map(role => (
-                          <option key={role.id} value={role.id}>
+                          <option key={role.id} value={role.id} className="bg-white py-2">
                             {role.icon} {role.label} - {role.description}
                           </option>
                         ))}
