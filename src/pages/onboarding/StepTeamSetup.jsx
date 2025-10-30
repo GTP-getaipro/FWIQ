@@ -15,53 +15,10 @@ import { useOnboardingData } from '@/lib/onboardingDataAggregator';
 import { provisionLabelSchemaFor } from '@/lib/labelProvisionService';
 import { emailVoiceAnalyzer } from '@/lib/emailVoiceAnalyzer';
 import { TeamReconfigurationManager } from '@/lib/teamReconfigurationManager';
+import { AVAILABLE_ROLES } from '@/constants/managerRoles';
 
 const MAX_MANAGERS = 5;
 const MAX_SUPPLIERS = 10;
-
-// CRITICAL ENHANCEMENT: Role configuration for intelligent routing
-const AVAILABLE_ROLES = [
-  {
-    id: 'sales_manager',
-    label: 'Sales Manager',
-    description: 'Handles quotes, new leads, pricing inquiries',
-    icon: '💰',
-    routes: ['SALES'],
-    keywords: ['price', 'quote', 'buy', 'purchase', 'how much']
-  },
-  {
-    id: 'service_manager',
-    label: 'Service Manager',
-    description: 'Handles repairs, appointments, emergencies',
-    icon: '🔧',
-    routes: ['SUPPORT', 'URGENT'],
-    keywords: ['repair', 'fix', 'broken', 'appointment', 'emergency']
-  },
-  {
-    id: 'operations_manager',
-    label: 'Operations Manager',
-    description: 'Handles vendors, internal ops, hiring',
-    icon: '⚙️',
-    routes: ['MANAGER', 'SUPPLIERS'],
-    keywords: ['vendor', 'supplier', 'hiring', 'internal']
-  },
-  {
-    id: 'support_lead',
-    label: 'Support Lead',
-    description: 'Handles general questions, parts, how-to',
-    icon: '💬',
-    routes: ['SUPPORT'],
-    keywords: ['help', 'question', 'parts', 'chemicals']
-  },
-  {
-    id: 'owner',
-    label: 'Owner/CEO',
-    description: 'Handles strategic, legal, high-priority',
-    icon: '👔',
-    routes: ['MANAGER', 'URGENT'],
-    keywords: ['strategic', 'legal', 'partnership', 'media']
-  }
-];
 
 const StepTeamSetup = () => {
   const { user } = useAuth();

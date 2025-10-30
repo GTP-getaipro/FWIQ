@@ -7,13 +7,15 @@
  * 
  * Features:
  * - Business-specific tertiary categories (e-Transfer, Receipts)
- * - Dynamic manager/supplier injection
+ * - Dynamic manager/supplier injection with role-based keywords
  * - Industry-specific keywords and examples
  * - Business-specific support categories
  * - Comprehensive category descriptions
  * - Form submission override logic
- * - Manager-specific routing
+ * - Manager-specific routing by name and role
  */
+
+import { buildManagerInfoForAI, buildSupplierInfoForAI } from '@/constants/managerRoles.js';
 
 // Business-specific tertiary customizations for all 12 business types
 const BUSINESS_TERTIARY_CUSTOMIZATIONS = {
@@ -344,18 +346,21 @@ const BUSINESS_TERTIARY_CUSTOMIZATIONS = {
 
 
 export class EnhancedDynamicClassifierGenerator {
-  constructor(businessType, businessInfo, managers = [], suppliers = [], actualLabels = null) {
+  constructor(businessType, businessInfo, managers = [], suppliers = [], actualLabels = null, departmentScope = ['all']) {
     this.businessType = businessType;
     this.businessInfo = businessInfo;
     this.managers = managers;
     this.suppliers = suppliers;
     this.actualLabels = actualLabels || {}; // Store actual label IDs for debugging
+    this.departmentScope = departmentScope; // Department scope for filtering (e.g., ['sales', 'support'] or ['all'])
   }
   
   generateClassifierSystemMessage() {
     const categoryStructure = this.generateCategoryStructure();
     const businessRules = this.generateBusinessRules();
     const tertiaryRules = this.generateTertiaryRules();
+    const managerInfo = this.generateManagerInfo();
+    const supplierInfo = this.generateSupplierInfo();
     const labelIdInfo = this.generateLabelIdDocumentation();
     
     return `You are an expert email processing and routing system for "${this.businessInfo.name}".
@@ -389,6 +394,8 @@ ${categoryStructure}
 ${tertiaryRules}
 
 ${businessRules}
+${managerInfo}
+${supplierInfo}
 
 ${labelIdInfo}
 
@@ -1221,6 +1228,60 @@ Return ONLY the following JSON structure. Do not add any other text or explanati
     ];
     
     return rules;
+  }
+  
+  /**
+   * Generate manager information section with role-based keywords
+   * Uses the shared managerRoles constants for consistency
+   * Automatically filters managers based on department scope
+   */
+  generateManagerInfo() {
+    if (!this.managers || this.managers.length === 0) {
+      return '';
+    }
+    
+    try {
+      // Pass department scope to filter managers by relevant roles
+      return buildManagerInfoForAI(this.managers, this.departmentScope);
+    } catch (error) {
+      console.error('Error generating manager info for AI:', error);
+      // Fallback to simple manager list
+      const managerNames = this.managers
+        .filter(m => m.name && m.name.trim())
+        .map(m => m.name)
+        .join(', ');
+      
+      if (managerNames) {
+        return `\n\n### Team Managers:\n${managerNames}\n`;
+      }
+      return '';
+    }
+  }
+  
+  /**
+   * Generate supplier information section
+   * Uses the shared managerRoles constants for consistency
+   */
+  generateSupplierInfo() {
+    if (!this.suppliers || this.suppliers.length === 0) {
+      return '';
+    }
+    
+    try {
+      return buildSupplierInfoForAI(this.suppliers);
+    } catch (error) {
+      console.error('Error generating supplier info for AI:', error);
+      // Fallback to simple supplier list
+      const supplierNames = this.suppliers
+        .filter(s => s.name && s.name.trim())
+        .map(s => s.name)
+        .join(', ');
+      
+      if (supplierNames) {
+        return `\n\n### Known Suppliers:\n${supplierNames}\n`;
+      }
+      return '';
+    }
   }
   
   getBusinessSpecificUrgentKeywords() {

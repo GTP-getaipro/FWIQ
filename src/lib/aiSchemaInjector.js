@@ -339,7 +339,7 @@ export const loadLabelSchemaForBusinessTypes = async (businessTypes, managers = 
  * @param {object} actualLabels - Actual labels created in email system (optional)
  * @returns {string} - Production-ready classifier prompt
  */
-export const buildProductionClassifier = (aiConfig, labelConfig, businessInfo, managers = [], suppliers = [], actualLabels = null) => {
+export const buildProductionClassifier = (aiConfig, labelConfig, businessInfo, managers = [], suppliers = [], actualLabels = null, departmentScope = ['all']) => {
   // Debug: Log what we're receiving
   console.log('🔍 DEBUG: buildProductionClassifier received:', {
     businessInfo: {
@@ -361,7 +361,8 @@ export const buildProductionClassifier = (aiConfig, labelConfig, businessInfo, m
     suppliers: suppliers?.length || 0,
     actualLabels: actualLabels?.length || 0,
     hasLabelConfig: !!labelConfig,
-    labelConfigLabels: labelConfig?.labels?.length || 0
+    labelConfigLabels: labelConfig?.labels?.length || 0,
+    departmentScope: departmentScope
   });
   
   // ARCHITECTURAL DECISION: Use EnhancedDynamicClassifierGenerator as primary
@@ -378,16 +379,19 @@ export const buildProductionClassifier = (aiConfig, labelConfig, businessInfo, m
       name: businessInfo.name,
       businessTypes: businessInfo.businessTypes,
       managers: managers?.length || 0,
-      suppliers: suppliers?.length || 0
+      suppliers: suppliers?.length || 0,
+      departmentScope: departmentScope
     });
     
     // Ensure EnhancedDynamicClassifierGenerator is properly instantiated
+    // Pass department scope for manager filtering
     const classifierGenerator = new EnhancedDynamicClassifierGenerator(
       primaryBusinessType,
       businessInfo,
       managers || [],
       suppliers || [],
-      actualLabels || null  // Pass actual label IDs for debugging documentation
+      actualLabels || null,  // Pass actual label IDs for debugging documentation
+      departmentScope || ['all']  // Department scope for filtering managers by role
     );
     
     console.log('✅ EnhancedDynamicClassifierGenerator instantiated successfully');
@@ -400,6 +404,7 @@ export const buildProductionClassifier = (aiConfig, labelConfig, businessInfo, m
       hasCategories: enhancedSystemMessage?.includes('Categories:') || false,
       hasJSONFormat: enhancedSystemMessage?.includes('JSON Output Format') || false,
       hasTertiaryCategories: enhancedSystemMessage?.includes('FromBusiness') && enhancedSystemMessage?.includes('ToBusiness') || false,
+      hasManagerInfo: enhancedSystemMessage?.includes('Team Manager Information') || false,
       messagePreview: enhancedSystemMessage?.substring(0, 200) + '...' || 'No message generated'
     });
     

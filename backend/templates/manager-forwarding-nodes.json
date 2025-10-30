@@ -1,0 +1,95 @@
+{
+  "description": "Manager forwarding nodes - Add to workflow for intelligent email routing with draft replies",
+  "version": "1.0",
+  "nodes": [
+    {
+      "id": "route-to-manager",
+      "name": "Route to Manager",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [320, 272],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "<<<ROUTING_NODE_CODE>>>"
+      }
+    },
+    {
+      "id": "build-forward-body",
+      "name": "Build Forward Email Body",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2224, 272],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Build Forward Email Body\nconst emailData = $('Prepare Email Data').first().json;\nconst classification = $json;\nconst manager = classification.matched_manager;\n\n// Get draft if it was generated\nlet draftText = 'No AI draft generated';\ntry {\n  const formatNode = $('Format Reply as HTML').first();\n  if (formatNode && formatNode.json && formatNode.json.output) {\n    draftText = formatNode.json.output\n      .replace(/<br\\s*\\/?>/gi, '\\n')\n      .replace(/<\\/p>/gi, '\\n')\n      .replace(/<[^>]+>/g, '')\n      .replace(/&nbsp;/g, ' ');\n  }\n} catch (e) {\n  console.log('No draft available:', e.message);\n}\n\nconst hasDraft = draftText && !draftText.includes('No AI draft');\n\nconst forwardBody = `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📧 FloWorx AI Email Routing - Action Required\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n🎯 CLASSIFICATION:\nCategory: ${classification.primary_category || 'N/A'} > ${classification.secondary_category || 'General'}\n${classification.tertiary_category ? `Tertiary: ${classification.tertiary_category}\\n` : ''}Confidence: ${(classification.confidence * 100).toFixed(1)}%\nAI Can Reply: ${classification.ai_can_reply ? '✅ Yes' : '❌ No'}\nSummary: ${classification.summary || 'N/A'}\n\n👤 ROUTED TO YOU:\nName: ${manager?.name || 'Unassigned'}\nEmail: ${manager?.email || 'Not configured'}\nReason: ${classification.routing_decision?.routing_reason || 'N/A'}\nRouting Confidence: ${classification.routing_decision?.routing_confidence || 0}%\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📨 ORIGINAL EMAIL:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nFrom: ${emailData.fromName || emailData.from} <${emailData.from}>\nTo: ${emailData.to}\nDate: ${new Date(emailData.date).toLocaleString()}\nSubject: ${emailData.subject}\n\n${emailData.body || 'No content'}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n${hasDraft ? `🤖 AI SUGGESTED DRAFT RESPONSE:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n${draftText}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` : `⚠️ NO AI DRAFT GENERATED\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nReason: Low confidence - requires human review\nThis email needs your personal attention.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`}\n\n💡 NEXT STEPS:\n${hasDraft ? '1. Review the AI draft above\\n2. Edit if needed or approve as-is\\n3. Reply to customer' : '1. Review the original email\\n2. Write your response\\n3. Reply to customer'}\n\n📧 Reply to: ${emailData.from}\n📂 Filed in: ${classification.manager_folder || classification.primary_category}\n🤖 Processed by FloWorx AI\n⏰ ${new Date().toLocaleString()}\n`;\n\nreturn {\n  json: {\n    ...classification,\n    forward_body: forwardBody,\n    forward_to: manager?.email || null,\n    forward_subject: `[FloWorx ${classification.primary_category || 'Email'}] ${emailData.subject}`\n  }\n};"
+      }
+    },
+    {
+      "id": "should-forward",
+      "name": "Should Forward to Manager?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [2448, 272],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "id": "has-manager-email",
+              "leftValue": "={{ $json.forward_to }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "forward-to-manager-gmail",
+      "name": "Forward to Manager",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [2672, 144],
+      "parameters": {
+        "sendTo": "={{ $json.forward_to }}",
+        "subject": "={{ $json.forward_subject }}",
+        "emailType": "text",
+        "message": "={{ $json.forward_body }}",
+        "options": {}
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "<<<CLIENT_GMAIL_CRED_ID>>>",
+          "name": "<<<BUSINESS_NAME>>> Gmail"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Generate Label Mappings": {
+      "main": [[{"node": "Route to Manager", "type": "main", "index": 0}]]
+    },
+    "Route to Manager": {
+      "main": [[
+        {"node": "Apply Gmail Labels", "type": "main", "index": 0},
+        {"node": "Calculate Performance Metrics", "type": "main", "index": 0}
+      ]]
+    },
+    "Save AI Draft for Learning": {
+      "main": [[{"node": "Build Forward Email Body", "type": "main", "index": 0}]]
+    },
+    "Build Forward Email Body": {
+      "main": [[{"node": "Should Forward to Manager?", "type": "main", "index": 0}]]
+    },
+    "Should Forward to Manager?": {
+      "main": [[{"node": "Forward to Manager", "type": "main", "index": 0}]]
+    }
+  }
+}
+
