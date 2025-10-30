@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Helmet } from 'react-helmet-async';
-import { Users, Briefcase, Info, PlusCircle, XCircle, Loader2, ArrowLeft, Mail, MailOff } from 'lucide-react';
+import { Users, Briefcase, Info, PlusCircle, XCircle, Loader2, ArrowLeft, Mail, MailX } from 'lucide-react';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { businessPresets } from '@/lib/businessPresets';
 import { supabase } from '@/lib/customSupabaseClient';
@@ -511,11 +511,11 @@ const StepTeamSetup = () => {
                                 <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
                                   <Mail className="w-5 h-5 text-green-600" />
                                 </div>
-                              ) : (
-                                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                                  <MailOff className="w-5 h-5 text-gray-400" />
-                                </div>
-                              )}
+                 ) : (
+                   <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                     <MailX className="w-5 h-5 text-gray-400" />
+                   </div>
+                 )}
                               <div className="flex-1">
                                 <p className="text-sm font-medium text-gray-800">
                                   Forward emails to {manager.email}
