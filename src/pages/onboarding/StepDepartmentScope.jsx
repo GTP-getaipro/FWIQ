@@ -65,19 +65,26 @@ const StepDepartmentScope = () => {
 
   const toggleDepartment = (dept) => {
     if (dept === 'all') {
-      setDepartmentScope(['all']);
+      // Toggle "all"
+      if (departmentScope.includes('all')) {
+        // When unchecking "all", uncheck everything
+        setDepartmentScope([]);
+      } else {
+        // When checking "all", store ONLY ['all']
+        // Visual will show all checked, but backend processes as "all"
+        setDepartmentScope(['all']);
+      }
     } else {
+      // Clicking a specific department
       setDepartmentScope(prev => {
-        // Remove 'all' if selecting specific department
+        // Remove 'all' if present (switching to individual selection)
         const withoutAll = prev.filter(d => d !== 'all');
         
         if (withoutAll.includes(dept)) {
           // Remove this department
-          const updated = withoutAll.filter(d => d !== dept);
-          // If no departments left, default to 'all'
-          return updated.length === 0 ? ['all'] : updated;
+          return withoutAll.filter(d => d !== dept);
         } else {
-          // Add this department
+          // Add this department (individual selection)
           return [...withoutAll, dept];
         }
       });
@@ -86,6 +93,16 @@ const StepDepartmentScope = () => {
 
   const handleContinue = async () => {
     if (!user) return;
+    
+    // Validation: require at least one department selected
+    if (departmentScope.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Selection Required',
+        description: 'Please select at least one department or choose "All Departments".'
+      });
+      return;
+    }
     
     setSaving(true);
     try {
@@ -201,15 +218,14 @@ const StepDepartmentScope = () => {
                   
           {/* Sales Department */}
           <label className={`flex items-center space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
-            departmentScope.includes('sales') && !departmentScope.includes('all')
+            departmentScope.includes('sales') || departmentScope.includes('all')
               ? 'bg-blue-50 border-blue-300' 
               : 'bg-white border-gray-200 hover:border-gray-300'
-          } ${departmentScope.includes('all') ? 'opacity-50 cursor-not-allowed' : ''}`}>
+          }`}>
             <input
               type="checkbox"
-              checked={departmentScope.includes('sales') && !departmentScope.includes('all')}
+              checked={departmentScope.includes('sales') || departmentScope.includes('all')}
               onChange={() => toggleDepartment('sales')}
-              disabled={departmentScope.includes('all')}
               className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
             />
             <div className="flex-1">
@@ -225,15 +241,14 @@ const StepDepartmentScope = () => {
                   
           {/* Support Department */}
           <label className={`flex items-center space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
-            departmentScope.includes('support') && !departmentScope.includes('all')
+            departmentScope.includes('support') || departmentScope.includes('all')
               ? 'bg-blue-50 border-blue-300' 
               : 'bg-white border-gray-200 hover:border-gray-300'
-          } ${departmentScope.includes('all') ? 'opacity-50 cursor-not-allowed' : ''}`}>
+          }`}>
             <input
               type="checkbox"
-              checked={departmentScope.includes('support') && !departmentScope.includes('all')}
+              checked={departmentScope.includes('support') || departmentScope.includes('all')}
               onChange={() => toggleDepartment('support')}
-              disabled={departmentScope.includes('all')}
               className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
             />
             <div className="flex-1">
@@ -249,15 +264,14 @@ const StepDepartmentScope = () => {
           
           {/* Operations Department */}
           <label className={`flex items-center space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
-            departmentScope.includes('operations') && !departmentScope.includes('all')
+            departmentScope.includes('operations') || departmentScope.includes('all')
               ? 'bg-blue-50 border-blue-300' 
               : 'bg-white border-gray-200 hover:border-gray-300'
-          } ${departmentScope.includes('all') ? 'opacity-50 cursor-not-allowed' : ''}`}>
+          }`}>
             <input
               type="checkbox"
-              checked={departmentScope.includes('operations') && !departmentScope.includes('all')}
+              checked={departmentScope.includes('operations') || departmentScope.includes('all')}
               onChange={() => toggleDepartment('operations')}
-              disabled={departmentScope.includes('all')}
               className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
             />
             <div className="flex-1">
@@ -273,15 +287,14 @@ const StepDepartmentScope = () => {
           
           {/* Urgent Department */}
           <label className={`flex items-center space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
-            departmentScope.includes('urgent') && !departmentScope.includes('all')
+            departmentScope.includes('urgent') || departmentScope.includes('all')
               ? 'bg-blue-50 border-blue-300' 
               : 'bg-white border-gray-200 hover:border-gray-300'
-          } ${departmentScope.includes('all') ? 'opacity-50 cursor-not-allowed' : ''}`}>
+          }`}>
             <input
               type="checkbox"
-              checked={departmentScope.includes('urgent') && !departmentScope.includes('all')}
+              checked={departmentScope.includes('urgent') || departmentScope.includes('all')}
               onChange={() => toggleDepartment('urgent')}
-              disabled={departmentScope.includes('all')}
               className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
             />
             <div className="flex-1">
