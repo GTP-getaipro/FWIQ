@@ -945,16 +945,18 @@ const finalLabels = uniqueLabelIds.length > 0 ? uniqueLabelIds : (fallbackLabelI
 
 // Return result with label IDs
 return {
-  ...parsed,
-  labelsToApply: finalLabels,
-  provider: provider,
-  debugInfo: {
-    primaryCategory: parsed.primary_category,
-    secondaryCategory: parsed.secondary_category,
-    tertiaryCategory: parsed.tertiary_category,
-    foundLabelIds: labelIds,
-    finalLabels: finalLabels,
-    labelMapSize: Object.keys(labelMap).length
+  json: {
+    ...parsed,
+    labelsToApply: finalLabels,
+    provider: provider,
+    debugInfo: {
+      primaryCategory: parsed.primary_category,
+      secondaryCategory: parsed.secondary_category,
+      tertiaryCategory: parsed.tertiary_category,
+      foundLabelIds: labelIds,
+      finalLabels: finalLabels,
+      labelMapSize: Object.keys(labelMap).length
+    }
   }
 };`;
 
