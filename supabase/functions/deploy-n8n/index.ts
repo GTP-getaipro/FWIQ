@@ -851,13 +851,13 @@ const provider = '${provider}';
 const labelMap = ${labelMapString};
 
 // Helper: Normalize category name for matching
-function normalizeCategory(category: string | null | undefined): string | null {
+function normalizeCategory(category) {
   if (!category) return null;
   return category.toString().toUpperCase().trim();
 }
 
 // Helper: Find label ID with intelligent matching
-function findLabelId(category: string | null | undefined, labelMap: any): string | null {
+function findLabelId(category, labelMap) {
   if (!category) return null;
   
   const normalized = normalizeCategory(category);
