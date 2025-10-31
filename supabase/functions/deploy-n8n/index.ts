@@ -1529,7 +1529,7 @@ async function loadWorkflowTemplate(businessType: string): Promise<any> {
             "conditions": [
               {
                 "id": "can-reply",
-                "leftValue": "={{ $json.parsed_output.ai_can_reply }}",
+                "leftValue": "={{ $('Generate Label Mappings').item.json.ai_can_reply }}",
                 "rightValue": "true",
                 "operator": {
                   "type": "boolean",
