@@ -946,16 +946,16 @@ const finalLabels = uniqueLabelIds.length > 0 ? uniqueLabelIds : (fallbackLabelI
 // Return result with label IDs
 return {
   json: {
-    ...parsed,
-    labelsToApply: finalLabels,
-    provider: provider,
-    debugInfo: {
-      primaryCategory: parsed.primary_category,
-      secondaryCategory: parsed.secondary_category,
-      tertiaryCategory: parsed.tertiary_category,
-      foundLabelIds: labelIds,
-      finalLabels: finalLabels,
-      labelMapSize: Object.keys(labelMap).length
+  ...parsed,
+  labelsToApply: finalLabels,
+  provider: provider,
+  debugInfo: {
+    primaryCategory: parsed.primary_category,
+    secondaryCategory: parsed.secondary_category,
+    tertiaryCategory: parsed.tertiary_category,
+    foundLabelIds: labelIds,
+    finalLabels: finalLabels,
+    labelMapSize: Object.keys(labelMap).length
     }
   }
 };`;
@@ -1637,7 +1637,7 @@ async function loadWorkflowTemplate(businessType: string): Promise<any> {
       {
         "parameters": {
           "mode": "runOnceForEachItem",
-          "jsCode": "const avgMinutesPerEmail = 4.5;\nconst receptionistHourlyRate = 25;\n\n// This node runs once for each item, so we process one email.\nconst emailsProcessed = 1;\n\n// Calculate savings\nconst timeSavedHours = +(emailsProcessed * avgMinutesPerEmail / 60).toFixed(2);\nconst moneySaved = +(timeSavedHours * receptionistHourlyRate).toFixed(2);\n\n// Determine type based on ai_can_reply flag\nconst type = $json.parsed_output?.ai_can_reply ? 'Drafting' : 'Labeling';\n\n// Return a single object, not an array, as required by this mode.\nreturn {\n  json: {\n    date: (new Date()).toISOString().slice(0, 10),\n    type: type,\n    emailsProcessed,\n    avgMinutesPerEmail,\n    timeSavedHours,\n    receptionistHourlyRate,\n    moneySaved\n  }\n};"
+          "jsCode": "const avgMinutesPerEmail = 4.5;\nconst receptionistHourlyRate = 25;\n\n// This node runs once for each item, so we process one email.\nconst emailsProcessed = 1;\n\n// Calculate savings\nconst timeSavedHours = +(emailsProcessed * avgMinutesPerEmail / 60).toFixed(2);\nconst moneySaved = +(timeSavedHours * receptionistHourlyRate).toFixed(2);\n\n// Determine type based on ai_can_reply flag from Generate Label Mappings node\nconst type = $('Generate Label Mappings').item?.json?.ai_can_reply ? 'Drafting' : 'Labeling';\n\n// Return a single object, not an array, as required by this mode.\nreturn {\n  json: {\n    date: (new Date()).toISOString().slice(0, 10),\n    type: type,\n    emailsProcessed,\n    avgMinutesPerEmail,\n    timeSavedHours,\n    receptionistHourlyRate,\n    moneySaved\n  }\n};"
         },
         "type": "n8n-nodes-base.code",
         "typeVersion": 2,
